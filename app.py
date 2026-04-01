@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import pandas_datareader.data as web
+import FinanceDataReader as fdr
 import datetime
 import plotly.graph_objects as go
 from scipy.stats import zscore

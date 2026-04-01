@@ -28,7 +28,8 @@ def load_data():
     df = pd.DataFrame()
     for name, ticker in tickers.items():
         try:
-            series = web.DataReader(ticker, 'fred', start_date, end_date)
+            # 기존 web.DataReader 대신 fdr.DataReader 사용 (앞에 'FRED:'를 붙여줍니다)
+            series = fdr.DataReader(f'FRED:{ticker}', start_date, end_date)
             df[name] = series[ticker]
         except Exception as e:
             st.error(f"{name} 데이터를 불러오는 중 오류 발생: {e}")

@@ -65,7 +65,7 @@ df = load_data()
 
 # --- 2. 기울기(Slope) 및 스코어 계산 ---
 # 4주 전 대비 절대 변화량을 기울기로 사용 (주가지수는 스코어 계산에서 제외)
-df_slope = df[['Reserves', 'US_M2', 'KR_M2', 'TGA', 'Reverse_Repo']].diff(periods=4).dropna()
+df_slope = df[['Reserves', 'US_M2', 'KR_M2', 'TGA', 'Reverse_Repo']].diff(periods=8).dropna()
 
 # 방향성 부여 (TGA와 역레포는 감소해야 호재이므로 -1 곱함)
 df_slope['Reserves_dir'] = df_slope['Reserves']

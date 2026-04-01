@@ -1,6 +1,5 @@
 streamlit
 pandas
-pandas-datareader
 plotly
 scipy
-setuptools
+finance-datareader

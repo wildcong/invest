@@ -1,5 +1,5 @@
 streamlit
+pykrx
 pandas
+numpy
 plotly
-scipy
-finance-datareader

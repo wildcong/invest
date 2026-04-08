@@ -61,7 +61,7 @@ def get_investor_data(ticker, access_token):
 # ==========================================
 # 2. 본문 인터페이스 및 콜백 로직
 # ==========================================
-st.title("📈 수급 자금흐름 분석 (모바일형)")
+st.title("📈 수급 흐름 분석")
 
 with st.spinner("로딩 중..."):
     kospi_dict = get_kospi200_list()
@@ -138,7 +138,7 @@ if token:
             title=dict(text=f"<b>{selected_name}</b> 수급 및 주가", font=dict(size=18)),
             hovermode="x unified",
             height=450, # 모바일에서 한 화면에 보이도록 높이 조절
-            margin=dict(l=10, r=10, t=50, b=10),
+            margin=dict(l=10, r=10, t=50, b=50),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5)
         )
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})

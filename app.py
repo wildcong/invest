@@ -1,136 +1,125 @@
 import streamlit as st
 import pandas as pd
-import FinanceDataReader as fdr
-import datetime
+import numpy as np
+from pykrx import stock
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from scipy.stats import zscore
+from datetime import datetime, timedelta
 
-# --- 페이지 설정 ---
-st.set_page_config(page_title="Global Liquidity Tracker", layout="wide")
-st.title("🌊 중기 주가 판단용: 글로벌 유동성 스코어 대시보드")
-st.markdown("지급준비금, M2, TGA, 역레포 잔고의 **'기울기(4주 변화량)'**를 기반으로 시장의 유동성 흐름을 추적합니다.")
+# 페이지 기본 설정
+st.set_page_config(page_title="수급 방향성 분석기", layout="wide")
 
-# --- 1. 데이터 가져오기 (FRED API 및 주가지수) ---
-@st.cache_data(ttl=3600*24) # 24시간 캐싱
-def load_data():
-    start_date = datetime.datetime.now() - datetime.timedelta(days=365*5) # 최근 5년
-    end_date = datetime.datetime.now()
-    
-    # 1-1. FRED 유동성 지표 티커
-    fred_tickers = {
-        'Reserves': 'WRESBAL',
-        'TGA': 'WTREGEN',
-        'Reverse_Repo': 'RRPONTSYD',
-        'US_M2': 'M2SL',
-        'KR_M2': 'MYAGM2KRM189N'
-    }
-    
-    # 1-2. 주가지수 티커 (FinanceDataReader 기준)
-    index_tickers = {
-        'KOSPI': 'KS11',
-        'NASDAQ': 'IXIC',
-        'S&P500': 'S&P500'
-    }
-    
-    series_list = []
-    
-    # FRED 데이터 수집
-    for name, ticker in fred_tickers.items():
-        try:
-            series = fdr.DataReader(f'FRED:{ticker}', start_date, end_date)
-            series = series[[ticker]].rename(columns={ticker: name})
-            series_list.append(series)
-        except Exception as e:
-            st.error(f"FRED {name} 데이터 오류: {e}")
+# 1. KOSPI 200 종목 정보 가져오기 (캐싱하여 속도 향상)
+@st.cache_data(show_spinner=False)
+def get_kospi200_stocks():
+    # 1028은 KOSPI 200 지수의 인덱스 코드입니다.
+    tickers = stock.get_index_portfolio_deposit_file("1028")
+    stock_dict = {}
+    for ticker in tickers:
+        name = stock.get_market_ticker_name(ticker)
+        stock_dict[name] = ticker
+    return stock_dict
 
-    # 주가지수 데이터 수집 (종가 Close 기준)
-    for name, ticker in index_tickers.items():
-        try:
-            series = fdr.DataReader(ticker, start_date, end_date)
-            # Close 컬럼만 추출하고 이름을 지수 이름으로 변경
-            series = series[['Close']].rename(columns={'Close': name})
-            series_list.append(series)
-        except Exception as e:
-            st.error(f"주가지수 {name} 데이터 오류: {e}")
-            
-    # 모든 데이터를 병합, 빈칸 채우기, 매주 금요일 기준으로 정리
-    df = pd.concat(series_list, axis=1)
-    df = df.ffill()
-    df = df.resample('W-FRI').last().dropna()
-    
+# 2. 투자자별 순매수 데이터 가져오기 (캐싱)
+@st.cache_data(show_spinner=False)
+def get_investor_data(ticker, start_date, end_date):
+    df = stock.get_market_trading_value_by_date(start_date, end_date, ticker)
     return df
 
-df = load_data()
+st.title("📊 KOSPI 200 외국인 & 기관 수급 쌍끌이 분석")
+st.markdown("선택한 종목의 외국인과 기관 누적 순매수 **추세(기울기)가 동시에 양(+)이거나 음(-)인 구간**을 중점적으로 확인합니다.")
 
-# --- 2. 기울기(Slope) 및 스코어 계산 ---
-# 4주 전 대비 절대 변화량을 기울기로 사용 (주가지수는 스코어 계산에서 제외)
-df_slope = df[['Reserves', 'US_M2', 'KR_M2', 'TGA', 'Reverse_Repo']].diff(periods=8).dropna()
+with st.spinner("KOSPI 200 종목 목록을 불러오는 중입니다..."):
+    kospi200_dict = get_kospi200_stocks()
 
-# 방향성 부여 (TGA와 역레포는 감소해야 호재이므로 -1 곱함)
-df_slope['Reserves_dir'] = df_slope['Reserves']
-df_slope['US_M2_dir'] = df_slope['US_M2']
-df_slope['KR_M2_dir'] = df_slope['KR_M2']
-df_slope['TGA_dir'] = df_slope['TGA'] * -1
-df_slope['Reverse_Repo_dir'] = df_slope['Reverse_Repo'] * -1
+# 사이드바 설정 (종목, 기간, 이동평균 설정)
+st.sidebar.header("설정 (Settings)")
 
-# 정규화 (Z-Score)
-cols_to_score = ['Reserves_dir', 'US_M2_dir', 'KR_M2_dir', 'TGA_dir', 'Reverse_Repo_dir']
-df_zscore = df_slope[cols_to_score].apply(zscore)
+# 종목 선택 드롭다운
+selected_name = st.sidebar.selectbox("KOSPI 200 종목을 선택하세요", list(kospi200_dict.keys()))
+selected_ticker = kospi200_dict[selected_name]
 
-# 종합 유동성 스코어 산출
-df_zscore['Liquidity_Score'] = df_zscore.sum(axis=1)
+# 날짜 선택
+end_date_default = datetime.today()
+start_date_default = end_date_default - timedelta(days=365)
+start_date = st.sidebar.date_input("시작일", start_date_default)
+end_date = st.sidebar.date_input("종료일", end_date_default)
 
-# 주가지수 데이터를 Z-score 데이터프레임과 날짜를 맞추어 합침 (주가 비교용)
-df_final = df_zscore.copy()
-df_final['KOSPI'] = df.loc[df_final.index, 'KOSPI']
-df_final['NASDAQ'] = df.loc[df_final.index, 'NASDAQ']
-df_final['S&P500'] = df.loc[df_final.index, 'S&P500']
+# 추세선(이동평균) 기간 설정
+ma_window = st.sidebar.slider("추세선 평활화 기간 (일)", min_value=5, max_value=60, value=10, step=1)
 
-
-# --- 3. 대시보드 UI 및 차트 시각화 ---
-st.subheader("📊 유동성 스코어 vs 주가지수 상관관계")
-
-# 비교할 주가지수 선택 라디오 버튼
-selected_index = st.radio("비교할 주가지수를 선택하세요:", ('S&P500', 'NASDAQ', 'KOSPI'), horizontal=True)
-
-# 이중 Y축 차트 생성
-fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-# 1. 유동성 스코어 (왼쪽 Y축, 파란색 영역형 차트)
-fig.add_trace(go.Scatter(
-    x=df_final.index, y=df_final['Liquidity_Score'],
-    mode='lines', name='Liquidity Score',
-    fill='tozeroy', line=dict(color='rgba(65, 105, 225, 0.6)', width=2)
-), secondary_y=False)
-
-# 2. 선택한 주가지수 (오른쪽 Y축, 빨간색 선 차트)
-fig.add_trace(go.Scatter(
-    x=df_final.index, y=df_final[selected_index],
-    mode='lines', name=f'{selected_index} Index',
-    line=dict(color='firebrick', width=2.5)
-), secondary_y=True)
-
-# 0선 (기준선) 추가
-fig.add_hline(y=0, line_dash="dash", line_color="gray", annotation_text="Liquidity Neutral (0)", secondary_y=False)
-
-# 차트 레이아웃 디자인
-fig.update_layout(
-    height=600,
-    template="plotly_white",
-    hovermode="x unified",
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-)
-# Y축 이름 설정
-fig.update_yaxes(title_text="<b>Liquidity Z-Score</b>", secondary_y=False)
-fig.update_yaxes(title_text=f"<b>{selected_index} Points</b>", secondary_y=True)
-
-st.plotly_chart(fig, use_container_width=True)
-
-# 개별 지표의 기울기 기여도 확인
-st.subheader("🔍 개별 지표별 유동성 기여도 흐름 (최근 1년)")
-st.line_chart(df_zscore[cols_to_score].tail(52)) # 최근 52주 데이터
-
-# 원본 데이터 표
-with st.expander("데이터 테이블 보기"):
-    st.dataframe(df_final.tail(20).sort_index(ascending=False))
+if st.sidebar.button("데이터 조회"):
+    with st.spinner("데이터를 분석 중입니다..."):
+        # 날짜 포맷 변환 (pykrx용)
+        str_start = start_date.strftime("%Y%m%d")
+        str_end = end_date.strftime("%Y%m%d")
+        
+        # 데이터 가져오기
+        raw_df = get_investor_data(selected_ticker, str_start, str_end)
+        
+        if raw_df.empty:
+            st.error("해당 기간의 데이터가 없습니다.")
+        else:
+            df = raw_df[['외국인', '기관합계']].copy()
+            
+            # 1. 누적 순매수 계산
+            df['외국인_누적'] = df['외국인'].cumsum()
+            df['기관_누적'] = df['기관합계'].cumsum()
+            
+            # 2. 이동평균 적용 (추세 스무딩)
+            df['외국인_이평'] = df['외국인_누적'].rolling(window=ma_window).mean()
+            df['기관_이평'] = df['기관_누적'].rolling(window=ma_window).mean()
+            
+            # 3. 기울기 계산 (오늘 이동평균 값 - 어제 이동평균 값)
+            df['외국인_기울기'] = df['외국인_이평'].diff()
+            df['기관_기울기'] = df['기관_이평'].diff()
+            
+            # 4. 방향성 판단
+            # 둘 다 양수이면 1 (동반 매수), 둘 다 음수이면 -1 (동반 매도), 엇갈리면 0
+            conditions = [
+                (df['외국인_기울기'] > 0) & (df['기관_기울기'] > 0),
+                (df['외국인_기울기'] < 0) & (df['기관_기울기'] < 0)
+            ]
+            choices = [1, -1]
+            df['동반방향'] = np.select(conditions, choices, default=0)
+            
+            df = df.dropna() # 이동평균으로 인한 결측치 제거
+            
+            # 5. Plotly를 이용한 시각화 (서브플롯)
+            fig = make_subplots(
+                rows=2, cols=1, 
+                shared_xaxes=True,
+                row_heights=[0.7, 0.3], # 위 차트 70%, 아래 차트 30% 비율
+                vertical_spacing=0.05,
+                subplot_titles=(f"{selected_name} ({selected_ticker}) 누적 순매수 추세 ({ma_window}일 이평)", 
+                                "외국인/기관 동반 매수/매도 상태")
+            )
+            
+            # 첫 번째 차트: 누적 추세선
+            fig.add_trace(go.Scatter(x=df.index, y=df['외국인_이평'], mode='lines', name='외국인 추세', line=dict(color='blue', width=2)), row=1, col=1)
+            fig.add_trace(go.Scatter(x=df.index, y=df['기관_이평'], mode='lines', name='기관 추세', line=dict(color='orange', width=2)), row=1, col=1)
+            
+            # 두 번째 차트: 방향성 막대 그래프
+            # 색상 설정: 동반 매수(초록), 동반 매도(빨강), 엇갈림(회색)
+            colors = ['rgba(0, 128, 0, 0.7)' if val == 1 else 'rgba(255, 0, 0, 0.7)' if val == -1 else 'rgba(200, 200, 200, 0.3)' for val in df['동반방향']]
+            
+            # 범례용 가짜 트레이스 (직관적인 범례를 위해)
+            fig.add_trace(go.Bar(x=[df.index[0]], y=[0], marker_color='rgba(0, 128, 0, 0.7)', name='쌍끌이 매수 (+, +)'), row=2, col=1)
+            fig.add_trace(go.Bar(x=[df.index[0]], y=[0], marker_color='rgba(255, 0, 0, 0.7)', name='쌍끌이 매도 (-, -)'), row=2, col=1)
+            
+            # 실제 데이터 막대 그래프
+            fig.add_trace(go.Bar(x=df.index, y=df['동반방향'], marker_color=colors, showlegend=False), row=2, col=1)
+            
+            # 레이아웃 디테일 설정
+            fig.update_layout(height=600, hovermode='x unified', margin=dict(l=20, r=20, t=60, b=20))
+            fig.update_yaxes(title_text="누적 순매수 금액", row=1, col=1)
+            fig.update_yaxes(title_text="일치 방향성", tickvals=[-1, 0, 1], ticktext=["동반매도", "엇갈림", "동반매수"], range=[-1.2, 1.2], row=2, col=1)
+            
+            # 화면에 출력
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # 요약 데이터 표 출력
+            st.subheader("최근 동반 수급 상세 데이터")
+            display_df = df[['외국인_기울기', '기관_기울기', '동반방향']].tail(10).iloc[::-1]
+            display_df.columns = ['외국인 추세(기울기)', '기관 추세(기울기)', '쌍끌이 상태 (1:매수, -1:매도)']
+            st.dataframe(display_df, use_container_width=True)

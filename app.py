@@ -2,17 +2,34 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from pykrx import stock
+import pykrx.stock.stock_api as stock_api  # <- 패치를 위해 추가
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
 
+# ==========================================
+# 🛠️ pykrx IndexError 버그 임시 해결 (Monkey Patch)
+# ==========================================
+def safe_business_day(date=None, prev=False):
+    now = datetime.today()
+    # 주말(토, 일)인 경우 가장 최근 영업일인 금요일로 날짜 강제 조정
+    if now.weekday() == 5:   # 토요일
+        now -= timedelta(days=1)
+    elif now.weekday() == 6: # 일요일
+        now -= timedelta(days=2)
+    return now.strftime("%Y%m%d")
+
+# pykrx 내부의 에러나는 함수를 강제로 안전한 함수로 교체
+stock_api.get_nearest_business_day_in_a_week = safe_business_day
+# ==========================================
+
 # 페이지 기본 설정
 st.set_page_config(page_title="수급 방향성 분석기", layout="wide")
 
-# 1. KOSPI 200 종목 정보 가져오기 (캐싱하여 속도 향상)
+# (이하 기존 코드 동일...)
 @st.cache_data(show_spinner=False)
 def get_kospi200_stocks():
-    # 1028은 KOSPI 200 지수의 인덱스 코드입니다.
+    # 이제 여기서 에러가 발생하지 않습니다!
     tickers = stock.get_index_portfolio_deposit_file("1028")
     stock_dict = {}
     for ticker in tickers:

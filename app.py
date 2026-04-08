@@ -46,55 +46,6 @@ st.set_page_config(page_title="수급 쌍끌이 분석기", layout="wide")
 
 @st.cache_data(show_spinner=False, ttl=43200)
 def get_kospi200_stocks():
-    # ... (기존 코드 생략 - 직전 답변의 코드 사용) ...
-import os
-
-# ==========================================
-# 🛡️ 프록시(Proxy) 설정: KRX IP 차단 우회
-# ==========================================
-# 주의: 깃허브 공개(Public) 저장소에 코드를 올리실 경우,
-# 아이디(warmhoon)와 비밀번호(5741oo)가 노출되니 각별히 주의하세요!
-proxy_url = "http://warmhoon:5741oo@152.67.216.179:3128"
-
-# 파이썬 내부의 모든 웹 요청(requests)이 이 프록시를 거치도록 강제 설정
-os.environ['HTTP_PROXY'] = proxy_url
-os.environ['HTTPS_PROXY'] = proxy_url
-os.environ['http_proxy'] = proxy_url
-os.environ['https_proxy'] = proxy_url
-# ==========================================
-
-import streamlit as st
-import pandas as pd
-import numpy as np
-from pykrx import stock
-import pykrx.stock.stock_api as stock_api
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from datetime import datetime, timedelta, timezone
-
-# --- 이전과 동일한 KST 시간대 방어 코드 ---
-def safe_business_day(date=None, prev=False):
-    KST = timezone(timedelta(hours=9))
-    now = datetime.now(KST)
-    if now.hour < 16:
-        now -= timedelta(days=1)
-    if now.weekday() == 5:   
-        now -= timedelta(days=1)
-    elif now.weekday() == 6: 
-        now -= timedelta(days=2)
-    return now.strftime("%Y%m%d")
-
-stock_api.get_nearest_business_day_in_a_week = safe_business_day
-
-# ---------------------------------------------------------
-# 이하 코드는 직전에 만들어드린 '절대 꺼지지 않는 최후 방어 코드'와
-# 100% 동일하게 붙여넣으시면 됩니다.
-# ---------------------------------------------------------
-
-st.set_page_config(page_title="수급 쌍끌이 분석기", layout="wide")
-
-@st.cache_data(show_spinner=False, ttl=43200)
-def get_kospi200_stocks():
     # 최악의 경우(KRX IP 차단 등)를 대비한 코스피 핵심 20종목 예비 리스트
     fallback_dict = {
         '삼성전자': '005930', 'SK하이닉스': '000660', 'LG에너지솔루션': '373220',

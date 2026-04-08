@@ -68,18 +68,53 @@ def get_investor_data(ticker, access_token):
 # 3. 메인 화면 구성
 # ==========================================
 st.title("📈 KOSPI 200 주가 및 자금(억원) 흐름 분석")
-st.markdown("수량(주) 대신 **순매수 금액(억원)** 기준으로 환산하여 세력의 실제 자금 투입 규모를 직관적으로 파악합니다.")
+st.markdown("수량(주) 대신 **순매수 금액(억원)** 기준으로 환산하여 자금의 흐름을 봅니다. 버튼을 눌러 빠르게 종목을 탐색해 보세요.")
 
 with st.spinner("종목 리스트 로딩 중..."):
     kospi_dict = get_kospi200_list()
+    kospi_names = list(kospi_dict.keys())
 
+# ==========================================
+# 4. 사이드바: 방향키(버튼) 내비게이션 구현
+# ==========================================
 st.sidebar.header("설정")
-selected_name = st.sidebar.selectbox("종목 선택", list(kospi_dict.keys()))
+
+# 세션 상태 초기화 (현재 선택된 종목의 인덱스 번호 저장)
+if 'current_idx' not in st.session_state:
+    st.session_state.current_idx = 0
+
+# 드롭다운을 직접 클릭해서 바꿀 때 실행되는 함수
+def update_index():
+    st.session_state.current_idx = kospi_names.index(st.session_state.stock_selector)
+
+# [이전] [다음] 버튼 가로 배치
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    if st.button("⬅️ 이전 종목", use_container_width=True):
+        if st.session_state.current_idx > 0:
+            st.session_state.current_idx -= 1
+with col2:
+    if st.button("다음 종목 ➡️", use_container_width=True):
+        if st.session_state.current_idx < len(kospi_names) - 1:
+            st.session_state.current_idx += 1
+
+# 드롭다운 (버튼 상태와 동기화됨)
+selected_name = st.sidebar.selectbox(
+    "종목 선택 (시총 상위 200)", 
+    kospi_names, 
+    index=st.session_state.current_idx, 
+    key="stock_selector",
+    on_change=update_index
+)
+
 selected_ticker = kospi_dict[selected_name]
 
 # 최대 한계치인 30일 내에서 조절
 period = st.sidebar.slider("분석 기간 (최대 30영업일)", 5, 30, 30)
 
+# ==========================================
+# 5. 데이터 분석 및 시각화 로직
+# ==========================================
 token = get_access_token()
 if token:
     df = get_investor_data(selected_ticker, token)
@@ -87,10 +122,7 @@ if token:
     if not df.empty:
         df = df.tail(period).copy()
         
-        # ==========================================
-        # 💰 수량을 '금액(억원)'으로 환산하는 핵심 로직
-        # ==========================================
-        # (일일 순매수 수량 * 당일 종가) / 1억
+        # 금액(억원)으로 환산 로직
         df['외국인_일일(억원)'] = (df['외국인_일일(주)'] * df['주가(원)']) / 100000000
         df['기관_일일(억원)'] = (df['기관_일일(주)'] * df['주가(원)']) / 100000000
         
@@ -124,14 +156,14 @@ if token:
         st.plotly_chart(fig, use_container_width=True)
         
         # ==========================================
-        # 📋 데이터 표 출력 (금액 단위)
+        # 6. 하단 데이터 표 (금액 단위)
         # ==========================================
         st.subheader(f"📋 자금 동향 상세 내역 (최근 {period}일)")
         
         # 필요한 칼럼만 추출하고, 최신 날짜가 위로 오게 정렬
         display_df = df[['주가(원)', '외국인_일일(억원)', '기관_일일(억원)', '외국인_누적(억원)', '기관_누적(억원)']].iloc[::-1]
         
-        # 금액은 소수점 1자리(예: 15.5), 주가는 정수로 깔끔하게 포맷팅
+        # 금액은 소수점 1자리, 주가는 정수로 포맷팅
         formatted_df = display_df.style.format({
             "주가(원)": "{:,.0f}",
             "외국인_일일(억원)": "{:,.1f}",

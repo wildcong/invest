@@ -6,6 +6,8 @@ import pykrx.stock.stock_api as stock_api  # <- 패치를 위해 추가
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from datetime import datetime, timedelta
+import FinanceDataReader as fdr
+
 
 # ==========================================
 # 🛠️ pykrx IndexError 버그 임시 해결 (Monkey Patch)
@@ -26,15 +28,18 @@ stock_api.get_nearest_business_day_in_a_week = safe_business_day
 # 페이지 기본 설정
 st.set_page_config(page_title="수급 방향성 분석기", layout="wide")
 
-# (이하 기존 코드 동일...)
+
+# 기존 get_kospi200_stocks() 함수를 아래 내용으로 교체
 @st.cache_data(show_spinner=False)
 def get_kospi200_stocks():
-    # 이제 여기서 에러가 발생하지 않습니다!
-    tickers = stock.get_index_portfolio_deposit_file("1028")
+    # FinanceDataReader를 사용하여 KOSPI 200 종목 가져오기
+    df_kospi200 = fdr.StockListing('KOSPI200')
+    
     stock_dict = {}
-    for ticker in tickers:
-        name = stock.get_market_ticker_name(ticker)
-        stock_dict[name] = ticker
+    # 코드(Symbol)와 종목명(Name)을 딕셔너리로 묶어줍니다
+    for idx, row in df_kospi200.iterrows():
+        stock_dict[row['Name']] = row['Symbol']
+        
     return stock_dict
 
 # 2. 투자자별 순매수 데이터 가져오기 (캐싱)

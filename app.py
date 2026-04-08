@@ -68,48 +68,55 @@ def get_investor_data(ticker, access_token):
 # 3. 메인 화면 구성
 # ==========================================
 st.title("📈 KOSPI 200 주가 및 자금(억원) 흐름 분석")
-st.markdown("수량(주) 대신 **순매수 금액(억원)** 기준으로 환산하여 자금의 흐름을 봅니다. 버튼을 눌러 빠르게 종목을 탐색해 보세요.")
+st.markdown("수량(주) 대신 **순매수 금액(억원)** 기준으로 환산하여 자금의 흐름을 봅니다.")
 
 with st.spinner("종목 리스트 로딩 중..."):
     kospi_dict = get_kospi200_list()
     kospi_names = list(kospi_dict.keys())
 
 # ==========================================
-# 4. 사이드바: 방향키(버튼) 내비게이션 구현
+# 4. 사이드바: 완벽하게 작동하는 콜백(Callback) 네비게이션
 # ==========================================
 st.sidebar.header("설정")
 
-# 세션 상태 초기화 (현재 선택된 종목의 인덱스 번호 저장)
+# 세션 상태 초기화
 if 'current_idx' not in st.session_state:
     st.session_state.current_idx = 0
+if 'stock_selector' not in st.session_state:
+    st.session_state.stock_selector = kospi_names[0]
 
-# 드롭다운을 직접 클릭해서 바꿀 때 실행되는 함수
-def update_index():
+# 콜백 함수: 드롭다운을 마우스로 바꿨을 때
+def update_from_selectbox():
     st.session_state.current_idx = kospi_names.index(st.session_state.stock_selector)
 
-# [이전] [다음] 버튼 가로 배치
+# 콜백 함수: 이전 버튼을 눌렀을 때
+def go_prev():
+    if st.session_state.current_idx > 0:
+        st.session_state.current_idx -= 1
+        st.session_state.stock_selector = kospi_names[st.session_state.current_idx]
+
+# 콜백 함수: 다음 버튼을 눌렀을 때
+def go_next():
+    if st.session_state.current_idx < len(kospi_names) - 1:
+        st.session_state.current_idx += 1
+        st.session_state.stock_selector = kospi_names[st.session_state.current_idx]
+
+# 버튼 렌더링 (클릭 시 콜백 함수 즉시 실행)
 col1, col2 = st.sidebar.columns(2)
 with col1:
-    if st.button("⬅️ 이전 종목", use_container_width=True):
-        if st.session_state.current_idx > 0:
-            st.session_state.current_idx -= 1
+    st.button("⬅️ 이전 종목", on_click=go_prev, use_container_width=True)
 with col2:
-    if st.button("다음 종목 ➡️", use_container_width=True):
-        if st.session_state.current_idx < len(kospi_names) - 1:
-            st.session_state.current_idx += 1
+    st.button("다음 종목 ➡️", on_click=go_next, use_container_width=True)
 
-# 드롭다운 (버튼 상태와 동기화됨)
+# 드롭다운
 selected_name = st.sidebar.selectbox(
     "종목 선택 (시총 상위 200)", 
     kospi_names, 
-    index=st.session_state.current_idx, 
     key="stock_selector",
-    on_change=update_index
+    on_change=update_from_selectbox
 )
 
 selected_ticker = kospi_dict[selected_name]
-
-# 최대 한계치인 30일 내에서 조절
 period = st.sidebar.slider("분석 기간 (최대 30영업일)", 5, 30, 30)
 
 # ==========================================
@@ -133,11 +140,11 @@ if token:
         # 그래프 생성 (이중 축)
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         
-        # 누적 금액 곡선 (왼쪽 축)
+        # 누적 금액 곡선
         fig.add_trace(go.Scatter(x=df.index, y=df['외국인_누적(억원)'], name='외국인 누적 (억원)', line=dict(color='blue', width=3)), secondary_y=False)
         fig.add_trace(go.Scatter(x=df.index, y=df['기관_누적(억원)'], name='기관 누적 (억원)', line=dict(color='orange', width=3)), secondary_y=False)
         
-        # 주가 곡선 (오른쪽 축)
+        # 주가 곡선
         fig.add_trace(go.Scatter(x=df.index, y=df['주가(원)'], name='주가 (원)', line=dict(color='red', width=2, dash='dot')), secondary_y=True)
         
         # 0점 기준선
@@ -160,10 +167,8 @@ if token:
         # ==========================================
         st.subheader(f"📋 자금 동향 상세 내역 (최근 {period}일)")
         
-        # 필요한 칼럼만 추출하고, 최신 날짜가 위로 오게 정렬
         display_df = df[['주가(원)', '외국인_일일(억원)', '기관_일일(억원)', '외국인_누적(억원)', '기관_누적(억원)']].iloc[::-1]
         
-        # 금액은 소수점 1자리, 주가는 정수로 포맷팅
         formatted_df = display_df.style.format({
             "주가(원)": "{:,.0f}",
             "외국인_일일(억원)": "{:,.1f}",

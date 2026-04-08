@@ -3,4 +3,3 @@ pykrx
 pandas
 numpy
 plotly
-finance-datareader

@@ -19,7 +19,7 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 st.set_page_config(page_title="수급 쌍끌이 스캐너", layout="wide")
 
 # ==========================================
-# ⏰ KST 시간 및 15:40 제한 우회 로직
+# ⏰ KST 시간 및 15:40 제한 우회 로직 (수급용)
 # ==========================================
 def get_target_date():
     kst = timezone(timedelta(hours=9))
@@ -54,6 +54,33 @@ def get_access_token():
         return res.json().get("access_token")
     return None
 
+# 🚨 [새로 추가된 API] 실시간 현재가 수집 (캐시 1분으로 실시간성 확보)
+@st.cache_data(ttl=60, show_spinner=False)
+def get_realtime_price(ticker, access_token):
+    headers = {
+        "content-type": "application/json; charset=utf-8", 
+        "authorization": f"Bearer {access_token}",
+        "appkey": APP_KEY, "appsecret": APP_SECRET, 
+        "tr_id": "FHKST01010100", "custtype": "P"
+    }
+    params = {"FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": ticker}
+    url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/inquire-price"
+    
+    try:
+        res = requests.get(url, headers=headers, params=params)
+        res_json = res.json()
+        if res.status_code == 200 and 'output' in res_json:
+            output = res_json['output']
+            return {
+                "price": int(output.get('stck_prpr', 0)),
+                "diff": int(output.get('prdy_vrss', 0)),
+                "rate": float(output.get('prdy_ctrt', 0.0))
+            }
+    except Exception:
+        pass
+    return None
+
+# 기존 수급 데이터 수집 API
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_investor_data(ticker, access_token):
     headers = {
@@ -168,21 +195,32 @@ with c2:
 with c3: st.button("다음 ➡️", on_click=go_next, use_container_width=True)
 
 selected_real = name_lookup.get(selected_disp, selected_disp)
+selected_ticker = kospi_dict.get(selected_real, "005930")
 
 # ==========================================
 # 4. 차트 및 표 시각화
 # ==========================================
 if token:
-    selected_ticker = kospi_dict.get(selected_real, "005930")
     df = get_investor_data(selected_ticker, token)
+    # 실시간 주가 데이터 별도 호출
+    rt_data = get_realtime_price(selected_ticker, token)
     
     if not df.empty:
         df_disp = df.tail(period).copy()
-        curr_p = df_disp['Price'].iloc[-1]
-        prev_p = df_disp['Price'].iloc[-2] if len(df_disp) > 1 else curr_p
-        diff = curr_p - prev_p
-        ratio = (diff / prev_p) * 100
         
+        # 🚨 [핵심] 상단 표시는 실시간 API 데이터를 우선 사용
+        if rt_data:
+            curr_p = rt_data['price']
+            diff = rt_data['diff']
+            ratio = rt_data['rate']
+        else:
+            # 실시간 API 실패 시 과거 데이터로 계산 (예비용)
+            curr_p = df_disp['Price'].iloc[-1]
+            prev_p = df_disp['Price'].iloc[-2] if len(df_disp) > 1 else curr_p
+            diff = curr_p - prev_p
+            ratio = (diff / prev_p) * 100 if prev_p != 0 else 0
+        
+        # 수급 뱃지 (기존 5일 대금 합산)
         f_sum, i_sum = df_disp['F_억'].tail(5).sum(), df_disp['I_억'].tail(5).sum()
         if f_sum > 0 and i_sum > 0: 
             b_html = '<span style="background-color:#ff4b4b;color:white;padding:2px 6px;border-radius:4px;font-size:0.8rem;">쌍끌이 매수 ↑↑</span>'
@@ -206,27 +244,22 @@ if token:
         fig.update_layout(title=f"<b>{selected_real}</b>", hovermode="x unified", height=450, margin=dict(l=5,r=5,t=50,b=5), legend=dict(orientation="h", y=1.1, x=0.5, xanchor='center'))
         st.plotly_chart(fig, use_container_width=True)
 
-        # ==========================================
-        # 🎨 [새로 추가] 표 색상 하이라이팅 기능
-        # ==========================================
+        # 표 색상 하이라이팅
         st.write("##### 📋 상세 내역 (단위: 억원)")
         res_df = df_disp[['Price','F_억','I_억','F_누적','I_누적']].iloc[::-1].copy()
         res_df.columns = ['주가','외인_일일','기관_일일','외인_누적','기관_누적']
         
-        # 순매수(빨강), 순매도(파랑) 색상 지정 함수
         def color_net_buy(val):
             try:
                 v = float(val)
-                if v > 0: return 'color: #ff4b4b; font-weight: bold;' # 빨간색
-                elif v < 0: return 'color: #1f77b4;' # 파란색
+                if v > 0: return 'color: #ff4b4b; font-weight: bold;'
+                elif v < 0: return 'color: #1f77b4;'
             except: pass
             return ''
             
-        # 표 데이터에 색상 적용
         try:
             styled_df = res_df.style.format("{:,.1f}").map(color_net_buy, subset=['외인_일일', '기관_일일', '외인_누적', '기관_누적'])
         except AttributeError:
-            # pandas 구버전 호환용
             styled_df = res_df.style.format("{:,.1f}").applymap(color_net_buy, subset=['외인_일일', '기관_일일', '외인_누적', '기관_누적'])
             
         st.dataframe(styled_df, use_container_width=True)
@@ -240,24 +273,5 @@ st.markdown("---")
 with st.expander("🛠️ 시스템 로그 보기 (에러 원인 파악용)"):
     if token:
         st.write(f"현재 선택된 종목: **{selected_real}** (코드: {selected_ticker})")
-        st.write(f"요청 기준일자(KST): **{get_target_date()}**")
-        headers = {
-            "content-type": "application/json; charset=utf-8", 
-            "authorization": f"Bearer {token}",
-            "appkey": APP_KEY, "appsecret": APP_SECRET, 
-            "tr_id": "FHPTJ04160001", "custtype": "P"
-        }
-        params = {
-            "FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": selected_ticker,
-            "FID_INPUT_DATE_1": get_target_date(), "FID_ORG_ADJ_PRC": "", "FID_ETC_CLS_CODE": "1"
-        }
-        url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
-        try:
-            raw_res = requests.get(url, headers=headers, params=params)
-            st.write(f"**HTTP 상태 코드:** {raw_res.status_code}")
-            try:
-                st.json(raw_res.json())
-            except:
-                st.text(raw_res.text)
-        except Exception as e:
-            st.error(f"서버 연결 실패: {str(e)}")
+        st.write(f"수급 요청 기준일자(KST): **{get_target_date()}**")
+        # 디버그 생략

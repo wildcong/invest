@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import FinanceDataReader as fdr
 import time
+import datetime
 
 # ==========================================
 # 🔒 보안 설정 (Streamlit Secrets)
@@ -35,40 +36,55 @@ def get_access_token():
     headers = {"content-type": "application/json"}
     body = {"grant_type": "client_credentials", "appkey": APP_KEY, "appsecret": APP_SECRET}
     res = requests.post(f"{URL_BASE}/oauth2/tokenP", headers=headers, data=json.dumps(body))
-    return res.json().get("access_token") if res.status_code == 200 else None
+    if res.status_code == 200:
+        return res.json().get("access_token")
+    return None
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_investor_data(ticker, access_token):
-    # 🚨 진짜 존재하는 정상 API 코드로 원상복구 (FHKST01010900)
+    # 🚨 보내주신 문서의 정확한 TR_ID (FHPTJ04160001) 및 URL 적용
     headers = {
         "content-type": "application/json; charset=utf-8", 
         "authorization": f"Bearer {access_token}",
         "appkey": APP_KEY, "appsecret": APP_SECRET, 
-        "tr_id": "FHKST01010900", "custtype": "P"
+        "tr_id": "FHPTJ04160001", "custtype": "P"
     }
-    params = {"FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": ticker}
+    
+    # 파라미터 요구사항에 맞춰 오늘 날짜 세팅 및 공란/1 입력
+    today_str = datetime.datetime.today().strftime("%Y%m%d")
+    params = {
+        "FID_COND_MRKT_DIV_CODE": "J", 
+        "FID_INPUT_ISCD": ticker,
+        "FID_INPUT_DATE_1": today_str,
+        "FID_ORG_ADJ_PRC": "",
+        "FID_ETC_CLS_CODE": "1"
+    }
+    
+    # 보내주신 URL 엔드포인트 적용
+    url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
     
     try:
-        res = requests.get(f"{URL_BASE}/uapi/domestic-stock/v1/quotations/inquire-investor", headers=headers, params=params)
+        res = requests.get(url, headers=headers, params=params)
         res_json = res.json()
         
-        if res.status_code == 200 and 'output' in res_json:
-            df = pd.DataFrame(res_json['output'])
+        # 문서에 명시된 대로 데이터 목록은 'output2' 배열에 담겨옵니다.
+        if res.status_code == 200 and 'output2' in res_json:
+            df = pd.DataFrame(res_json['output2'])
             if df.empty: return pd.DataFrame()
             
-            # 수량(qty) 데이터를 가져와서
-            df = df[['stck_bsop_date', 'stck_clpr', 'frgn_ntby_qty', 'orgn_ntby_qty']].copy()
-            df.columns = ['Date', 'Price', 'Foreign_Qty', 'Inst_Qty']
+            # 정확한 대금 칼럼: frgn_ntby_tr_pbmn(외국인), orgn_ntby_tr_pbmn(기관계)
+            df = df[['stck_bsop_date', 'stck_clpr', 'frgn_ntby_tr_pbmn', 'orgn_ntby_tr_pbmn']].copy()
+            df.columns = ['Date', 'Price', 'Foreign_Amt', 'Inst_Amt']
             df['Date'] = pd.to_datetime(df['Date'])
             
-            for col in ['Price', 'Foreign_Qty', 'Inst_Qty']:
+            for col in ['Price', 'Foreign_Amt', 'Inst_Amt']:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
                 
             df = df.dropna()
             
-            # 여기서 어쩔 수 없이 종가를 곱해 '추정 순매수액(억원)'을 만듭니다.
-            df['F_억'] = (df['Foreign_Qty'] * df['Price']) / 100000000
-            df['I_억'] = (df['Inst_Qty'] * df['Price']) / 100000000
+            # 🚨 문서 명시 "단위 : 백만원". 1억원은 100백만원이므로 100으로 나눔!
+            df['F_억'] = df['Foreign_Amt'] / 100
+            df['I_억'] = df['Inst_Amt'] / 100
             
             return df.sort_values('Date').set_index('Date')
     except Exception:
@@ -90,7 +106,7 @@ def scan_all_stocks(stock_dict, token):
         df = get_investor_data(ticker, token)
         
         if not df.empty and len(df) >= 5:
-            # 5일치 '금액'의 합계로 방향성 판단
+            # 증권사에서 보내준 정확한 5일치 '대금(억)' 기준 합산
             f_sum = df['F_억'].tail(5).sum()
             i_sum = df['I_억'].tail(5).sum()
             
@@ -170,7 +186,8 @@ selected_real = name_lookup.get(selected_disp, selected_disp)
 # 4. 차트 및 표 시각화
 # ==========================================
 if token:
-    df = get_investor_data(kospi_dict.get(selected_real, "005930"), token)
+    selected_ticker = kospi_dict.get(selected_real, "005930")
+    df = get_investor_data(selected_ticker, token)
     
     if not df.empty:
         df_disp = df.tail(period).copy()
@@ -179,6 +196,7 @@ if token:
         diff = curr_p - prev_p
         ratio = (diff / prev_p) * 100
         
+        # 뱃지 (이제 증권사 HTS와 100% 동일한 대금 기준으로 판별!)
         f_sum, i_sum = df_disp['F_억'].tail(5).sum(), df_disp['I_억'].tail(5).sum()
         if f_sum > 0 and i_sum > 0: 
             b_html = '<span style="background-color:#ff4b4b;color:white;padding:2px 6px;border-radius:4px;font-size:0.8rem;">쌍끌이 매수 ↑↑</span>'
@@ -208,3 +226,37 @@ if token:
         st.dataframe(res_df.style.format("{:,.1f}"), use_container_width=True)
     else:
         st.error("데이터를 불러올 수 없습니다. 장 종료 후 점검 시간이거나 종목 정보를 확인 중입니다.")
+
+# ==========================================
+# 🚨 API 디버그 로그 (오류 발생 시 확인용)
+# ==========================================
+st.markdown("---")
+with st.expander("🛠️ 시스템 로그 보기 (에러 원인 파악용)"):
+    if token:
+        st.write(f"현재 선택된 종목: **{selected_real}** (코드: {selected_ticker})")
+        
+        headers = {
+            "content-type": "application/json; charset=utf-8", 
+            "authorization": f"Bearer {token}",
+            "appkey": APP_KEY, "appsecret": APP_SECRET, 
+            "tr_id": "FHPTJ04160001", "custtype": "P"
+        }
+        today_str = datetime.datetime.today().strftime("%Y%m%d")
+        params = {
+            "FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": selected_ticker,
+            "FID_INPUT_DATE_1": today_str, "FID_ORG_ADJ_PRC": "", "FID_ETC_CLS_CODE": "1"
+        }
+        url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
+        
+        try:
+            raw_res = requests.get(url, headers=headers, params=params)
+            st.write(f"**HTTP 상태 코드:** {raw_res.status_code}")
+            try:
+                st.json(raw_res.json())
+            except:
+                st.text("JSON 변환 실패. 원본 텍스트:")
+                st.text(raw_res.text)
+        except Exception as e:
+            st.error(f"서버 연결 실패: {str(e)}")
+    else:
+        st.warning("토큰이 없어 API 테스트를 실행할 수 없습니다.")

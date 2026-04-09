@@ -33,29 +33,22 @@ def get_target_date():
     return target.strftime("%Y%m%d")
 
 # ==========================================
-# 1. 데이터 수집 함수 (시장별 분류 추가)
+# 1. 데이터 수집 함수들
 # ==========================================
 @st.cache_data(ttl=86400)
 def get_stock_lists():
     try:
-        # 코스피, 코스닥, 전체(KRX) 데이터를 각각 가져옵니다.
         df_kospi = fdr.StockListing('KOSPI')
         df_kosdaq = fdr.StockListing('KOSDAQ')
-        df_all = fdr.StockListing('KRX')
         
         mcap_col = 'Marcap' if 'Marcap' in df_kospi.columns else 'MarCap'
         
-        # 시총 기준으로 KOSPI 200, KOSDAQ 150 추출
         k200 = df_kospi.sort_values(mcap_col, ascending=False).head(200)
         kq150 = df_kosdaq.sort_values(mcap_col, ascending=False).head(150)
         
-        dict_k200 = dict(zip(k200['Name'], k200['Code']))
-        dict_kq150 = dict(zip(kq150['Name'], kq150['Code']))
-        dict_all = dict(zip(df_all['Name'], df_all['Code']))
-        
-        return dict_k200, dict_kq150, dict_all
+        return dict(zip(k200['Name'], k200['Code'])), dict(zip(kq150['Name'], kq150['Code']))
     except Exception:
-        return {"삼성전자": "005930"}, {"에코프로": "086520"}, {"삼성전자": "005930"}
+        return {"삼성전자": "005930"}, {"에코프로": "086520"}
 
 @st.cache_data(ttl=86000)
 def get_access_token():
@@ -124,6 +117,9 @@ def get_investor_data(ticker, access_token):
         pass
     return pd.DataFrame()
 
+# ==========================================
+# 2. 전수 조사(Scanner) 로직
+# ==========================================
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
     progress_bar = st.progress(0)
@@ -140,6 +136,7 @@ def scan_all_stocks(stock_dict, token):
                 valid_stocks[name] = f"{name} (↑↑)"
             elif f_sum < 0 and i_sum < 0:
                 valid_stocks[name] = f"{name} (↓↓)"
+                
         progress_bar.progress((i + 1) / total)
         time.sleep(0.05)
         
@@ -150,23 +147,22 @@ def scan_all_stocks(stock_dict, token):
 # ==========================================
 # 3. 메인 화면: 탭 및 컨트롤러 구성
 # ==========================================
-st.title("📊 쌍끌이 수급 스캐너")
+st.title("📊 통합 쌍끌이 수급 스캐너")
 
-# 시장 리스트 가져오기
-dict_k200, dict_kq150, dict_all = get_stock_lists()
+dict_k200, dict_kq150 = get_stock_lists()
 token = get_access_token()
 
-# 🎯 탭(모드) 선택 UI
+# 🎯 깔끔해진 탭(모드) 선택 UI
 market_mode = st.radio(
     "분석 시장 선택", 
-    ["🔵 KOSPI 200", "🟢 KOSDAQ 150", "🔍 전체 종목 개별 검색 (스캔불가)"], 
+    ["🔵 KOSPI 200", "🟢 KOSDAQ 150"], 
     horizontal=True
 )
 
-# 탭이 바뀔 때 세션 상태(필터, 인덱스) 초기화
 if 'current_market' not in st.session_state:
     st.session_state.current_market = market_mode
 
+# 시장이 바뀌면 필터 초기화
 if st.session_state.current_market != market_mode:
     st.session_state.current_idx = 0
     st.session_state.current_market = market_mode
@@ -176,31 +172,17 @@ if st.session_state.current_market != market_mode:
 if 'current_idx' not in st.session_state:
     st.session_state.current_idx = 0
 
-# 선택된 시장에 따라 타겟 데이터 설정
-if market_mode == "🔵 KOSPI 200 (스캐너)":
-    target_dict = dict_k200
-    allow_scan = True
-elif market_mode == "🟢 KOSDAQ 150 (스캐너)":
-    target_dict = dict_kq150
-    allow_scan = True
-else:
-    target_dict = dict_all
-    allow_scan = False
+target_dict = dict_k200 if market_mode == "🔵 KOSPI 200" else dict_kq150
 
 h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
 
 with h_col1:
-    # 전체 검색 모드일 때는 과부하 방지를 위해 필터 체크박스를 숨김
-    if allow_scan:
-        is_filtered = st.checkbox("🔥 5일 동방향 필터")
-    else:
-        is_filtered = False
-        st.caption("✅ 개별 종목 직접 검색 모드")
+    is_filtered = st.checkbox("🔥 5일 동방향 필터")
 
 with h_col2:
     period = st.select_slider("분석 기간", options=[5, 10, 15, 20, 25, 30], value=30, label_visibility="collapsed")
 
-if is_filtered and allow_scan:
+if is_filtered:
     if 'filtered_map' not in st.session_state:
         if token:
             st.session_state.filtered_map = scan_all_stocks(target_dict, token)
@@ -302,8 +284,11 @@ if token:
     else:
         st.error("데이터를 불러올 수 없습니다. 아래 API 로그를 확인해 주세요.")
 
+# ==========================================
+# 🚨 API 디버그 로그
+# ==========================================
 st.markdown("---")
 with st.expander("🛠️ 시스템 로그 보기 (에러 원인 파악용)"):
     if token:
         st.write(f"현재 선택된 종목: **{selected_real}** (코드: {selected_ticker})")
-        # 로그 출력 생략 (기존과 동일)
+        st.write(f"수급 요청 기준일자(KST): **{get_target_date()}**")

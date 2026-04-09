@@ -57,10 +57,10 @@ def get_investor_data(ticker, access_token):
     return pd.DataFrame()
 
 # ==========================================
-# 2. 전수 조사(Scanner) 로직
+# 2. 전수 조사(Scanner) 로직 (방향성 태그 추가)
 # ==========================================
 def scan_all_stocks(stock_dict, token):
-    valid_stocks = []
+    valid_stocks = {} # {종목명: 태그} 형태로 저장
     progress_bar = st.progress(0)
     status_text = st.empty()
     total = len(stock_dict)
@@ -71,8 +71,11 @@ def scan_all_stocks(stock_dict, token):
         if not df.empty and len(df) >= 5:
             f_sum = df['Foreign'].tail(5).sum()
             i_sum = df['Institutional'].tail(5).sum()
-            if (f_sum > 0 and i_sum > 0) or (f_sum < 0 and i_sum < 0):
-                valid_stocks.append(name)
+            
+            if f_sum > 0 and i_sum > 0:
+                valid_stocks[name] = f"{name} (↑↑)"
+            elif f_sum < 0 and i_sum < 0:
+                valid_stocks[name] = f"{name} (↓↓)"
         
         progress_bar.progress((i + 1) / total)
         time.sleep(0.05)
@@ -87,31 +90,34 @@ def scan_all_stocks(stock_dict, token):
 st.title("📊 KOSPI 200 쌍끌이 스캐너")
 
 kospi_dict = get_kospi200_list()
-full_names = list(kospi_dict.keys())
 token = get_access_token()
 
-# --- 세션 상태 초기화 (제일 중요) ---
 if 'current_idx' not in st.session_state:
     st.session_state.current_idx = 0
 
-# 상단 레이아웃 (체크박스 & 주가 정보)
 head_col1, head_col2 = st.columns([2, 1])
 
 with head_col1:
     is_filtered = st.checkbox("🔥 최근 5일 +/- 동방향 종목만 필터링")
 
 if is_filtered:
-    if 'filtered_list' not in st.session_state:
-        st.session_state.filtered_list = scan_all_stocks(kospi_dict, token)
-    display_names = st.session_state.filtered_list
+    if 'filtered_map' not in st.session_state:
+        st.session_state.filtered_map = scan_all_stocks(kospi_dict, token)
+    
+    # 필터링된 결과 (이름 -> 태그된 이름)
+    display_names = list(st.session_state.filtered_map.values())
+    # 매핑 정보를 통해 실제 이름 추출용 역행렬
+    name_lookup = {v: k for k, v in st.session_state.filtered_map.items()}
 else:
-    display_names = full_names
+    display_names = list(kospi_dict.keys())
+    name_lookup = {n: n for n in display_names}
 
 if not display_names:
     st.warning("조건에 맞는 종목이 없습니다.")
     display_names = ["삼성전자"]
+    name_lookup = {"삼성전자": "삼성전자"}
 
-# --- 인덱스 관리 및 네비게이션 함수 ---
+# --- 내비게이션 함수 ---
 def go_prev():
     if st.session_state.current_idx > 0:
         st.session_state.current_idx -= 1
@@ -123,51 +129,58 @@ def go_next():
         st.session_state.stock_selector = display_names[st.session_state.current_idx]
 
 def on_change():
-    # 에러 방지: stock_selector가 실제로 존재할 때만 인덱스 갱신
     if 'stock_selector' in st.session_state:
         if st.session_state.stock_selector in display_names:
             st.session_state.current_idx = display_names.index(st.session_state.stock_selector)
 
-# 컨트롤러 레이아웃
+# 컨트롤러
 c1, c2, c3 = st.columns([1, 2, 1])
 with c1: st.button("⬅️ 이전", on_click=go_prev, use_container_width=True)
 with c2:
-    # 필터 변경 시 인덱스 오버플로우 방지
-    if st.session_state.current_idx >= len(display_names):
-        st.session_state.current_idx = 0
-    
-    selected_name = st.selectbox(
-        "종목", 
-        display_names, 
-        index=st.session_state.current_idx, 
-        key="stock_selector", 
-        on_change=on_change, 
-        label_visibility="collapsed"
-    )
+    if st.session_state.current_idx >= len(display_names): st.session_state.current_idx = 0
+    selected_display_name = st.selectbox("종목", display_names, index=st.session_state.current_idx, 
+                                         key="stock_selector", on_change=on_change, label_visibility="collapsed")
 with c3: st.button("다음 ➡️", on_click=go_next, use_container_width=True)
+
+# 실제 분석에 사용할 종목명 추출
+selected_real_name = name_lookup.get(selected_display_name, selected_display_name)
 
 # ==========================================
 # 4. 분석 및 시각화
 # ==========================================
-selected_ticker = kospi_dict.get(selected_name, "005930")
+selected_ticker = kospi_dict.get(selected_real_name, "005930")
 df = get_investor_data(selected_ticker, token)
 
 if not df.empty:
-    # --- 주가 및 등락률 우측 표시 ---
     current_price = df['Price'].iloc[-1]
     prev_price = df['Price'].iloc[-2]
     change = current_price - prev_price
     change_rate = (change / prev_price) * 100
-    color = "red" if change > 0 else "blue" if change < 0 else "gray"
+    
+    # 수급 방향성 판단 (헤더 뱃지용)
+    f_sum_recent = df['Foreign'].tail(5).sum()
+    i_sum_recent = df['Institutional'].tail(5).sum()
+    
+    if f_sum_recent > 0 and i_sum_recent > 0:
+        status_badge = '<span style="background-color: #ff4b4b; color: white; padding: 2px 8px; border-radius: 4px;">쌍끌이 매수 ↑↑</span>'
+    elif f_sum_recent < 0 and i_sum_recent < 0:
+        status_badge = '<span style="background-color: #31333f; color: white; padding: 2px 8px; border-radius: 4px;">쌍끌이 매도 ↓↓</span>'
+    else:
+        status_badge = '<span style="background-color: #f0f2f6; color: #31333f; padding: 2px 8px; border-radius: 4px;">엇갈림</span>'
+
+    price_color = "red" if change > 0 else "blue" if change < 0 else "gray"
     arrow = "▲" if change > 0 else "▼" if change < 0 else ""
 
     with head_col2:
         st.markdown(f"""
-            <div style="text-align: right; font-size: 1.15rem; font-weight: bold; padding-top: 5px;">
-                {selected_name} : 
-                <span style="color: {color};">
-                    {current_price:,.0f} ({arrow}{abs(change):,.0f}, {change_rate:.2f}%)
-                </span>
+            <div style="text-align: right; line-height: 1.6;">
+                <div style="font-size: 0.9rem;">{status_badge}</div>
+                <div style="font-size: 1.1rem; font-weight: bold;">
+                    {selected_real_name} : 
+                    <span style="color: {price_color};">
+                        {current_price:,.0f} ({arrow}{abs(change):,.0f})
+                    </span>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -179,19 +192,18 @@ if not df.empty:
 
     # 그래프
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=df.index, y=df['F_누적'], name='외인누적(억)', line=dict(color='blue', width=3)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=df.index, y=df['I_누적'], name='기관누적(억)', line=dict(color='orange', width=3)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=df.index, y=df['Price'], name='주가(원)', line=dict(color='red', width=1.5, dash='dot')), secondary_y=True)
+    fig.add_trace(go.Scatter(x=df.index, y=df['F_누적'], name='외인누적', line=dict(color='blue', width=3)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=df.index, y=df['I_누적'], name='기관누적', line=dict(color='orange', width=3)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=df.index, y=df['Price'], name='주가', line=dict(color='red', width=1.5, dash='dot')), secondary_y=True)
     fig.add_hline(y=0, line_dash="dash", line_color="gray")
     
-    fig.update_layout(title=f"<b>{selected_name}</b> 수급/주가 추세", hovermode="x unified", height=450, 
+    fig.update_layout(title=f"<b>{selected_real_name}</b> 수급/주가 추세", hovermode="x unified", height=450, 
                       margin=dict(l=5, r=5, t=50, b=5), legend=dict(orientation="h", y=1.1, x=0.5, xanchor='center'))
     st.plotly_chart(fig, use_container_width=True)
 
-    # 하단 표
     st.write("##### 📋 상세 내역 (단위: 억원)")
     result_df = df[['Price', 'F_억', 'I_억', 'F_누적', 'I_누적']].iloc[::-1].copy()
     result_df.columns = ['주가', '외인_일일', '기관_일일', '외인_누적', '기관_누적']
     st.dataframe(result_df.style.format("{:,.1f}"), use_container_width=True)
 else:
-    st.warning("데이터 수집 중입니다. 잠시만 기다려주세요.")
+    st.warning("데이터 수집 중...")

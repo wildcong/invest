@@ -48,7 +48,6 @@ def get_investor_data(ticker, access_token):
     if res.status_code == 200:
         df = pd.DataFrame(res.json()['output'])
         if df.empty: return pd.DataFrame()
-        # 컬럼명 명확히 지정 (에러 방지용 영어 기준)
         df = df[['stck_bsop_date', 'stck_clpr', 'frgn_ntby_qty', 'orgn_ntby_qty']].copy()
         df.columns = ['Date', 'Price', 'Foreign', 'Institutional']
         df['Date'] = pd.to_datetime(df['Date'])
@@ -70,15 +69,13 @@ def scan_all_stocks(stock_dict, token):
         status_text.text(f"🚀 스캔 중 ({i+1}/{total}): {name}")
         df = get_investor_data(ticker, token)
         if not df.empty and len(df) >= 5:
-            # 최근 5일 합계의 방향성 확인
             f_sum = df['Foreign'].tail(5).sum()
             i_sum = df['Institutional'].tail(5).sum()
-            # 쌍끌이 매수 또는 쌍끌이 매도 필터
             if (f_sum > 0 and i_sum > 0) or (f_sum < 0 and i_sum < 0):
                 valid_stocks.append(name)
         
         progress_bar.progress((i + 1) / total)
-        time.sleep(0.05) # 호출 제한 방어
+        time.sleep(0.05)
         
     status_text.empty()
     progress_bar.empty()
@@ -93,8 +90,11 @@ kospi_dict = get_kospi200_list()
 full_names = list(kospi_dict.keys())
 token = get_access_token()
 
-# 필터 체크박스
-is_filtered = st.checkbox("🔥 최근 5일 +/- 동방향 종목만 필터링")
+# --- 주가 및 등락률 레이아웃 ---
+head_col1, head_col2 = st.columns([2, 1])
+
+with head_col1:
+    is_filtered = st.checkbox("🔥 최근 5일 +/- 동방향 종목만 필터링")
 
 if is_filtered:
     if 'filtered_list' not in st.session_state:
@@ -124,11 +124,10 @@ def on_change():
     if st.session_state.stock_selector in display_names:
         st.session_state.current_idx = display_names.index(st.session_state.stock_selector)
 
-# 상단 컨트롤러 (모바일 최적화)
+# 컨트롤러
 c1, c2, c3 = st.columns([1, 2, 1])
 with c1: st.button("⬅️ 이전", on_click=go_prev, use_container_width=True)
 with c2:
-    # 드롭다운 리스트 갱신 대응
     if st.session_state.current_idx >= len(display_names): st.session_state.current_idx = 0
     selected_name = st.selectbox("종목", display_names, index=st.session_state.current_idx, 
                                  key="stock_selector", on_change=on_change, label_visibility="collapsed")
@@ -141,7 +140,28 @@ selected_ticker = kospi_dict.get(selected_name, "005930")
 df = get_investor_data(selected_ticker, token)
 
 if not df.empty:
-    # 계산 (KeyError 방지를 위해 영어 컬럼명 사용)
+    # 실시간 주가 및 등락률 정보 추출 (체크박스 우측 표시용)
+    current_price = df['Price'].iloc[-1]
+    prev_price = df['Price'].iloc[-2]
+    change = current_price - prev_price
+    change_rate = (change / prev_price) * 100
+    
+    # 색상 결정
+    color = "red" if change > 0 else "blue" if change < 0 else "black"
+    arrow = "▲" if change > 0 else "▼" if change < 0 else ""
+
+    with head_col2:
+        # 우측 끝 정렬을 위한 마크다운
+        st.markdown(f"""
+            <div style="text-align: right; font-size: 1.2rem; font-weight: bold;">
+                {selected_name} : 
+                <span style="color: {color};">
+                    {current_price:,.0f} ({arrow}{change:,.0f}, {change_rate:.2f}%)
+                </span>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # 데이터 계산
     df['F_억'] = (df['Foreign'] * df['Price']) / 100000000
     df['I_억'] = (df['Institutional'] * df['Price']) / 100000000
     df['F_누적'] = df['F_억'].cumsum()
@@ -158,7 +178,7 @@ if not df.empty:
                       margin=dict(l=5, r=5, t=50, b=5), legend=dict(orientation="h", y=1.1, x=0.5, xanchor='center'))
     st.plotly_chart(fig, use_container_width=True)
 
-    # 하단 표 (한글로 변환하여 출력)
+    # 하단 표
     st.write("##### 📋 상세 내역 (단위: 억원)")
     result_df = df[['Price', 'F_억', 'I_억', 'F_누적', 'I_누적']].iloc[::-1].copy()
     result_df.columns = ['주가', '외인_일일', '기관_일일', '외인_누적', '기관_누적']

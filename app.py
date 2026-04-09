@@ -143,7 +143,7 @@ def scan_all_stocks(stock_dict, token):
                 valid_stocks[name] = f"{name} (↓↓)"
                 
         progress_bar.progress((i + 1) / total)
-        time.sleep(0.08) # 유량 초과 방지용 안전 딜레이
+        time.sleep(0.05) # 유량 초과 방지용 안전 딜레이
         
     status_text.empty()
     progress_bar.empty()
@@ -152,7 +152,7 @@ def scan_all_stocks(stock_dict, token):
 # ==========================================
 # 3. 메인 화면: 탭 및 컨트롤러 구성
 # ==========================================
-st.title("📊 통합 쌍끌이 수급 스캐너")
+st.markdown("<h2 style='margin-bottom: 20px;'>📊 쌍끌이 수급 스캐너</h2>", unsafe_allow_html=True)
 
 dict_k200, dict_kq150, dict_all = get_stock_lists() # 3개 리스트 모두 받아옴
 token = get_access_token()
@@ -160,7 +160,7 @@ token = get_access_token()
 # 🎯 3개 탭(모드) 선택 UI 복구 완료!
 market_mode = st.radio(
     "분석 시장 선택", 
-    ["🔵 KOSPI 200 (스캐너)", "🟢 KOSDAQ 150 (스캐너)", "🔍 전체 종목 개별 검색 (스캔X)"], 
+    ["🔵 KOSPI 200", "🟢 KOSDAQ 150", "🔍 전체 종목 개별 검색 (스캔 불가)"], 
     horizontal=True
 )
 

@@ -19,7 +19,7 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 st.set_page_config(page_title="수급 쌍끌이 스캐너", layout="wide")
 
 # ==========================================
-# ⏰ KST 시간 및 15:40 제한 우회 로직 (수급용)
+# ⏰ KST 시간 및 15:40 제한 우회 로직
 # ==========================================
 def get_target_date():
     kst = timezone(timedelta(hours=9))
@@ -33,17 +33,29 @@ def get_target_date():
     return target.strftime("%Y%m%d")
 
 # ==========================================
-# 1. 데이터 수집 함수들
+# 1. 데이터 수집 함수 (시장별 분류 추가)
 # ==========================================
 @st.cache_data(ttl=86400)
-def get_kospi200_list():
+def get_stock_lists():
     try:
+        # 코스피, 코스닥, 전체(KRX) 데이터를 각각 가져옵니다.
         df_kospi = fdr.StockListing('KOSPI')
+        df_kosdaq = fdr.StockListing('KOSDAQ')
+        df_all = fdr.StockListing('KRX')
+        
         mcap_col = 'Marcap' if 'Marcap' in df_kospi.columns else 'MarCap'
-        df_200 = df_kospi.sort_values(mcap_col, ascending=False).head(200)
-        return dict(zip(df_200['Name'], df_200['Code']))
+        
+        # 시총 기준으로 KOSPI 200, KOSDAQ 150 추출
+        k200 = df_kospi.sort_values(mcap_col, ascending=False).head(200)
+        kq150 = df_kosdaq.sort_values(mcap_col, ascending=False).head(150)
+        
+        dict_k200 = dict(zip(k200['Name'], k200['Code']))
+        dict_kq150 = dict(zip(kq150['Name'], kq150['Code']))
+        dict_all = dict(zip(df_all['Name'], df_all['Code']))
+        
+        return dict_k200, dict_kq150, dict_all
     except Exception:
-        return {"삼성전자": "005930", "SK하이닉스": "000660"}
+        return {"삼성전자": "005930"}, {"에코프로": "086520"}, {"삼성전자": "005930"}
 
 @st.cache_data(ttl=86000)
 def get_access_token():
@@ -54,7 +66,6 @@ def get_access_token():
         return res.json().get("access_token")
     return None
 
-# 🚨 [새로 추가된 API] 실시간 현재가 수집 (캐시 1분으로 실시간성 확보)
 @st.cache_data(ttl=60, show_spinner=False)
 def get_realtime_price(ticker, access_token):
     headers = {
@@ -80,7 +91,6 @@ def get_realtime_price(ticker, access_token):
         pass
     return None
 
-# 기존 수급 데이터 수집 API
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_investor_data(ticker, access_token):
     headers = {
@@ -114,9 +124,6 @@ def get_investor_data(ticker, access_token):
         pass
     return pd.DataFrame()
 
-# ==========================================
-# 2. 전수 조사(Scanner) 로직
-# ==========================================
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
     progress_bar = st.progress(0)
@@ -141,33 +148,69 @@ def scan_all_stocks(stock_dict, token):
     return valid_stocks
 
 # ==========================================
-# 3. 메인 화면 구성 및 필터링
+# 3. 메인 화면: 탭 및 컨트롤러 구성
 # ==========================================
-st.title("📊 KOSPI 200 쌍끌이 스캐너")
+st.title("📊 통합 쌍끌이 수급 스캐너")
 
-kospi_dict = get_kospi200_list()
+# 시장 리스트 가져오기
+dict_k200, dict_kq150, dict_all = get_stock_lists()
 token = get_access_token()
+
+# 🎯 탭(모드) 선택 UI
+market_mode = st.radio(
+    "분석 시장 선택", 
+    ["🔵 KOSPI 200 (스캐너)", "🟢 KOSDAQ 150 (스캐너)", "🔍 전체 종목 개별 검색 (스캔X)"], 
+    horizontal=True
+)
+
+# 탭이 바뀔 때 세션 상태(필터, 인덱스) 초기화
+if 'current_market' not in st.session_state:
+    st.session_state.current_market = market_mode
+
+if st.session_state.current_market != market_mode:
+    st.session_state.current_idx = 0
+    st.session_state.current_market = market_mode
+    if 'filtered_map' in st.session_state:
+        del st.session_state.filtered_map
 
 if 'current_idx' not in st.session_state:
     st.session_state.current_idx = 0
 
+# 선택된 시장에 따라 타겟 데이터 설정
+if market_mode == "🔵 KOSPI 200 (스캐너)":
+    target_dict = dict_k200
+    allow_scan = True
+elif market_mode == "🟢 KOSDAQ 150 (스캐너)":
+    target_dict = dict_kq150
+    allow_scan = True
+else:
+    target_dict = dict_all
+    allow_scan = False
+
 h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
+
 with h_col1:
-    is_filtered = st.checkbox("🔥 5일 동방향 필터")
+    # 전체 검색 모드일 때는 과부하 방지를 위해 필터 체크박스를 숨김
+    if allow_scan:
+        is_filtered = st.checkbox("🔥 5일 동방향 필터")
+    else:
+        is_filtered = False
+        st.caption("✅ 개별 종목 직접 검색 모드")
+
 with h_col2:
     period = st.select_slider("분석 기간", options=[5, 10, 15, 20, 25, 30], value=30, label_visibility="collapsed")
 
-if is_filtered:
+if is_filtered and allow_scan:
     if 'filtered_map' not in st.session_state:
         if token:
-            st.session_state.filtered_map = scan_all_stocks(kospi_dict, token)
+            st.session_state.filtered_map = scan_all_stocks(target_dict, token)
         else:
             st.error("API 토큰 발급 실패")
             st.stop()
     display_names = list(st.session_state.filtered_map.values())
     name_lookup = {v: k for k, v in st.session_state.filtered_map.items()}
 else:
-    display_names = list(kospi_dict.keys())
+    display_names = list(target_dict.keys())
     name_lookup = {n: n for n in display_names}
 
 if not display_names:
@@ -190,37 +233,31 @@ c1, c2, c3 = st.columns([1, 2, 1])
 with c1: st.button("⬅️ 이전", on_click=go_prev, use_container_width=True)
 with c2:
     if st.session_state.current_idx >= len(display_names): st.session_state.current_idx = 0
-    selected_disp = st.selectbox("종목", display_names, index=st.session_state.current_idx, 
+    selected_disp = st.selectbox("종목 검색 및 선택", display_names, index=st.session_state.current_idx, 
                                  key="stock_selector", on_change=on_change, label_visibility="collapsed")
 with c3: st.button("다음 ➡️", on_click=go_next, use_container_width=True)
 
 selected_real = name_lookup.get(selected_disp, selected_disp)
-selected_ticker = kospi_dict.get(selected_real, "005930")
+selected_ticker = target_dict.get(selected_real, "005930")
 
 # ==========================================
 # 4. 차트 및 표 시각화
 # ==========================================
 if token:
     df = get_investor_data(selected_ticker, token)
-    # 실시간 주가 데이터 별도 호출
     rt_data = get_realtime_price(selected_ticker, token)
     
     if not df.empty:
         df_disp = df.tail(period).copy()
         
-        # 🚨 [핵심] 상단 표시는 실시간 API 데이터를 우선 사용
         if rt_data:
-            curr_p = rt_data['price']
-            diff = rt_data['diff']
-            ratio = rt_data['rate']
+            curr_p, diff, ratio = rt_data['price'], rt_data['diff'], rt_data['rate']
         else:
-            # 실시간 API 실패 시 과거 데이터로 계산 (예비용)
             curr_p = df_disp['Price'].iloc[-1]
             prev_p = df_disp['Price'].iloc[-2] if len(df_disp) > 1 else curr_p
             diff = curr_p - prev_p
             ratio = (diff / prev_p) * 100 if prev_p != 0 else 0
         
-        # 수급 뱃지 (기존 5일 대금 합산)
         f_sum, i_sum = df_disp['F_억'].tail(5).sum(), df_disp['I_억'].tail(5).sum()
         if f_sum > 0 and i_sum > 0: 
             b_html = '<span style="background-color:#ff4b4b;color:white;padding:2px 6px;border-radius:4px;font-size:0.8rem;">쌍끌이 매수 ↑↑</span>'
@@ -244,7 +281,6 @@ if token:
         fig.update_layout(title=f"<b>{selected_real}</b>", hovermode="x unified", height=450, margin=dict(l=5,r=5,t=50,b=5), legend=dict(orientation="h", y=1.1, x=0.5, xanchor='center'))
         st.plotly_chart(fig, use_container_width=True)
 
-        # 표 색상 하이라이팅
         st.write("##### 📋 상세 내역 (단위: 억원)")
         res_df = df_disp[['Price','F_억','I_억','F_누적','I_누적']].iloc[::-1].copy()
         res_df.columns = ['주가','외인_일일','기관_일일','외인_누적','기관_누적']
@@ -264,14 +300,10 @@ if token:
             
         st.dataframe(styled_df, use_container_width=True)
     else:
-        st.error("데이터를 불러올 수 없습니다. 장 종료 후 점검 시간이거나 종목 정보를 확인 중입니다.")
+        st.error("데이터를 불러올 수 없습니다. 아래 API 로그를 확인해 주세요.")
 
-# ==========================================
-# 🚨 API 디버그 로그
-# ==========================================
 st.markdown("---")
 with st.expander("🛠️ 시스템 로그 보기 (에러 원인 파악용)"):
     if token:
         st.write(f"현재 선택된 종목: **{selected_real}** (코드: {selected_ticker})")
-        st.write(f"수급 요청 기준일자(KST): **{get_target_date()}**")
-        # 디버그 생략
+        # 로그 출력 생략 (기존과 동일)

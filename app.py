@@ -291,6 +291,8 @@ if token:
         st.write("##### 📋 상세 내역 (단위: 억원)")
         res_df = df_disp[['Price','F_억','I_억','F_누적','I_누적']].iloc[::-1].copy()
         res_df.columns = ['주가','외인_일일','기관_일일','외인_누적','기관_누적']
+
+        res_df.index = res_df.index.strftime('%Y-%m-%d')
         
         def color_net_buy(val):
             try:

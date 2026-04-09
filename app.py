@@ -189,7 +189,7 @@ if not df.empty:
     fig.add_trace(go.Scatter(x=df.index, y=df['Price'], name='주가', line=dict(color='red', width=1.5, dash='dot')), secondary_y=True)
     fig.add_hline(y=0, line_dash="dash", line_color="gray")
     
-    fig.update_layout(title=f"<b>{selected_real_name}</b> 수급/주가 추세", hovermode="x unified", height=450, 
+    fig.update_layout(title=f"<b>{selected_real_name}</b>", hovermode="x unified", height=450, 
                       margin=dict(l=5, r=5, t=50, b=5), legend=dict(orientation="h", y=1.1, x=0.5, xanchor='center'))
     st.plotly_chart(fig, use_container_width=True)
 

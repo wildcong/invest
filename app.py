@@ -150,7 +150,7 @@ def scan_all_stocks(stock_dict, token):
 # ==========================================
 # 3. 메인 화면: 탭 및 컨트롤러 구성
 # ==========================================
-st.title("📊 통합 쌍끌이 수급 스캐너")
+st.title("📊 쌍끌이 수급 스캐너")
 
 # 시장 리스트 가져오기
 dict_k200, dict_kq150, dict_all = get_stock_lists()
@@ -159,7 +159,7 @@ token = get_access_token()
 # 🎯 탭(모드) 선택 UI
 market_mode = st.radio(
     "분석 시장 선택", 
-    ["🔵 KOSPI 200 (스캐너)", "🟢 KOSDAQ 150 (스캐너)", "🔍 전체 종목 개별 검색 (스캔X)"], 
+    ["🔵 KOSPI 200", "🟢 KOSDAQ 150", "🔍 전체 종목 개별 검색 (스캔불가)"], 
     horizontal=True
 )
 

@@ -40,15 +40,20 @@ def get_stock_lists():
     try:
         df_kospi = fdr.StockListing('KOSPI')
         df_kosdaq = fdr.StockListing('KOSDAQ')
+        df_all = fdr.StockListing('KRX') # 🔍 전체 종목(2,500개) 데이터 복구!
         
         mcap_col = 'Marcap' if 'Marcap' in df_kospi.columns else 'MarCap'
         
         k200 = df_kospi.sort_values(mcap_col, ascending=False).head(200)
         kq150 = df_kosdaq.sort_values(mcap_col, ascending=False).head(150)
         
-        return dict(zip(k200['Name'], k200['Code'])), dict(zip(kq150['Name'], kq150['Code']))
+        dict_k200 = dict(zip(k200['Name'], k200['Code']))
+        dict_kq150 = dict(zip(kq150['Name'], kq150['Code']))
+        dict_all = dict(zip(df_all['Name'], df_all['Code']))
+        
+        return dict_k200, dict_kq150, dict_all
     except Exception:
-        return {"삼성전자": "005930"}, {"에코프로": "086520"}
+        return {"삼성전자": "005930"}, {"에코프로": "086520"}, {"삼성전자": "005930"}
 
 @st.cache_data(ttl=86000)
 def get_access_token():
@@ -138,7 +143,7 @@ def scan_all_stocks(stock_dict, token):
                 valid_stocks[name] = f"{name} (↓↓)"
                 
         progress_bar.progress((i + 1) / total)
-        time.sleep(0.05)
+        time.sleep(0.08) # 유량 초과 방지용 안전 딜레이
         
     status_text.empty()
     progress_bar.empty()
@@ -149,20 +154,20 @@ def scan_all_stocks(stock_dict, token):
 # ==========================================
 st.title("📊 통합 쌍끌이 수급 스캐너")
 
-dict_k200, dict_kq150 = get_stock_lists()
+dict_k200, dict_kq150, dict_all = get_stock_lists() # 3개 리스트 모두 받아옴
 token = get_access_token()
 
-# 🎯 깔끔해진 탭(모드) 선택 UI
+# 🎯 3개 탭(모드) 선택 UI 복구 완료!
 market_mode = st.radio(
     "분석 시장 선택", 
-    ["🔵 KOSPI 200", "🟢 KOSDAQ 150"], 
+    ["🔵 KOSPI 200 (스캐너)", "🟢 KOSDAQ 150 (스캐너)", "🔍 전체 종목 개별 검색 (스캔X)"], 
     horizontal=True
 )
 
 if 'current_market' not in st.session_state:
     st.session_state.current_market = market_mode
 
-# 시장이 바뀌면 필터 초기화
+# 시장이 바뀌면 상태 초기화
 if st.session_state.current_market != market_mode:
     st.session_state.current_idx = 0
     st.session_state.current_market = market_mode
@@ -172,17 +177,30 @@ if st.session_state.current_market != market_mode:
 if 'current_idx' not in st.session_state:
     st.session_state.current_idx = 0
 
-target_dict = dict_k200 if market_mode == "🔵 KOSPI 200" else dict_kq150
+# 선택된 탭에 따라 타겟 딕셔너리 할당
+if market_mode == "🔵 KOSPI 200 (스캐너)":
+    target_dict = dict_k200
+    allow_scan = True
+elif market_mode == "🟢 KOSDAQ 150 (스캐너)":
+    target_dict = dict_kq150
+    allow_scan = True
+else:
+    target_dict = dict_all
+    allow_scan = False # 전체 검색 모드에서는 스캔 금지 (서버 폭파 방지)
 
 h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
 
 with h_col1:
-    is_filtered = st.checkbox("🔥 5일 동방향 필터")
+    if allow_scan:
+        is_filtered = st.checkbox("🔥 5일 동방향 필터")
+    else:
+        is_filtered = False
+        st.caption("✅ 개별 종목 직접 검색 모드")
 
 with h_col2:
     period = st.select_slider("분석 기간", options=[5, 10, 15, 20, 25, 30], value=30, label_visibility="collapsed")
 
-if is_filtered:
+if is_filtered and allow_scan:
     if 'filtered_map' not in st.session_state:
         if token:
             st.session_state.filtered_map = scan_all_stocks(target_dict, token)

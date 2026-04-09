@@ -308,6 +308,8 @@ if token:
             styled_df = res_df.style.format("{:,.1f}").applymap(color_net_buy, subset=['외인_일일', '기관_일일', '외인_누적', '기관_누적'])
             
         st.dataframe(styled_df, use_container_width=True)
+
+        st.markdown("<p style='font-size: 0.8rem; color: gray; margin-top: -10px;'>💡 당일 수급 데이터는 16:30에 추가되며, 해당 시간 이후 데이터가 초기화 및 업데이트됩니다.</p>", unsafe_allow_html=True)
     else:
         st.error("데이터를 불러올 수 없습니다. 아래 API 로그를 확인해 주세요.")
 

@@ -57,29 +57,26 @@ def get_investor_data(ticker, access_token):
     return pd.DataFrame()
 
 # ==========================================
-# 2. 전수 조사(Scanner) 로직 (방향성 태그 추가)
+# 2. 전수 조사(Scanner) 로직
 # ==========================================
 def scan_all_stocks(stock_dict, token):
-    valid_stocks = {} # {종목명: 태그} 형태로 저장
+    valid_stocks = {}
     progress_bar = st.progress(0)
     status_text = st.empty()
     total = len(stock_dict)
     
     for i, (name, ticker) in enumerate(stock_dict.items()):
-        status_text.text(f"🚀 스캔 중 ({i+1}/{total}): {name}")
+        status_text.text(f"🚀 스캐닝 ({i+1}/{total}): {name}")
         df = get_investor_data(ticker, token)
         if not df.empty and len(df) >= 5:
             f_sum = df['Foreign'].tail(5).sum()
             i_sum = df['Institutional'].tail(5).sum()
-            
             if f_sum > 0 and i_sum > 0:
                 valid_stocks[name] = f"{name} (↑↑)"
             elif f_sum < 0 and i_sum < 0:
                 valid_stocks[name] = f"{name} (↓↓)"
-        
         progress_bar.progress((i + 1) / total)
         time.sleep(0.05)
-        
     status_text.empty()
     progress_bar.empty()
     return valid_stocks
@@ -95,7 +92,7 @@ token = get_access_token()
 if 'current_idx' not in st.session_state:
     st.session_state.current_idx = 0
 
-head_col1, head_col2 = st.columns([2, 1])
+head_col1, head_col2 = st.columns([1.5, 1])
 
 with head_col1:
     is_filtered = st.checkbox("🔥 최근 5일 +/- 동방향 종목만 필터링")
@@ -103,10 +100,7 @@ with head_col1:
 if is_filtered:
     if 'filtered_map' not in st.session_state:
         st.session_state.filtered_map = scan_all_stocks(kospi_dict, token)
-    
-    # 필터링된 결과 (이름 -> 태그된 이름)
     display_names = list(st.session_state.filtered_map.values())
-    # 매핑 정보를 통해 실제 이름 추출용 역행렬
     name_lookup = {v: k for k, v in st.session_state.filtered_map.items()}
 else:
     display_names = list(kospi_dict.keys())
@@ -133,7 +127,7 @@ def on_change():
         if st.session_state.stock_selector in display_names:
             st.session_state.current_idx = display_names.index(st.session_state.stock_selector)
 
-# 컨트롤러
+# 컨트롤러 레이아웃
 c1, c2, c3 = st.columns([1, 2, 1])
 with c1: st.button("⬅️ 이전", on_click=go_prev, use_container_width=True)
 with c2:
@@ -142,7 +136,6 @@ with c2:
                                          key="stock_selector", on_change=on_change, label_visibility="collapsed")
 with c3: st.button("다음 ➡️", on_click=go_next, use_container_width=True)
 
-# 실제 분석에 사용할 종목명 추출
 selected_real_name = name_lookup.get(selected_display_name, selected_display_name)
 
 # ==========================================
@@ -152,45 +145,44 @@ selected_ticker = kospi_dict.get(selected_real_name, "005930")
 df = get_investor_data(selected_ticker, token)
 
 if not df.empty:
-    current_price = df['Price'].iloc[-1]
-    prev_price = df['Price'].iloc[-2]
-    change = current_price - prev_price
-    change_rate = (change / prev_price) * 100
+    # --- 주가 및 등락률 복구 ---
+    curr_p = df['Price'].iloc[-1]
+    prev_p = df['Price'].iloc[-2]
+    diff = curr_p - prev_p
+    ratio = (diff / prev_p) * 100
     
-    # 수급 방향성 판단 (헤더 뱃지용)
-    f_sum_recent = df['Foreign'].tail(5).sum()
-    i_sum_recent = df['Institutional'].tail(5).sum()
-    
-    if f_sum_recent > 0 and i_sum_recent > 0:
-        status_badge = '<span style="background-color: #ff4b4b; color: white; padding: 2px 8px; border-radius: 4px;">쌍끌이 매수 ↑↑</span>'
-    elif f_sum_recent < 0 and i_sum_recent < 0:
-        status_badge = '<span style="background-color: #31333f; color: white; padding: 2px 8px; border-radius: 4px;">쌍끌이 매도 ↓↓</span>'
+    # 방향성 뱃지 로직
+    f_sum = df['Foreign'].tail(5).sum()
+    i_sum = df['Institutional'].tail(5).sum()
+    if f_sum > 0 and i_sum > 0:
+        badge = '<span style="background-color: #ff4b4b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">쌍끌이 매수 ↑↑</span>'
+    elif f_sum < 0 and i_sum < 0:
+        badge = '<span style="background-color: #31333f; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">쌍끌이 매도 ↓↓</span>'
     else:
-        status_badge = '<span style="background-color: #f0f2f6; color: #31333f; padding: 2px 8px; border-radius: 4px;">엇갈림</span>'
+        badge = '<span style="background-color: #f0f2f6; color: #31333f; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">엇갈림</span>'
 
-    price_color = "red" if change > 0 else "blue" if change < 0 else "gray"
-    arrow = "▲" if change > 0 else "▼" if change < 0 else ""
+    p_color = "red" if diff > 0 else "blue" if diff < 0 else "gray"
+    p_arrow = "▲" if diff > 0 else "▼" if diff < 0 else ""
 
     with head_col2:
         st.markdown(f"""
-            <div style="text-align: right; line-height: 1.6;">
-                <div style="font-size: 0.9rem;">{status_badge}</div>
+            <div style="text-align: right; line-height: 1.5;">
+                <div>{badge}</div>
                 <div style="font-size: 1.1rem; font-weight: bold;">
                     {selected_real_name} : 
-                    <span style="color: {price_color};">
-                        {current_price:,.0f} ({arrow}{abs(change):,.0f})
+                    <span style="color: {p_color};">
+                        {curr_p:,.0f} ({p_arrow}{abs(diff):,.0f}, {ratio:.2f}%)
                     </span>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
-    # 데이터 계산
+    # 데이터 계산 및 차트
     df['F_억'] = (df['Foreign'] * df['Price']) / 100000000
     df['I_억'] = (df['Institutional'] * df['Price']) / 100000000
     df['F_누적'] = df['F_억'].cumsum()
     df['I_누적'] = df['I_억'].cumsum()
 
-    # 그래프
     fig = make_subplots(specs=[[{"secondary_y": True}]])
     fig.add_trace(go.Scatter(x=df.index, y=df['F_누적'], name='외인누적', line=dict(color='blue', width=3)), secondary_y=False)
     fig.add_trace(go.Scatter(x=df.index, y=df['I_누적'], name='기관누적', line=dict(color='orange', width=3)), secondary_y=False)
@@ -205,5 +197,3 @@ if not df.empty:
     result_df = df[['Price', 'F_억', 'I_억', 'F_누적', 'I_누적']].iloc[::-1].copy()
     result_df.columns = ['주가', '외인_일일', '기관_일일', '외인_누적', '기관_누적']
     st.dataframe(result_df.style.format("{:,.1f}"), use_container_width=True)
-else:
-    st.warning("데이터 수집 중...")

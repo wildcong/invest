@@ -90,7 +90,11 @@ kospi_dict = get_kospi200_list()
 full_names = list(kospi_dict.keys())
 token = get_access_token()
 
-# --- 주가 및 등락률 레이아웃 ---
+# --- 세션 상태 초기화 (제일 중요) ---
+if 'current_idx' not in st.session_state:
+    st.session_state.current_idx = 0
+
+# 상단 레이아웃 (체크박스 & 주가 정보)
 head_col1, head_col2 = st.columns([2, 1])
 
 with head_col1:
@@ -107,9 +111,7 @@ if not display_names:
     st.warning("조건에 맞는 종목이 없습니다.")
     display_names = ["삼성전자"]
 
-# --- 인덱스 관리 및 네비게이션 ---
-if 'current_idx' not in st.session_state: st.session_state.current_idx = 0
-
+# --- 인덱스 관리 및 네비게이션 함수 ---
 def go_prev():
     if st.session_state.current_idx > 0:
         st.session_state.current_idx -= 1
@@ -121,16 +123,27 @@ def go_next():
         st.session_state.stock_selector = display_names[st.session_state.current_idx]
 
 def on_change():
-    if st.session_state.stock_selector in display_names:
-        st.session_state.current_idx = display_names.index(st.session_state.stock_selector)
+    # 에러 방지: stock_selector가 실제로 존재할 때만 인덱스 갱신
+    if 'stock_selector' in st.session_state:
+        if st.session_state.stock_selector in display_names:
+            st.session_state.current_idx = display_names.index(st.session_state.stock_selector)
 
-# 컨트롤러
+# 컨트롤러 레이아웃
 c1, c2, c3 = st.columns([1, 2, 1])
 with c1: st.button("⬅️ 이전", on_click=go_prev, use_container_width=True)
 with c2:
-    if st.session_state.current_idx >= len(display_names): st.session_state.current_idx = 0
-    selected_name = st.selectbox("종목", display_names, index=st.session_state.current_idx, 
-                                 key="stock_selector", on_change=on_change, label_visibility="collapsed")
+    # 필터 변경 시 인덱스 오버플로우 방지
+    if st.session_state.current_idx >= len(display_names):
+        st.session_state.current_idx = 0
+    
+    selected_name = st.selectbox(
+        "종목", 
+        display_names, 
+        index=st.session_state.current_idx, 
+        key="stock_selector", 
+        on_change=on_change, 
+        label_visibility="collapsed"
+    )
 with c3: st.button("다음 ➡️", on_click=go_next, use_container_width=True)
 
 # ==========================================
@@ -140,23 +153,20 @@ selected_ticker = kospi_dict.get(selected_name, "005930")
 df = get_investor_data(selected_ticker, token)
 
 if not df.empty:
-    # 실시간 주가 및 등락률 정보 추출 (체크박스 우측 표시용)
+    # --- 주가 및 등락률 우측 표시 ---
     current_price = df['Price'].iloc[-1]
     prev_price = df['Price'].iloc[-2]
     change = current_price - prev_price
     change_rate = (change / prev_price) * 100
-    
-    # 색상 결정
-    color = "red" if change > 0 else "blue" if change < 0 else "black"
+    color = "red" if change > 0 else "blue" if change < 0 else "gray"
     arrow = "▲" if change > 0 else "▼" if change < 0 else ""
 
     with head_col2:
-        # 우측 끝 정렬을 위한 마크다운
         st.markdown(f"""
-            <div style="text-align: right; font-size: 1.2rem; font-weight: bold;">
+            <div style="text-align: right; font-size: 1.15rem; font-weight: bold; padding-top: 5px;">
                 {selected_name} : 
                 <span style="color: {color};">
-                    {current_price:,.0f} ({arrow}{change:,.0f}, {change_rate:.2f}%)
+                    {current_price:,.0f} ({arrow}{abs(change):,.0f}, {change_rate:.2f}%)
                 </span>
             </div>
         """, unsafe_allow_html=True)
@@ -169,12 +179,12 @@ if not df.empty:
 
     # 그래프
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(go.Scatter(x=df.index, y=df['F_누적'], name='외인누적', line=dict(color='blue', width=3)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=df.index, y=df['I_누적'], name='기관누적', line=dict(color='orange', width=3)), secondary_y=False)
-    fig.add_trace(go.Scatter(x=df.index, y=df['Price'], name='주가', line=dict(color='red', width=1.5, dash='dot')), secondary_y=True)
+    fig.add_trace(go.Scatter(x=df.index, y=df['F_누적'], name='외인누적(억)', line=dict(color='blue', width=3)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=df.index, y=df['I_누적'], name='기관누적(억)', line=dict(color='orange', width=3)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=df.index, y=df['Price'], name='주가(원)', line=dict(color='red', width=1.5, dash='dot')), secondary_y=True)
     fig.add_hline(y=0, line_dash="dash", line_color="gray")
     
-    fig.update_layout(title=f"<b>{selected_name}</b> 수급 추세", hovermode="x unified", height=450, 
+    fig.update_layout(title=f"<b>{selected_name}</b> 수급/주가 추세", hovermode="x unified", height=450, 
                       margin=dict(l=5, r=5, t=50, b=5), legend=dict(orientation="h", y=1.1, x=0.5, xanchor='center'))
     st.plotly_chart(fig, use_container_width=True)
 
@@ -184,4 +194,4 @@ if not df.empty:
     result_df.columns = ['주가', '외인_일일', '기관_일일', '외인_누적', '기관_누적']
     st.dataframe(result_df.style.format("{:,.1f}"), use_container_width=True)
 else:
-    st.warning("데이터 수집에 실패했습니다.")
+    st.warning("데이터 수집 중입니다. 잠시만 기다려주세요.")

@@ -19,23 +19,17 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 st.set_page_config(page_title="수급 쌍끌이 스캐너", layout="wide")
 
 # ==========================================
-# ⏰ [핵심] 한국시간(KST) 및 15:40 제한 우회 로직
+# ⏰ KST 시간 및 15:40 제한 우회 로직
 # ==========================================
 def get_target_date():
-    # 서버 시간이 미국(UTC)일 수 있으므로 한국 시간(KST, UTC+9)으로 강제 고정
     kst = timezone(timedelta(hours=9))
     now = datetime.now(kst)
-    
-    # 1. 시간이 15:40 이전이면 '오늘' 데이터가 없으므로 '어제'로 설정
     if now.hour < 15 or (now.hour == 15 and now.minute < 40):
         target = now - timedelta(days=1)
     else:
         target = now
-        
-    # 2. 타겟 날짜가 주말(토=5, 일=6)이면 금요일로 되돌림
     while target.weekday() > 4:
         target -= timedelta(days=1)
-        
     return target.strftime("%Y%m%d")
 
 # ==========================================
@@ -68,43 +62,29 @@ def get_investor_data(ticker, access_token):
         "appkey": APP_KEY, "appsecret": APP_SECRET, 
         "tr_id": "FHPTJ04160001", "custtype": "P"
     }
-    
-    # 스마트 날짜 함수 적용 (15:40 이전엔 전일, 이후엔 당일)
     params = {
-        "FID_COND_MRKT_DIV_CODE": "J", 
-        "FID_INPUT_ISCD": ticker,
-        "FID_INPUT_DATE_1": get_target_date(),
-        "FID_ORG_ADJ_PRC": "", 
-        "FID_ETC_CLS_CODE": "1"
+        "FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": ticker,
+        "FID_INPUT_DATE_1": get_target_date(), "FID_ORG_ADJ_PRC": "", "FID_ETC_CLS_CODE": "1"
     }
-    
     url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
     
     try:
         res = requests.get(url, headers=headers, params=params)
         res_json = res.json()
-        
         if res.status_code == 200 and 'output2' in res_json:
             df = pd.DataFrame(res_json['output2'])
             if df.empty: return pd.DataFrame()
-            
             df = df[['stck_bsop_date', 'stck_clpr', 'frgn_ntby_tr_pbmn', 'orgn_ntby_tr_pbmn']].copy()
             df.columns = ['Date', 'Price', 'Foreign_Amt', 'Inst_Amt']
             df['Date'] = pd.to_datetime(df['Date'])
-            
             for col in ['Price', 'Foreign_Amt', 'Inst_Amt']:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
-                
             df = df.dropna()
-            
-            # 단위: 백만원 -> 억원 변환 (/100)
             df['F_억'] = df['Foreign_Amt'] / 100
             df['I_억'] = df['Inst_Amt'] / 100
-            
             return df.sort_values('Date').set_index('Date')
     except Exception:
         pass
-        
     return pd.DataFrame()
 
 # ==========================================
@@ -119,16 +99,13 @@ def scan_all_stocks(stock_dict, token):
     for i, (name, ticker) in enumerate(stock_dict.items()):
         status_text.text(f"🚀 스캔 중 ({i+1}/{total}): {name}")
         df = get_investor_data(ticker, token)
-        
         if not df.empty and len(df) >= 5:
             f_sum = df['F_억'].tail(5).sum()
             i_sum = df['I_억'].tail(5).sum()
-            
             if f_sum > 0 and i_sum > 0:
                 valid_stocks[name] = f"{name} (↑↑)"
             elif f_sum < 0 and i_sum < 0:
                 valid_stocks[name] = f"{name} (↓↓)"
-                
         progress_bar.progress((i + 1) / total)
         time.sleep(0.05)
         
@@ -148,10 +125,8 @@ if 'current_idx' not in st.session_state:
     st.session_state.current_idx = 0
 
 h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
-
 with h_col1:
     is_filtered = st.checkbox("🔥 5일 동방향 필터")
-
 with h_col2:
     period = st.select_slider("분석 기간", options=[5, 10, 15, 20, 25, 30], value=30, label_visibility="collapsed")
 
@@ -176,12 +151,10 @@ def go_prev():
     if st.session_state.current_idx > 0:
         st.session_state.current_idx -= 1
         st.session_state.stock_selector = display_names[st.session_state.current_idx]
-
 def go_next():
     if st.session_state.current_idx < len(display_names) - 1:
         st.session_state.current_idx += 1
         st.session_state.stock_selector = display_names[st.session_state.current_idx]
-
 def on_change():
     if 'stock_selector' in st.session_state and st.session_state.stock_selector in display_names:
         st.session_state.current_idx = display_names.index(st.session_state.stock_selector)
@@ -233,10 +206,30 @@ if token:
         fig.update_layout(title=f"<b>{selected_real}</b>", hovermode="x unified", height=450, margin=dict(l=5,r=5,t=50,b=5), legend=dict(orientation="h", y=1.1, x=0.5, xanchor='center'))
         st.plotly_chart(fig, use_container_width=True)
 
+        # ==========================================
+        # 🎨 [새로 추가] 표 색상 하이라이팅 기능
+        # ==========================================
         st.write("##### 📋 상세 내역 (단위: 억원)")
         res_df = df_disp[['Price','F_억','I_억','F_누적','I_누적']].iloc[::-1].copy()
         res_df.columns = ['주가','외인_일일','기관_일일','외인_누적','기관_누적']
-        st.dataframe(res_df.style.format("{:,.1f}"), use_container_width=True)
+        
+        # 순매수(빨강), 순매도(파랑) 색상 지정 함수
+        def color_net_buy(val):
+            try:
+                v = float(val)
+                if v > 0: return 'color: #ff4b4b; font-weight: bold;' # 빨간색
+                elif v < 0: return 'color: #1f77b4;' # 파란색
+            except: pass
+            return ''
+            
+        # 표 데이터에 색상 적용
+        try:
+            styled_df = res_df.style.format("{:,.1f}").map(color_net_buy, subset=['외인_일일', '기관_일일', '외인_누적', '기관_누적'])
+        except AttributeError:
+            # pandas 구버전 호환용
+            styled_df = res_df.style.format("{:,.1f}").applymap(color_net_buy, subset=['외인_일일', '기관_일일', '외인_누적', '기관_누적'])
+            
+        st.dataframe(styled_df, use_container_width=True)
     else:
         st.error("데이터를 불러올 수 없습니다. 장 종료 후 점검 시간이거나 종목 정보를 확인 중입니다.")
 
@@ -248,7 +241,6 @@ with st.expander("🛠️ 시스템 로그 보기 (에러 원인 파악용)"):
     if token:
         st.write(f"현재 선택된 종목: **{selected_real}** (코드: {selected_ticker})")
         st.write(f"요청 기준일자(KST): **{get_target_date()}**")
-        
         headers = {
             "content-type": "application/json; charset=utf-8", 
             "authorization": f"Bearer {token}",
@@ -260,14 +252,12 @@ with st.expander("🛠️ 시스템 로그 보기 (에러 원인 파악용)"):
             "FID_INPUT_DATE_1": get_target_date(), "FID_ORG_ADJ_PRC": "", "FID_ETC_CLS_CODE": "1"
         }
         url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
-        
         try:
             raw_res = requests.get(url, headers=headers, params=params)
             st.write(f"**HTTP 상태 코드:** {raw_res.status_code}")
             try:
                 st.json(raw_res.json())
             except:
-                st.text("JSON 변환 실패. 원본 텍스트:")
                 st.text(raw_res.text)
         except Exception as e:
             st.error(f"서버 연결 실패: {str(e)}")

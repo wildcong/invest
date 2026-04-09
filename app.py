@@ -87,14 +87,14 @@ def scan_all_stocks(stock_dict, token):
 # ==========================================
 # 3. 메인 화면 구성 및 필터링
 # ==========================================
-st.title("📊 KOSPI 200 쌍끌이 스캐너 (모바일)")
+st.title("📊 KOSPI 200 쌍끌이 스캐너")
 
 kospi_dict = get_kospi200_list()
 full_names = list(kospi_dict.keys())
 token = get_access_token()
 
 # 필터 체크박스
-is_filtered = st.checkbox("🔥 최근 5일 동방향(쌍끌이) 종목만 필터링")
+is_filtered = st.checkbox("🔥 최근 5일 +/- 동방향 종목만 필터링")
 
 if is_filtered:
     if 'filtered_list' not in st.session_state:

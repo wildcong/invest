@@ -30,7 +30,8 @@ jobs:
         env:
           APP_URL: ${{ steps.resolve.outputs.app_url }}
         run: |
+          HEALTH_URL="${APP_URL%/}/_stcore/health"
           curl --fail --silent --show-error --location \
             --max-time 30 \
             --user-agent "github-actions-keep-awake" \
-            "$APP_URL" >/dev/null
+            "$HEALTH_URL" >/dev/null

@@ -5,9 +5,11 @@ import requests
 import json
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import FinanceDataReader as fdr
 import time
-from datetime import datetime, timedelta, timezone
+from scanner import classify_5day_direction, get_investor_data as fetch_investor_data
+from scanner import get_access_token as fetch_access_token
+from scanner import get_stock_lists as fetch_stock_lists
+from scanner import get_target_date, load_scan_cache
 
 # ==========================================
 # 🔒 보안 설정 (Streamlit Secrets)
@@ -35,51 +37,15 @@ st.markdown(
 )
 
 # ==========================================
-# ⏰ KST 시간 및 15:40 제한 우회 로직
-# ==========================================
-def get_target_date():
-    kst = timezone(timedelta(hours=9))
-    now = datetime.now(kst)
-    if now.hour < 15 or (now.hour == 15 and now.minute < 40):
-        target = now - timedelta(days=1)
-    else:
-        target = now
-    while target.weekday() > 4:
-        target -= timedelta(days=1)
-    return target.strftime("%Y%m%d")
-
-# ==========================================
 # 1. 데이터 수집 함수들
 # ==========================================
 @st.cache_data(ttl=86400)
 def get_stock_lists():
-    try:
-        # 코스피, 코스닥, 전체(KRX) 3개 데이터 모두 로드
-        df_kospi = fdr.StockListing('KOSPI')
-        df_kosdaq = fdr.StockListing('KOSDAQ')
-        df_all = fdr.StockListing('KRX') 
-        
-        mcap_col = 'Marcap' if 'Marcap' in df_kospi.columns else 'MarCap'
-        
-        k200 = df_kospi.sort_values(mcap_col, ascending=False).head(200)
-        kq150 = df_kosdaq.sort_values(mcap_col, ascending=False).head(150)
-        
-        dict_k200 = dict(zip(k200['Name'], k200['Code']))
-        dict_kq150 = dict(zip(kq150['Name'], kq150['Code']))
-        dict_all = dict(zip(df_all['Name'], df_all['Code']))
-        
-        return dict_k200, dict_kq150, dict_all
-    except Exception:
-        return {"삼성전자": "005930"}, {"에코프로": "086520"}, {"삼성전자": "005930"}
+    return fetch_stock_lists()
 
 @st.cache_data(ttl=86000)
 def get_access_token():
-    headers = {"content-type": "application/json"}
-    body = {"grant_type": "client_credentials", "appkey": APP_KEY, "appsecret": APP_SECRET}
-    res = requests.post(f"{URL_BASE}/oauth2/tokenP", headers=headers, data=json.dumps(body))
-    if res.status_code == 200:
-        return res.json().get("access_token")
-    return None
+    return fetch_access_token(APP_KEY, APP_SECRET)
 
 @st.cache_data(ttl=60, show_spinner=False)
 def get_realtime_price(ticker, access_token):
@@ -108,49 +74,12 @@ def get_realtime_price(ticker, access_token):
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_investor_data(ticker, access_token):
-    headers = {
-        "content-type": "application/json; charset=utf-8", 
-        "authorization": f"Bearer {access_token}",
-        "appkey": APP_KEY, "appsecret": APP_SECRET, 
-        "tr_id": "FHPTJ04160001", "custtype": "P"
-    }
-    params = {
-        "FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": ticker,
-        "FID_INPUT_DATE_1": get_target_date(), "FID_ORG_ADJ_PRC": "", "FID_ETC_CLS_CODE": "1"
-    }
-    url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
-    
-    try:
-        res = requests.get(url, headers=headers, params=params)
-        res_json = res.json()
-        if res.status_code == 200 and 'output2' in res_json:
-            df = pd.DataFrame(res_json['output2'])
-            if df.empty: return pd.DataFrame()
-            df = df[['stck_bsop_date', 'stck_clpr', 'frgn_ntby_tr_pbmn', 'orgn_ntby_tr_pbmn']].copy()
-            df.columns = ['Date', 'Price', 'Foreign_Amt', 'Inst_Amt']
-            df['Date'] = pd.to_datetime(df['Date'])
-            for col in ['Price', 'Foreign_Amt', 'Inst_Amt']:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-            df = df.dropna()
-            df['F_억'] = df['Foreign_Amt'] / 100
-            df['I_억'] = df['Inst_Amt'] / 100
-            return df.sort_values('Date').set_index('Date')
-    except Exception:
-        pass
-    return pd.DataFrame()
+    return fetch_investor_data(ticker, access_token, APP_KEY, APP_SECRET)
 
-# ==========================================
-# 2. 전수 조사(Scanner) 로직
-# ==========================================
-def classify_5day_direction(df):
-    f_sum = df['F_억'].tail(5).sum()
-    i_sum = df['I_억'].tail(5).sum()
-    if f_sum > 0 and i_sum > 0:
-        return "buy"
-    if f_sum < 0 and i_sum < 0:
-        return "sell"
-    return "mixed"
 
+@st.cache_data(ttl=300, show_spinner=False)
+def get_scan_cache():
+    return load_scan_cache()
 
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
@@ -214,12 +143,19 @@ if 'current_idx' not in st.session_state:
 if market_mode == "🔵 KOSPI 200":
     target_dict = dict_k200
     allow_scan = True
+    market_cache_key = "kospi200"
 elif market_mode == "🟢 KOSDAQ 150":
     target_dict = dict_kq150
     allow_scan = True
+    market_cache_key = "kosdaq150"
 else:
     target_dict = dict_all
     allow_scan = False
+    market_cache_key = None
+
+scan_cache = get_scan_cache()
+cached_market = scan_cache.get("markets", {}).get(market_cache_key, {}) if market_cache_key else {}
+cached_generated_at = scan_cache.get("generated_at_kst")
 
 h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
 
@@ -240,7 +176,10 @@ with h_col2:
 
 if is_filtered and allow_scan:
     if 'filtered_map' not in st.session_state or 'scan_summary' not in st.session_state:
-        if token:
+        if cached_market.get("summary"):
+            st.session_state.filtered_map = cached_market.get("filtered_map", {})
+            st.session_state.scan_summary = cached_market["summary"]
+        elif token:
             filtered_map, scan_summary = scan_all_stocks(target_dict, token)
             st.session_state.filtered_map = filtered_map
             st.session_state.scan_summary = scan_summary
@@ -249,6 +188,9 @@ if is_filtered and allow_scan:
             st.stop()
     if market_mode in ("🔵 KOSPI 200", "🟢 KOSDAQ 150"):
         scan_summary = st.session_state.scan_summary
+        updated_text = ""
+        if cached_generated_at:
+            updated_text = f" | 자동갱신 {cached_generated_at[:16].replace('T', ' ')}"
         summary_placeholder.markdown(
             (
                 "<div style='font-size:0.82rem; line-height:1.5; white-space:nowrap; margin-top: 2px;'>"
@@ -256,6 +198,7 @@ if is_filtered and allow_scan:
                 f"엇갈림 <b>{scan_summary['mixed']}</b> | "
                 f"쌍끌이매도 <b>{scan_summary['sell']}</b>"
                 f"<span style='color:#6b7280;'> ({scan_summary['scanned']}/{len(target_dict)} 집계)</span>"
+                f"<span style='color:#6b7280;'>{updated_text}</span>"
                 "</div>"
             ),
             unsafe_allow_html=True,

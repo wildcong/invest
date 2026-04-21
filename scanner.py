@@ -102,9 +102,23 @@ def classify_5day_direction(df: pd.DataFrame) -> str:
     return "mixed"
 
 
+def summarize_5day_flow(df: pd.DataFrame) -> dict[str, float]:
+    foreign_5d = round(df["F_억"].tail(5).sum(), 1)
+    inst_5d = round(df["I_억"].tail(5).sum(), 1)
+    total_5d = round(foreign_5d + inst_5d, 1)
+    strength = round(abs(foreign_5d) + abs(inst_5d), 1)
+    return {
+        "foreign_5d": foreign_5d,
+        "inst_5d": inst_5d,
+        "total_5d": total_5d,
+        "strength": strength,
+    }
+
+
 def scan_market(stock_dict: dict[str, str], access_token: str, app_key: str, app_secret: str):
     filtered_map = {}
     summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
+    direction_groups = {"buy": [], "mixed": [], "sell": []}
 
     for name, ticker in stock_dict.items():
         df = get_investor_data(ticker, access_token, app_key, app_secret)
@@ -112,15 +126,31 @@ def scan_market(stock_dict: dict[str, str], access_token: str, app_key: str, app
             continue
 
         direction = classify_5day_direction(df)
+        flow = summarize_5day_flow(df)
         summary["scanned"] += 1
         summary[direction] += 1
+        label = name
+        if direction == "buy":
+            label = f"{name} (↑↑)"
+        elif direction == "sell":
+            label = f"{name} (↓↓)"
+        direction_groups[direction].append(
+            {
+                "name": name,
+                "label": label,
+                **flow,
+            }
+        )
 
         if direction == "buy":
-            filtered_map[name] = f"{name} (↑↑)"
+            filtered_map[name] = label
         elif direction == "sell":
-            filtered_map[name] = f"{name} (↓↓)"
+            filtered_map[name] = label
 
-    return filtered_map, summary
+    for direction in direction_groups:
+        direction_groups[direction].sort(key=lambda item: item["strength"], reverse=True)
+
+    return filtered_map, summary, direction_groups
 
 
 def build_scan_cache(app_key: str, app_secret: str):
@@ -131,8 +161,8 @@ def build_scan_cache(app_key: str, app_secret: str):
     dict_k200, dict_kq150, _ = get_stock_lists()
     generated_at = datetime.now(KST)
 
-    kospi_filtered, kospi_summary = scan_market(dict_k200, access_token, app_key, app_secret)
-    kosdaq_filtered, kosdaq_summary = scan_market(dict_kq150, access_token, app_key, app_secret)
+    kospi_filtered, kospi_summary, kospi_groups = scan_market(dict_k200, access_token, app_key, app_secret)
+    kosdaq_filtered, kosdaq_summary, kosdaq_groups = scan_market(dict_kq150, access_token, app_key, app_secret)
 
     return {
         "generated_at_kst": generated_at.isoformat(),
@@ -143,12 +173,14 @@ def build_scan_cache(app_key: str, app_secret: str):
                 "market_size": len(dict_k200),
                 "filtered_map": kospi_filtered,
                 "summary": kospi_summary,
+                "direction_groups": kospi_groups,
             },
             "kosdaq150": {
                 "label": "KOSDAQ 150",
                 "market_size": len(dict_kq150),
                 "filtered_map": kosdaq_filtered,
                 "summary": kosdaq_summary,
+                "direction_groups": kosdaq_groups,
             },
         },
     }

@@ -17,6 +17,22 @@ APP_SECRET = st.secrets["KIS_APP_SECRET"]
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 
 st.set_page_config(page_title="수급 쌍끌이 스캐너", layout="wide")
+st.markdown(
+    """
+    <style>
+    div[data-testid="stPlotlyChart"] {
+        touch-action: pan-y pinch-zoom !important;
+    }
+    div[data-testid="stPlotlyChart"] .js-plotly-plot,
+    div[data-testid="stPlotlyChart"] .plot-container,
+    div[data-testid="stPlotlyChart"] .plotly,
+    div[data-testid="stPlotlyChart"] .svg-container {
+        touch-action: pan-y pinch-zoom !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ==========================================
 # ⏰ KST 시간 및 15:40 제한 우회 로직
@@ -126,8 +142,19 @@ def get_investor_data(ticker, access_token):
 # ==========================================
 # 2. 전수 조사(Scanner) 로직
 # ==========================================
+def classify_5day_direction(df):
+    f_sum = df['F_억'].tail(5).sum()
+    i_sum = df['I_억'].tail(5).sum()
+    if f_sum > 0 and i_sum > 0:
+        return "buy"
+    if f_sum < 0 and i_sum < 0:
+        return "sell"
+    return "mixed"
+
+
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
+    summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
     progress_bar = st.progress(0)
     status_text = st.empty()
     total = len(stock_dict)
@@ -136,11 +163,12 @@ def scan_all_stocks(stock_dict, token):
         status_text.text(f"🚀 스캔 중 ({i+1}/{total}): {name}")
         df = get_investor_data(ticker, token)
         if not df.empty and len(df) >= 5:
-            f_sum = df['F_억'].tail(5).sum()
-            i_sum = df['I_억'].tail(5).sum()
-            if f_sum > 0 and i_sum > 0:
+            direction = classify_5day_direction(df)
+            summary["scanned"] += 1
+            summary[direction] += 1
+            if direction == "buy":
                 valid_stocks[name] = f"{name} (↑↑)"
-            elif f_sum < 0 and i_sum < 0:
+            elif direction == "sell":
                 valid_stocks[name] = f"{name} (↓↓)"
                 
         progress_bar.progress((i + 1) / total)
@@ -149,7 +177,7 @@ def scan_all_stocks(stock_dict, token):
         
     status_text.empty()
     progress_bar.empty()
-    return valid_stocks
+    return valid_stocks, summary
 
 # ==========================================
 # 3. 메인 화면: 탭 및 컨트롤러 구성
@@ -176,6 +204,8 @@ if st.session_state.current_market != market_mode:
     st.session_state.current_market = market_mode
     if 'filtered_map' in st.session_state:
         del st.session_state.filtered_map
+    if 'scan_summary' in st.session_state:
+        del st.session_state.scan_summary
 
 if 'current_idx' not in st.session_state:
     st.session_state.current_idx = 0
@@ -196,7 +226,11 @@ h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
 with h_col1:
     # 코스피/코스닥일 때만 스캐너 필터 활성화
     if allow_scan:
-        is_filtered = st.checkbox("🔥 5일 동방향 필터")
+        filter_col, summary_col = st.columns([1.05, 1.95])
+        with filter_col:
+            is_filtered = st.checkbox("🔥 5일 동방향 필터")
+        with summary_col:
+            summary_placeholder = st.empty()
     else:
         is_filtered = False
         st.caption("✅ 전체 종목은 스캔이 제한되며 개별 검색만 가능합니다.")
@@ -205,17 +239,34 @@ with h_col2:
     period = st.select_slider("분석 기간", options=[5, 10, 15, 20, 25, 30], value=30, label_visibility="collapsed")
 
 if is_filtered and allow_scan:
-    if 'filtered_map' not in st.session_state:
+    if 'filtered_map' not in st.session_state or 'scan_summary' not in st.session_state:
         if token:
-            st.session_state.filtered_map = scan_all_stocks(target_dict, token)
+            filtered_map, scan_summary = scan_all_stocks(target_dict, token)
+            st.session_state.filtered_map = filtered_map
+            st.session_state.scan_summary = scan_summary
         else:
             st.error("API 토큰 발급 실패")
             st.stop()
+    if market_mode == "🔵 KOSPI 200":
+        scan_summary = st.session_state.scan_summary
+        summary_placeholder.markdown(
+            (
+                "<div style='font-size:0.82rem; line-height:1.5; white-space:nowrap; margin-top: 2px;'>"
+                f"쌍끌이매수 <b>{scan_summary['buy']}</b> | "
+                f"엇갈림 <b>{scan_summary['mixed']}</b> | "
+                f"쌍끌이매도 <b>{scan_summary['sell']}</b>"
+                f"<span style='color:#6b7280;'> ({scan_summary['scanned']}/{len(target_dict)} 집계)</span>"
+                "</div>"
+            ),
+            unsafe_allow_html=True,
+        )
     display_names = list(st.session_state.filtered_map.values())
     name_lookup = {v: k for k, v in st.session_state.filtered_map.items()}
 else:
     display_names = list(target_dict.keys())
     name_lookup = {n: n for n in display_names}
+    if allow_scan and market_mode == "🔵 KOSPI 200":
+        summary_placeholder.empty()
 
 if not display_names:
     st.warning("조건에 맞는 종목이 없습니다.")
@@ -262,10 +313,10 @@ if token:
             diff = curr_p - prev_p
             ratio = (diff / prev_p) * 100 if prev_p != 0 else 0
         
-        f_sum, i_sum = df_disp['F_억'].tail(5).sum(), df_disp['I_억'].tail(5).sum()
-        if f_sum > 0 and i_sum > 0: 
+        direction = classify_5day_direction(df_disp)
+        if direction == "buy":
             b_html = '<span style="background-color:#ff4b4b;color:white;padding:2px 6px;border-radius:4px;font-size:0.8rem;">쌍끌이 매수 ↑↑</span>'
-        elif f_sum < 0 and i_sum < 0: 
+        elif direction == "sell":
             b_html = '<span style="background-color:#31333f;color:white;padding:2px 6px;border-radius:4px;font-size:0.8rem;">쌍끌이 매도 ↓↓</span>'
         else: 
             b_html = '<span style="background-color:#f0f2f6;color:#31333f;padding:2px 6px;border-radius:4px;font-size:0.8rem;">엇갈림</span>'
@@ -284,9 +335,19 @@ if token:
         fig.add_hline(y=0, line_dash="dash", line_color="gray")
         fig.update_layout(
             title=f"<b>{selected_real}</b>", hovermode="x unified", height=450, 
-            margin=dict(l=5,r=5,t=50,b=5), legend=dict(orientation="h", y=1.1, x=0.5, xanchor='center')
+            margin=dict(l=5,r=5,t=50,b=5),
+            legend=dict(orientation="h", y=1.1, x=0.5, xanchor='center'),
+            dragmode=False,
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            config={
+                "scrollZoom": True,
+                "doubleClick": False,
+                "displaylogo": False,
+            },
+        )
 
         st.write("##### 📋 상세 내역 (단위: 억원)")
         res_df = df_disp[['Price','F_억','I_억','F_누적','I_누적']].iloc[::-1].copy()

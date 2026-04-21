@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Optional
 
-import FinanceDataReader as fdr
 import pandas as pd
 import requests
 
@@ -13,7 +11,7 @@ KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
 
 
-def get_target_date(now: datetime | None = None) -> str:
+def get_target_date(now: Optional[datetime] = None) -> str:
     current = now.astimezone(KST) if now else datetime.now(KST)
     if current.hour < 15 or (current.hour == 15 and current.minute < 40):
         target = current - timedelta(days=1)
@@ -26,6 +24,8 @@ def get_target_date(now: datetime | None = None) -> str:
 
 def get_stock_lists():
     try:
+        import FinanceDataReader as fdr
+
         df_kospi = fdr.StockListing("KOSPI")
         df_kosdaq = fdr.StockListing("KOSDAQ")
         df_all = fdr.StockListing("KRX")
@@ -44,7 +44,7 @@ def get_stock_lists():
         return {"삼성전자": "005930"}, {"에코프로": "086520"}, {"삼성전자": "005930"}
 
 
-def get_access_token(app_key: str, app_secret: str) -> str | None:
+def get_access_token(app_key: str, app_secret: str) -> Optional[str]:
     headers = {"content-type": "application/json"}
     body = {"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret}
     res = requests.post(f"{URL_BASE}/oauth2/tokenP", headers=headers, data=json.dumps(body), timeout=20)

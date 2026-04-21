@@ -31,7 +31,21 @@ jobs:
           APP_URL: ${{ steps.resolve.outputs.app_url }}
         run: |
           HEALTH_URL="${APP_URL%/}/_stcore/health"
-          curl --fail --silent --show-error --location \
+          RESPONSE_HEADERS="$(mktemp)"
+
+          curl --head --silent --show-error \
+            --max-time 30 \
+            --user-agent "github-actions-keep-awake" \
+            --dump-header "$RESPONSE_HEADERS" \
+            "$HEALTH_URL" >/dev/null
+
+          if grep -qi 'location: https://share.streamlit.io/-/auth/app' "$RESPONSE_HEADERS"; then
+            echo "Streamlit app requires authentication, so GitHub Actions cannot keep it awake anonymously."
+            echo "Make the app public or use an authenticated local wake-up job instead."
+            exit 0
+          fi
+
+          curl --fail --silent --show-error \
             --max-time 30 \
             --user-agent "github-actions-keep-awake" \
             "$HEALTH_URL" >/dev/null

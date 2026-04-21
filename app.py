@@ -247,7 +247,7 @@ if is_filtered and allow_scan:
         else:
             st.error("API 토큰 발급 실패")
             st.stop()
-    if market_mode == "🔵 KOSPI 200":
+    if market_mode in ("🔵 KOSPI 200", "🟢 KOSDAQ 150"):
         scan_summary = st.session_state.scan_summary
         summary_placeholder.markdown(
             (
@@ -265,7 +265,7 @@ if is_filtered and allow_scan:
 else:
     display_names = list(target_dict.keys())
     name_lookup = {n: n for n in display_names}
-    if allow_scan and market_mode == "🔵 KOSPI 200":
+    if allow_scan:
         summary_placeholder.empty()
 
 if not display_names:

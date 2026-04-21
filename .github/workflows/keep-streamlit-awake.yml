@@ -1,0 +1,36 @@
+name: Keep Streamlit Awake
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve app URL
+        id: resolve
+        env:
+          STREAMLIT_APP_URL_VAR: ${{ vars.STREAMLIT_APP_URL }}
+          STREAMLIT_APP_URL_SECRET: ${{ secrets.STREAMLIT_APP_URL }}
+        run: |
+          APP_URL="${STREAMLIT_APP_URL_VAR:-$STREAMLIT_APP_URL_SECRET}"
+          if [ -z "$APP_URL" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "STREAMLIT_APP_URL is not configured."
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "app_url=$APP_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Ping Streamlit app
+        if: steps.resolve.outputs.skip == 'false'
+        env:
+          APP_URL: ${{ steps.resolve.outputs.app_url }}
+        run: |
+          curl --fail --silent --show-error --location \
+            --max-time 30 \
+            --user-agent "github-actions-keep-awake" \
+            "$APP_URL" >/dev/null

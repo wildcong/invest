@@ -6,10 +6,11 @@ import json
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import time
+from datetime import datetime
 from scanner import classify_5day_direction, get_investor_data as fetch_investor_data
 from scanner import get_access_token as fetch_access_token
 from scanner import get_stock_lists as fetch_stock_lists
-from scanner import get_target_date, load_scan_cache
+from scanner import get_target_date, load_scan_cache, summarize_5day_flow
 
 # ==========================================
 # 🔒 보안 설정 (Streamlit Secrets)
@@ -81,9 +82,76 @@ def get_investor_data(ticker, access_token):
 def get_scan_cache():
     return load_scan_cache()
 
+def format_cache_timestamp(timestamp):
+    if not timestamp:
+        return "자동 갱신 정보 없음"
+    try:
+        parsed = datetime.fromisoformat(timestamp)
+        return parsed.strftime("%Y-%m-%d %H:%M KST")
+    except ValueError:
+        return timestamp.replace("T", " ")[:16]
+
+def format_target_date(date_str):
+    if not date_str:
+        return "-"
+    try:
+        return datetime.strptime(date_str, "%Y%m%d").strftime("%Y-%m-%d")
+    except ValueError:
+        return date_str
+
+def build_direction_groups(target_dict, filtered_map, cached_groups=None):
+    groups = {"buy": [], "mixed": [], "sell": []}
+
+    if cached_groups:
+        for direction, entries in cached_groups.items():
+            if direction not in groups:
+                continue
+            for entry in entries:
+                if isinstance(entry, str):
+                    item = {"name": entry}
+                else:
+                    item = dict(entry)
+                name = item.get("name")
+                if name not in target_dict:
+                    continue
+                item["label"] = item.get("label") or filtered_map.get(name, name)
+                groups[direction].append(item)
+
+    known_names = {
+        item["name"]
+        for items in groups.values()
+        for item in items
+    }
+    for name, label in filtered_map.items():
+        if name in known_names:
+            continue
+        if "(↑↑)" in label:
+            groups["buy"].append({"name": name, "label": label, "strength": 0})
+        elif "(↓↓)" in label:
+            groups["sell"].append({"name": name, "label": label, "strength": 0})
+
+    for direction in groups:
+        groups[direction].sort(key=lambda item: item.get("strength", 0), reverse=True)
+
+    return groups
+
+def get_display_entries(direction_groups, display_filter):
+    if display_filter == "buy":
+        active_keys = ["buy"]
+    elif display_filter == "sell":
+        active_keys = ["sell"]
+    else:
+        active_keys = ["buy", "sell"]
+
+    entries = []
+    for key in active_keys:
+        entries.extend(direction_groups.get(key, []))
+    return entries
+
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
     summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
+    direction_groups = {"buy": [], "mixed": [], "sell": []}
     progress_bar = st.progress(0)
     status_text = st.empty()
     total = len(stock_dict)
@@ -93,12 +161,23 @@ def scan_all_stocks(stock_dict, token):
         df = get_investor_data(ticker, token)
         if not df.empty and len(df) >= 5:
             direction = classify_5day_direction(df)
+            flow = summarize_5day_flow(df)
             summary["scanned"] += 1
             summary[direction] += 1
+            label = name
             if direction == "buy":
-                valid_stocks[name] = f"{name} (↑↑)"
+                label = f"{name} (↑↑)"
+                valid_stocks[name] = label
             elif direction == "sell":
-                valid_stocks[name] = f"{name} (↓↓)"
+                label = f"{name} (↓↓)"
+                valid_stocks[name] = label
+            direction_groups[direction].append(
+                {
+                    "name": name,
+                    "label": label,
+                    **flow,
+                }
+            )
                 
         progress_bar.progress((i + 1) / total)
         # ⚡ 0.05초로 복구
@@ -106,7 +185,9 @@ def scan_all_stocks(stock_dict, token):
         
     status_text.empty()
     progress_bar.empty()
-    return valid_stocks, summary
+    for direction in direction_groups:
+        direction_groups[direction].sort(key=lambda item: item.get("strength", 0), reverse=True)
+    return valid_stocks, summary, direction_groups
 
 # ==========================================
 # 3. 메인 화면: 탭 및 컨트롤러 구성
@@ -135,9 +216,17 @@ if st.session_state.current_market != market_mode:
         del st.session_state.filtered_map
     if 'scan_summary' in st.session_state:
         del st.session_state.scan_summary
+    if 'scan_direction_groups' in st.session_state:
+        del st.session_state.scan_direction_groups
+    st.session_state.scan_display_filter = "all"
+    st.session_state.scan_focus = None
 
 if 'current_idx' not in st.session_state:
     st.session_state.current_idx = 0
+if 'scan_display_filter' not in st.session_state:
+    st.session_state.scan_display_filter = "all"
+if 'scan_focus' not in st.session_state:
+    st.session_state.scan_focus = None
 
 # 🎯 탭에 따른 로직 분리 (전체 종목 탭은 스캔 불가 처리)
 if market_mode == "🔵 KOSPI 200":
@@ -156,6 +245,7 @@ else:
 scan_cache = get_scan_cache()
 cached_market = scan_cache.get("markets", {}).get(market_cache_key, {}) if market_cache_key else {}
 cached_generated_at = scan_cache.get("generated_at_kst")
+current_target_date = get_target_date()
 
 h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
 
@@ -175,36 +265,140 @@ with h_col2:
     period = st.select_slider("분석 기간", options=[5, 10, 15, 20, 25, 30], value=30, label_visibility="collapsed")
 
 if is_filtered and allow_scan:
-    if 'filtered_map' not in st.session_state or 'scan_summary' not in st.session_state:
+    if (
+        'filtered_map' not in st.session_state
+        or 'scan_summary' not in st.session_state
+        or 'scan_direction_groups' not in st.session_state
+    ):
         if cached_market.get("summary"):
             st.session_state.filtered_map = cached_market.get("filtered_map", {})
             st.session_state.scan_summary = cached_market["summary"]
+            st.session_state.scan_direction_groups = build_direction_groups(
+                target_dict,
+                st.session_state.filtered_map,
+                cached_market.get("direction_groups"),
+            )
         elif token:
-            filtered_map, scan_summary = scan_all_stocks(target_dict, token)
+            filtered_map, scan_summary, direction_groups = scan_all_stocks(target_dict, token)
             st.session_state.filtered_map = filtered_map
             st.session_state.scan_summary = scan_summary
+            st.session_state.scan_direction_groups = build_direction_groups(
+                target_dict,
+                filtered_map,
+                direction_groups,
+            )
         else:
             st.error("API 토큰 발급 실패")
             st.stop()
     if market_mode in ("🔵 KOSPI 200", "🟢 KOSDAQ 150"):
         scan_summary = st.session_state.scan_summary
-        updated_text = ""
-        if cached_generated_at:
-            updated_text = f" | 자동갱신 {cached_generated_at[:16].replace('T', ' ')}"
-        summary_placeholder.markdown(
-            (
-                "<div style='font-size:0.82rem; line-height:1.5; white-space:nowrap; margin-top: 2px;'>"
-                f"쌍끌이매수 <b>{scan_summary['buy']}</b> | "
-                f"엇갈림 <b>{scan_summary['mixed']}</b> | "
-                f"쌍끌이매도 <b>{scan_summary['sell']}</b>"
-                f"<span style='color:#6b7280;'> ({scan_summary['scanned']}/{len(target_dict)} 집계)</span>"
-                f"<span style='color:#6b7280;'>{updated_text}</span>"
-                "</div>"
-            ),
-            unsafe_allow_html=True,
-        )
-    display_names = list(st.session_state.filtered_map.values())
-    name_lookup = {v: k for k, v in st.session_state.filtered_map.items()}
+        direction_groups = st.session_state.scan_direction_groups
+        target_date = cached_market.get("target_date") or current_target_date
+        is_stale_cache = bool(cached_market.get("target_date")) and cached_market.get("target_date") != current_target_date
+        focus_meta = {
+            "buy": ("쌍끌이매수", "secondary"),
+            "mixed": ("엇갈림", "secondary"),
+            "sell": ("쌍끌이매도", "secondary"),
+        }
+        with summary_placeholder.container():
+            if is_stale_cache:
+                st.warning(
+                    f"자동 갱신 캐시 기준일이 {format_target_date(target_date)} 입니다. "
+                    f"현재 기준일 {format_target_date(current_target_date)} 과 달라서 수동 새로 집계를 권장합니다."
+                )
+            st.caption(
+                f"집계 {scan_summary['scanned']}/{len(target_dict)} | "
+                f"기준일 {format_target_date(target_date)}"
+            )
+            st.caption(
+                f"자동 갱신 {format_cache_timestamp(cached_generated_at)}"
+            )
+            refresh_disabled = not bool(token)
+            refresh_help = "KIS 토큰이 없어서 지금은 새로 집계할 수 없습니다." if refresh_disabled else "실시간으로 다시 스캔해서 목록을 갱신합니다."
+            if st.button(
+                "새로 집계",
+                key=f"{market_cache_key}_refresh_scan",
+                use_container_width=True,
+                disabled=refresh_disabled,
+                help=refresh_help,
+            ):
+                filtered_map, scan_summary, direction_groups = scan_all_stocks(target_dict, token)
+                st.session_state.filtered_map = filtered_map
+                st.session_state.scan_summary = scan_summary
+                st.session_state.scan_direction_groups = build_direction_groups(
+                    target_dict,
+                    filtered_map,
+                    direction_groups,
+                )
+                cached_generated_at = None
+                cached_market = {"target_date": current_target_date}
+                target_date = current_target_date
+                is_stale_cache = False
+                direction_groups = st.session_state.scan_direction_groups
+            buy_col, mixed_col, sell_col = st.columns(3)
+            for direction, column in zip(
+                ["buy", "mixed", "sell"],
+                [buy_col, mixed_col, sell_col],
+            ):
+                count = scan_summary[direction]
+                label, default_type = focus_meta[direction]
+                button_type = "primary" if st.session_state.scan_focus == direction else default_type
+                if column.button(
+                    f"{label} {count}",
+                    key=f"{market_cache_key}_{direction}_summary",
+                    use_container_width=True,
+                    type=button_type,
+                ):
+                    st.session_state.scan_focus = direction
+                    if direction in ("buy", "sell"):
+                        st.session_state.scan_display_filter = direction
+
+            filter_labels = {
+                "all": "전체 보기",
+                "buy": "쌍끌이매수만",
+                "sell": "쌍끌이매도만",
+            }
+            reverse_filter_labels = {v: k for k, v in filter_labels.items()}
+            selected_filter_label = st.radio(
+                "표시 종목",
+                list(filter_labels.values()),
+                index=list(filter_labels.keys()).index(st.session_state.scan_display_filter),
+                horizontal=True,
+                label_visibility="collapsed",
+            )
+            st.session_state.scan_display_filter = reverse_filter_labels[selected_filter_label]
+
+            focus = st.session_state.scan_focus
+            if focus:
+                focus_items = direction_groups.get(focus, [])
+                focus_title = focus_meta[focus][0]
+                with st.expander(f"{focus_title} 종목 {len(focus_items)}개", expanded=True):
+                    if focus_items:
+                        focus_df = pd.DataFrame(
+                            {
+                                "종목": [item["name"] for item in focus_items],
+                                "외인 5일합(억)": [item.get("foreign_5d", "-") for item in focus_items],
+                                "기관 5일합(억)": [item.get("inst_5d", "-") for item in focus_items],
+                                "합계(억)": [item.get("total_5d", "-") for item in focus_items],
+                            }
+                        )
+                        st.dataframe(focus_df, use_container_width=True)
+                    else:
+                        st.caption("현재 조건에 맞는 종목이 없습니다.")
+                    if st.button("목록 닫기", key=f"{market_cache_key}_{focus}_close", use_container_width=True):
+                        st.session_state.scan_focus = None
+                        if focus == "mixed":
+                            st.session_state.scan_display_filter = "all"
+
+        display_entries = get_display_entries(direction_groups, st.session_state.scan_display_filter)
+    else:
+        display_entries = [
+            {"name": name, "label": label}
+            for name, label in st.session_state.filtered_map.items()
+        ]
+
+    display_names = [item["label"] for item in display_entries]
+    name_lookup = {item["label"]: item["name"] for item in display_entries}
 else:
     display_names = list(target_dict.keys())
     name_lookup = {n: n for n in display_names}
@@ -230,7 +424,10 @@ def on_change():
 c1, c2, c3 = st.columns([1, 2, 1])
 with c1: st.button("⬅️ 이전", on_click=go_prev, use_container_width=True)
 with c2:
-    if st.session_state.current_idx >= len(display_names): st.session_state.current_idx = 0
+    if st.session_state.current_idx >= len(display_names):
+        st.session_state.current_idx = 0
+    if st.session_state.get("stock_selector") not in display_names:
+        st.session_state.current_idx = 0
     selected_disp = st.selectbox("종목 선택", display_names, index=st.session_state.current_idx, 
                                  key="stock_selector", on_change=on_change, label_visibility="collapsed")
 with c3: st.button("다음 ➡️", on_click=go_next, use_container_width=True)
@@ -313,7 +510,13 @@ if token:
             
         st.dataframe(styled_df, use_container_width=True)
 
-        st.markdown("<p style='font-size: 0.8rem; color: gray; margin-top: -10px;'>💡 당일 수급 데이터는 16:30에 추가되며, 해당 시간 이후 데이터가 초기화 및 업데이트됩니다.</p>", unsafe_allow_html=True)
+        info_parts = [
+            f"수급 기준일 {format_target_date(cached_market.get('target_date') if is_filtered and allow_scan else get_target_date())}",
+            "당일 수급 데이터는 보통 16:30 이후 반영",
+        ]
+        if is_filtered and allow_scan:
+            info_parts.append(f"자동 갱신 {format_cache_timestamp(cached_generated_at)}")
+        st.caption(" | ".join(info_parts))
     else:
         st.error("데이터를 불러올 수 없습니다. 아래 API 로그를 확인해 주세요.")
 

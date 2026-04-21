@@ -1,0 +1,28 @@
+{
+  "generated_at_kst": null,
+  "target_date": null,
+  "markets": {
+    "kospi200": {
+      "label": "KOSPI 200",
+      "market_size": 0,
+      "filtered_map": {},
+      "summary": {
+        "buy": 0,
+        "mixed": 0,
+        "sell": 0,
+        "scanned": 0
+      }
+    },
+    "kosdaq150": {
+      "label": "KOSDAQ 150",
+      "market_size": 0,
+      "filtered_map": {},
+      "summary": {
+        "buy": 0,
+        "mixed": 0,
+        "sell": 0,
+        "scanned": 0
+      }
+    }
+  }
+}

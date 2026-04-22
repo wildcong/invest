@@ -6,11 +6,11 @@ import json
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from scanner import classify_5day_direction, get_investor_data as fetch_investor_data
 from scanner import get_access_token as fetch_access_token
 from scanner import get_stock_lists as fetch_stock_lists
-from scanner import get_target_date, load_scan_cache, summarize_5day_flow
+from scanner import get_target_date, load_scan_cache, save_scan_cache, summarize_5day_flow
 
 # ==========================================
 # 🔒 보안 설정 (Streamlit Secrets)
@@ -18,6 +18,7 @@ from scanner import get_target_date, load_scan_cache, summarize_5day_flow
 APP_KEY = st.secrets["KIS_APP_KEY"]
 APP_SECRET = st.secrets["KIS_APP_SECRET"]
 URL_BASE = "https://openapi.koreainvestment.com:9443"
+KST = timezone(timedelta(hours=9))
 
 st.set_page_config(page_title="수급 쌍끌이 스캐너", layout="wide")
 st.markdown(
@@ -81,6 +82,32 @@ def get_investor_data(ticker, access_token):
 @st.cache_data(ttl=300, show_spinner=False)
 def get_scan_cache():
     return load_scan_cache()
+
+
+def persist_market_scan_cache(market_key, market_label, market_size, filtered_map, scan_summary, direction_groups):
+    existing_cache = load_scan_cache()
+    markets = dict(existing_cache.get("markets", {}))
+    generated_at = datetime.now(KST).isoformat()
+    target_date = get_target_date()
+
+    markets[market_key] = {
+        "label": market_label,
+        "market_size": market_size,
+        "filtered_map": filtered_map,
+        "summary": scan_summary,
+        "direction_groups": direction_groups,
+        "target_date": target_date,
+    }
+
+    save_scan_cache(
+        {
+            **existing_cache,
+            "generated_at_kst": generated_at,
+            "target_date": target_date,
+            "markets": markets,
+        }
+    )
+    get_scan_cache.clear()
 
 def format_cache_timestamp(timestamp):
     if not timestamp:
@@ -233,14 +260,17 @@ if market_mode == "🔵 KOSPI 200":
     target_dict = dict_k200
     allow_scan = True
     market_cache_key = "kospi200"
+    market_cache_label = "KOSPI 200"
 elif market_mode == "🟢 KOSDAQ 150":
     target_dict = dict_kq150
     allow_scan = True
     market_cache_key = "kosdaq150"
+    market_cache_label = "KOSDAQ 150"
 else:
     target_dict = dict_all
     allow_scan = False
     market_cache_key = None
+    market_cache_label = None
 
 scan_cache = get_scan_cache()
 cached_market = scan_cache.get("markets", {}).get(market_cache_key, {}) if market_cache_key else {}
@@ -287,6 +317,17 @@ if is_filtered and allow_scan:
                 filtered_map,
                 direction_groups,
             )
+            persist_market_scan_cache(
+                market_cache_key,
+                market_cache_label,
+                len(target_dict),
+                filtered_map,
+                scan_summary,
+                direction_groups,
+            )
+            scan_cache = get_scan_cache()
+            cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
+            cached_generated_at = scan_cache.get("generated_at_kst")
         else:
             st.error("API 토큰 발급 실패")
             st.stop()
@@ -318,7 +359,7 @@ if is_filtered and allow_scan:
             if st.button(
                 "새로 집계",
                 key=f"{market_cache_key}_refresh_scan",
-                use_container_width=True,
+                width="stretch",
                 disabled=refresh_disabled,
                 help=refresh_help,
             ):
@@ -330,8 +371,17 @@ if is_filtered and allow_scan:
                     filtered_map,
                     direction_groups,
                 )
-                cached_generated_at = None
-                cached_market = {"target_date": current_target_date}
+                persist_market_scan_cache(
+                    market_cache_key,
+                    market_cache_label,
+                    len(target_dict),
+                    filtered_map,
+                    scan_summary,
+                    direction_groups,
+                )
+                scan_cache = get_scan_cache()
+                cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
+                cached_generated_at = scan_cache.get("generated_at_kst")
                 target_date = current_target_date
                 is_stale_cache = False
                 direction_groups = st.session_state.scan_direction_groups
@@ -346,7 +396,7 @@ if is_filtered and allow_scan:
                 if column.button(
                     f"{label} {count}",
                     key=f"{market_cache_key}_{direction}_summary",
-                    use_container_width=True,
+                    width="stretch",
                     type=button_type,
                 ):
                     st.session_state.scan_focus = direction
@@ -382,10 +432,10 @@ if is_filtered and allow_scan:
                                 "합계(억)": [item.get("total_5d", "-") for item in focus_items],
                             }
                         )
-                        st.dataframe(focus_df, use_container_width=True)
+                        st.dataframe(focus_df, width="stretch")
                     else:
                         st.caption("현재 조건에 맞는 종목이 없습니다.")
-                    if st.button("목록 닫기", key=f"{market_cache_key}_{focus}_close", use_container_width=True):
+                    if st.button("목록 닫기", key=f"{market_cache_key}_{focus}_close", width="stretch"):
                         st.session_state.scan_focus = None
                         if focus == "mixed":
                             st.session_state.scan_display_filter = "all"
@@ -422,7 +472,7 @@ def on_change():
         st.session_state.current_idx = display_names.index(st.session_state.stock_selector)
 
 c1, c2, c3 = st.columns([1, 2, 1])
-with c1: st.button("⬅️ 이전", on_click=go_prev, use_container_width=True)
+with c1: st.button("⬅️ 이전", on_click=go_prev, width="stretch")
 with c2:
     if st.session_state.current_idx >= len(display_names):
         st.session_state.current_idx = 0
@@ -430,7 +480,7 @@ with c2:
         st.session_state.current_idx = 0
     selected_disp = st.selectbox("종목 선택", display_names, index=st.session_state.current_idx, 
                                  key="stock_selector", on_change=on_change, label_visibility="collapsed")
-with c3: st.button("다음 ➡️", on_click=go_next, use_container_width=True)
+with c3: st.button("다음 ➡️", on_click=go_next, width="stretch")
 
 selected_real = name_lookup.get(selected_disp, selected_disp)
 selected_ticker = target_dict.get(selected_real, "005930")
@@ -481,7 +531,7 @@ if token:
         )
         st.plotly_chart(
             fig,
-            use_container_width=True,
+            width="stretch",
             config={
                 "scrollZoom": True,
                 "doubleClick": False,
@@ -508,7 +558,7 @@ if token:
         except AttributeError:
             styled_df = res_df.style.format("{:,.1f}").applymap(color_net_buy, subset=['외인_일일', '기관_일일', '외인_누적', '기관_누적'])
             
-        st.dataframe(styled_df, use_container_width=True)
+        st.dataframe(styled_df, width="stretch")
 
         info_parts = [
             f"수급 기준일 {format_target_date(cached_market.get('target_date') if is_filtered and allow_scan else get_target_date())}",

@@ -62,25 +62,44 @@ def cache_has_target_date(cache: Dict, target_date: str) -> bool:
 
 
 def get_stock_lists():
+    fallback_k200 = {"삼성전자": "005930"}
+    fallback_kq150 = {"에코프로": "086520"}
+    fallback_all = {**fallback_k200, **fallback_kq150}
+
     try:
         import FinanceDataReader as fdr
-
-        df_kospi = fdr.StockListing("KOSPI")
-        df_kosdaq = fdr.StockListing("KOSDAQ")
-        df_all = fdr.StockListing("KRX")
-
-        mcap_col = "Marcap" if "Marcap" in df_kospi.columns else "MarCap"
-
-        k200 = df_kospi.sort_values(mcap_col, ascending=False).head(200)
-        kq150 = df_kosdaq.sort_values(mcap_col, ascending=False).head(150)
-
-        dict_k200 = dict(zip(k200["Name"], k200["Code"]))
-        dict_kq150 = dict(zip(kq150["Name"], kq150["Code"]))
-        dict_all = dict(zip(df_all["Name"], df_all["Code"]))
-
-        return dict_k200, dict_kq150, dict_all
     except Exception:
-        return {"삼성전자": "005930"}, {"에코프로": "086520"}, {"삼성전자": "005930"}
+        return fallback_k200, fallback_kq150, fallback_all
+
+    def to_symbol_map(df: pd.DataFrame, limit: Optional[int] = None) -> Dict[str, str]:
+        if df.empty:
+            return {}
+        mcap_col = "Marcap" if "Marcap" in df.columns else "MarCap" if "MarCap" in df.columns else None
+        ranked = df.sort_values(mcap_col, ascending=False) if mcap_col else df
+        if limit:
+            ranked = ranked.head(limit)
+        return dict(zip(ranked["Name"], ranked["Code"]))
+
+    dict_k200 = fallback_k200
+    dict_kq150 = fallback_kq150
+    dict_all = fallback_all
+
+    try:
+        dict_k200 = to_symbol_map(fdr.StockListing("KOSPI"), limit=200) or fallback_k200
+    except Exception:
+        pass
+
+    try:
+        dict_kq150 = to_symbol_map(fdr.StockListing("KOSDAQ"), limit=150) or fallback_kq150
+    except Exception:
+        pass
+
+    try:
+        dict_all = to_symbol_map(fdr.StockListing("KRX")) or {**dict_k200, **dict_kq150}
+    except Exception:
+        dict_all = {**dict_k200, **dict_kq150}
+
+    return dict_k200, dict_kq150, dict_all
 
 
 def get_access_token(app_key: str, app_secret: str) -> Optional[str]:
@@ -176,6 +195,7 @@ def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app
         direction_groups[direction].append(
             {
                 "name": name,
+                "ticker": ticker,
                 "label": label,
                 **flow,
             }
@@ -211,6 +231,7 @@ def build_scan_cache(app_key: str, app_secret: str):
             "kospi200": {
                 "label": "KOSPI 200",
                 "market_size": len(dict_k200),
+                "symbols": dict_k200,
                 "filtered_map": kospi_filtered,
                 "summary": kospi_summary,
                 "direction_groups": kospi_groups,
@@ -219,6 +240,7 @@ def build_scan_cache(app_key: str, app_secret: str):
             "kosdaq150": {
                 "label": "KOSDAQ 150",
                 "market_size": len(dict_kq150),
+                "symbols": dict_kq150,
                 "filtered_map": kosdaq_filtered,
                 "summary": kosdaq_summary,
                 "direction_groups": kosdaq_groups,

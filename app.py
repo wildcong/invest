@@ -272,14 +272,6 @@ def get_display_entries(direction_groups, display_filter):
         entries.extend(direction_groups.get(key, []))
     return entries
 
-
-def get_display_filter_options():
-    return {
-        "all": "전체",
-        "buy": "매수↑↑",
-        "sell": "매도↓↓",
-    }
-
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
     summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
@@ -312,6 +304,7 @@ def scan_all_stocks(stock_dict, token):
             )
                 
         progress_bar.progress((i + 1) / total)
+        # ⚡ 0.05초로 복구
         time.sleep(0.05)
         
     status_text.empty()
@@ -323,11 +316,14 @@ def scan_all_stocks(stock_dict, token):
 # ==========================================
 # 3. 메인 화면: 탭 및 컨트롤러 구성
 # ==========================================
+# 🎨 폰트 사이즈 조정 (H2 태그 적용)
 st.markdown("<h2 style='margin-bottom: 20px;'>📊 쌍끌이 수급 스캐너</h2>", unsafe_allow_html=True)
 
+# 3개 리스트 다시 받아옴
 dict_k200, dict_kq150, dict_all = get_stock_lists() 
 token = get_access_token()
 
+# 🎯 3개 탭 유지
 market_mode = st.radio(
     "분석 시장 선택", 
     ["🔵 KOSPI 200", "🟢 KOSDAQ 150", "🔍 전체 종목 (개별 검색)"], 
@@ -356,6 +352,7 @@ if 'scan_display_filter' not in st.session_state:
 if 'scan_focus' not in st.session_state:
     st.session_state.scan_focus = None
 
+# 🎯 탭에 따른 로직 분리 (전체 종목 탭은 스캔 불가 처리)
 if market_mode == "🔵 KOSPI 200":
     target_dict = dict_k200
     allow_scan = True
@@ -380,6 +377,7 @@ current_target_date = get_target_date()
 h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
 
 with h_col1:
+    # 코스피/코스닥일 때만 스캐너 필터 활성화
     if allow_scan:
         filter_col, summary_col = st.columns([1.05, 1.95])
         with filter_col:
@@ -457,7 +455,7 @@ if is_filtered and allow_scan:
             st.caption(f"집계 {scan_summary['scanned']}/{len(target_dict)} | 기준일 {format_target_date(target_date)}")
             refresh_disabled = not bool(token)
             refresh_help = "KIS 토큰이 없어서 지금은 새로 집계할 수 없습니다." if refresh_disabled else "실시간으로 다시 스캔해서 목록을 갱신합니다."
-            controls_col, selector_col = st.columns([1.05, 1.2])
+            controls_col = st.columns([1])[0]
             with controls_col:
                 if st.button(
                     "새로 집계",
@@ -487,20 +485,6 @@ if is_filtered and allow_scan:
                     cached_generated_at = scan_cache.get("generated_at_kst")
                     target_date = current_target_date
                     direction_groups = st.session_state.scan_direction_groups
-            with selector_col:
-                filter_options = get_display_filter_options()
-                selector_state_key = f"{market_cache_key}_display_filter_label"
-                expected_filter_label = filter_options[st.session_state.scan_display_filter]
-                if st.session_state.get(selector_state_key) != expected_filter_label:
-                    st.session_state[selector_state_key] = expected_filter_label
-                selected_filter_label = st.selectbox(
-                    "표시 종목",
-                    options=list(filter_options.values()),
-                    label_visibility="collapsed",
-                    key=selector_state_key,
-                )
-                reverse_filter_labels = {v: k for k, v in filter_options.items()}
-                st.session_state.scan_display_filter = reverse_filter_labels[selected_filter_label]
 
             buy_col, mixed_col, sell_col = st.columns(3)
             for direction, column in zip(
@@ -522,9 +506,12 @@ if is_filtered and allow_scan:
                     type=button_type,
                     help=f"{label} 종목 보기",
                 ):
-                    st.session_state.scan_focus = direction
-                    if direction in ("buy", "sell"):
-                        st.session_state.scan_display_filter = direction
+                    if st.session_state.scan_focus == direction:
+                        st.session_state.scan_focus = None
+                        st.session_state.scan_display_filter = "all"
+                    else:
+                        st.session_state.scan_focus = direction
+                        st.session_state.scan_display_filter = direction if direction in ("buy", "sell") else "all"
 
             focus = st.session_state.scan_focus
             if focus:

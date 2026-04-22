@@ -1,8 +1,10 @@
+
 name: Prefetch Scan Cache
 
 on:
   schedule:
-    - cron: "30 7 * * 1-5"
+    - cron: "43 7 * * 1-5"
+    - cron: "5 8 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -10,6 +12,9 @@ permissions:
 
 jobs:
   prefetch:
+    concurrency:
+      group: prefetch-scan-cache
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     environment: KIS_APP_KEY
 

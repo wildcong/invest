@@ -1,7 +1,8 @@
+
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 import pandas as pd
 import requests
@@ -9,6 +10,10 @@ import requests
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
+AUTO_REFRESH_PRIMARY_HOUR = 16
+AUTO_REFRESH_PRIMARY_MINUTE = 43
+AUTO_REFRESH_BACKUP_HOUR = 17
+AUTO_REFRESH_BACKUP_MINUTE = 5
 
 
 def get_target_date(now: Optional[datetime] = None) -> str:
@@ -20,6 +25,40 @@ def get_target_date(now: Optional[datetime] = None) -> str:
     while target.weekday() > 4:
         target -= timedelta(days=1)
     return target.strftime("%Y%m%d")
+
+
+def get_auto_refresh_window(now: Optional[datetime] = None):
+    current = now.astimezone(KST) if now else datetime.now(KST)
+    primary = current.replace(
+        hour=AUTO_REFRESH_PRIMARY_HOUR,
+        minute=AUTO_REFRESH_PRIMARY_MINUTE,
+        second=0,
+        microsecond=0,
+    )
+    backup = current.replace(
+        hour=AUTO_REFRESH_BACKUP_HOUR,
+        minute=AUTO_REFRESH_BACKUP_MINUTE,
+        second=0,
+        microsecond=0,
+    )
+    return primary, backup
+
+
+def cache_has_target_date(cache: Dict, target_date: str) -> bool:
+    if cache.get("target_date") != target_date:
+        return False
+
+    markets = cache.get("markets", {})
+    required_keys = ("kospi200", "kosdaq150")
+    for market_key in required_keys:
+        market = markets.get(market_key, {})
+        if market.get("target_date") != target_date:
+            return False
+        if not market.get("summary"):
+            return False
+        if not market.get("direction_groups"):
+            return False
+    return True
 
 
 def get_stock_lists():
@@ -102,7 +141,7 @@ def classify_5day_direction(df: pd.DataFrame) -> str:
     return "mixed"
 
 
-def summarize_5day_flow(df: pd.DataFrame) -> dict[str, float]:
+def summarize_5day_flow(df: pd.DataFrame) -> Dict[str, float]:
     foreign_5d = round(df["F_억"].tail(5).sum(), 1)
     inst_5d = round(df["I_억"].tail(5).sum(), 1)
     total_5d = round(foreign_5d + inst_5d, 1)
@@ -115,7 +154,7 @@ def summarize_5day_flow(df: pd.DataFrame) -> dict[str, float]:
     }
 
 
-def scan_market(stock_dict: dict[str, str], access_token: str, app_key: str, app_secret: str):
+def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app_secret: str):
     filtered_map = {}
     summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
     direction_groups = {"buy": [], "mixed": [], "sell": []}
@@ -160,13 +199,14 @@ def build_scan_cache(app_key: str, app_secret: str):
 
     dict_k200, dict_kq150, _ = get_stock_lists()
     generated_at = datetime.now(KST)
+    target_date = get_target_date(generated_at)
 
     kospi_filtered, kospi_summary, kospi_groups = scan_market(dict_k200, access_token, app_key, app_secret)
     kosdaq_filtered, kosdaq_summary, kosdaq_groups = scan_market(dict_kq150, access_token, app_key, app_secret)
 
     return {
         "generated_at_kst": generated_at.isoformat(),
-        "target_date": get_target_date(generated_at),
+        "target_date": target_date,
         "markets": {
             "kospi200": {
                 "label": "KOSPI 200",
@@ -174,6 +214,7 @@ def build_scan_cache(app_key: str, app_secret: str):
                 "filtered_map": kospi_filtered,
                 "summary": kospi_summary,
                 "direction_groups": kospi_groups,
+                "target_date": target_date,
             },
             "kosdaq150": {
                 "label": "KOSDAQ 150",
@@ -181,6 +222,7 @@ def build_scan_cache(app_key: str, app_secret: str):
                 "filtered_map": kosdaq_filtered,
                 "summary": kosdaq_summary,
                 "direction_groups": kosdaq_groups,
+                "target_date": target_date,
             },
         },
     }

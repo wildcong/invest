@@ -1,6 +1,6 @@
 import os
 
-from scanner import CACHE_FILE, build_scan_cache, save_scan_cache
+from scanner import CACHE_FILE, build_scan_cache, cache_has_target_date, get_target_date, load_scan_cache, save_scan_cache
 
 
 def main():
@@ -9,6 +9,12 @@ def main():
 
     if not app_key or not app_secret:
         raise SystemExit("환경변수 KIS_APP_KEY / KIS_APP_SECRET 이 필요합니다.")
+
+    target_date = get_target_date()
+    existing_cache = load_scan_cache()
+    if cache_has_target_date(existing_cache, target_date):
+        print(f"scan cache already up to date for {target_date}; skipping rebuild")
+        return
 
     cache = build_scan_cache(app_key, app_secret)
     save_scan_cache(cache)
@@ -25,3 +31,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

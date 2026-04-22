@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -10,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 import streamlit.components.v1 as components
 from scanner import classify_5day_direction, get_investor_data as fetch_investor_data
 from scanner import get_access_token as fetch_access_token
+from scanner import get_auto_refresh_window
 from scanner import get_stock_lists as fetch_stock_lists
 from scanner import get_target_date, load_scan_cache, save_scan_cache, summarize_5day_flow
 
@@ -179,6 +181,48 @@ def format_target_date(date_str):
     except ValueError:
         return date_str
 
+
+def get_refresh_notice(cached_target_date, expected_target_date, generated_at, now=None):
+    current = now.astimezone(KST) if now else datetime.now(KST)
+    primary_time, backup_time = get_auto_refresh_window(current)
+
+    if not generated_at:
+        return (
+            "warning",
+            f"자동 갱신 캐시가 아직 없습니다. {primary_time.strftime('%H:%M')} 이후 새로 집계 또는 자동 갱신을 확인해 주세요.",
+        )
+
+    if cached_target_date == expected_target_date:
+        return (
+            "success",
+            f"자동 갱신 {format_cache_timestamp(generated_at)} | 기준일 {format_target_date(cached_target_date)}",
+        )
+
+    if current.weekday() > 4:
+        return (
+            "info",
+            f"현재 기준일은 {format_target_date(expected_target_date)} 이고, 마지막 자동 갱신은 {format_cache_timestamp(generated_at)} 입니다.",
+        )
+
+    if current < primary_time:
+        return (
+            "info",
+            f"오늘 자동 갱신은 {primary_time.strftime('%H:%M')} 1차, {backup_time.strftime('%H:%M')} 2차로 예정되어 있습니다.",
+        )
+
+    if current < backup_time:
+        return (
+            "warning",
+            f"1차 자동 갱신({primary_time.strftime('%H:%M')})이 아직 반영되지 않았습니다. "
+            f"{backup_time.strftime('%H:%M')} 백업 실행을 기다리거나 수동 새로 집계를 눌러주세요.",
+        )
+
+    return (
+        "error",
+        f"오늘 자동 갱신이 아직 반영되지 않았습니다. "
+        f"마지막 자동 갱신 {format_cache_timestamp(generated_at)} | 기준일 {format_target_date(cached_target_date)}",
+    )
+
 def build_direction_groups(target_dict, filtered_map, cached_groups=None):
     groups = {"buy": [], "mixed": [], "sell": []}
 
@@ -268,7 +312,6 @@ def scan_all_stocks(stock_dict, token):
             )
                 
         progress_bar.progress((i + 1) / total)
-        # ⚡ 0.05초로 복구
         time.sleep(0.05)
         
     status_text.empty()
@@ -280,14 +323,11 @@ def scan_all_stocks(stock_dict, token):
 # ==========================================
 # 3. 메인 화면: 탭 및 컨트롤러 구성
 # ==========================================
-# 🎨 폰트 사이즈 조정 (H2 태그 적용)
 st.markdown("<h2 style='margin-bottom: 20px;'>📊 쌍끌이 수급 스캐너</h2>", unsafe_allow_html=True)
 
-# 3개 리스트 다시 받아옴
 dict_k200, dict_kq150, dict_all = get_stock_lists() 
 token = get_access_token()
 
-# 🎯 3개 탭 유지
 market_mode = st.radio(
     "분석 시장 선택", 
     ["🔵 KOSPI 200", "🟢 KOSDAQ 150", "🔍 전체 종목 (개별 검색)"], 
@@ -316,7 +356,6 @@ if 'scan_display_filter' not in st.session_state:
 if 'scan_focus' not in st.session_state:
     st.session_state.scan_focus = None
 
-# 🎯 탭에 따른 로직 분리 (전체 종목 탭은 스캔 불가 처리)
 if market_mode == "🔵 KOSPI 200":
     target_dict = dict_k200
     allow_scan = True
@@ -341,7 +380,6 @@ current_target_date = get_target_date()
 h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
 
 with h_col1:
-    # 코스피/코스닥일 때만 스캐너 필터 활성화
     if allow_scan:
         filter_col, summary_col = st.columns([1.05, 1.95])
         with filter_col:
@@ -395,26 +433,28 @@ if is_filtered and allow_scan:
     if market_mode in ("🔵 KOSPI 200", "🟢 KOSDAQ 150"):
         scan_summary = st.session_state.scan_summary
         direction_groups = st.session_state.scan_direction_groups
-        target_date = cached_market.get("target_date") or current_target_date
-        is_stale_cache = bool(cached_market.get("target_date")) and cached_market.get("target_date") != current_target_date
+        cached_target_date = cached_market.get("target_date") or scan_cache.get("target_date")
+        target_date = cached_target_date or current_target_date
+        notice_level, notice_message = get_refresh_notice(
+            cached_target_date,
+            current_target_date,
+            cached_generated_at,
+        )
         focus_meta = {
             "buy": ("쌍끌이매수", "secondary"),
             "mixed": ("엇갈림", "secondary"),
             "sell": ("쌍끌이매도", "secondary"),
         }
         with summary_placeholder.container():
-            if is_stale_cache:
-                st.warning(
-                    f"자동 갱신 캐시 기준일이 {format_target_date(target_date)} 입니다. "
-                    f"현재 기준일 {format_target_date(current_target_date)} 과 달라서 수동 새로 집계를 권장합니다."
-                )
-            st.caption(
-                f"집계 {scan_summary['scanned']}/{len(target_dict)} | "
-                f"기준일 {format_target_date(target_date)}"
-            )
-            st.caption(
-                f"자동 갱신 {format_cache_timestamp(cached_generated_at)}"
-            )
+            if notice_level == "success":
+                st.caption(notice_message)
+            elif notice_level == "info":
+                st.info(notice_message)
+            elif notice_level == "warning":
+                st.warning(notice_message)
+            else:
+                st.error(notice_message)
+            st.caption(f"집계 {scan_summary['scanned']}/{len(target_dict)} | 기준일 {format_target_date(target_date)}")
             refresh_disabled = not bool(token)
             refresh_help = "KIS 토큰이 없어서 지금은 새로 집계할 수 없습니다." if refresh_disabled else "실시간으로 다시 스캔해서 목록을 갱신합니다."
             controls_col, selector_col = st.columns([1.05, 1.2])
@@ -446,7 +486,6 @@ if is_filtered and allow_scan:
                     cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
                     cached_generated_at = scan_cache.get("generated_at_kst")
                     target_date = current_target_date
-                    is_stale_cache = False
                     direction_groups = st.session_state.scan_direction_groups
             with selector_col:
                 filter_options = get_display_filter_options()

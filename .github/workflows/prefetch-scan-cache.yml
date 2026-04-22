@@ -43,4 +43,5 @@ jobs:
           git add data/scan_cache.json
           git diff --cached --quiet && exit 0
           git commit -m "Update daily scan cache"
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main

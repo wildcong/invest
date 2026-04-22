@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import time
 from datetime import datetime, timedelta, timezone
+import streamlit.components.v1 as components
 from scanner import classify_5day_direction, get_investor_data as fetch_investor_data
 from scanner import get_access_token as fetch_access_token
 from scanner import get_stock_lists as fetch_stock_lists
@@ -26,6 +27,8 @@ st.markdown(
     <style>
     div[data-testid="stPlotlyChart"] {
         touch-action: pan-y pinch-zoom !important;
+        -webkit-user-select: none;
+        user-select: none;
     }
     div[data-testid="stPlotlyChart"] .js-plotly-plot,
     div[data-testid="stPlotlyChart"] .plot-container,
@@ -33,9 +36,59 @@ st.markdown(
     div[data-testid="stPlotlyChart"] .svg-container {
         touch-action: pan-y pinch-zoom !important;
     }
+    div[data-testid="stPlotlyChart"] .modebar {
+        z-index: 1 !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
+)
+components.html(
+    """
+    <script>
+    (() => {
+      const parentWindow = window.parent;
+      const parentDoc = parentWindow.document;
+      const isAndroid = /Android/i.test(parentWindow.navigator.userAgent || "");
+      if (!isAndroid) return;
+
+      const bindSingleTouchScroll = () => {
+        parentDoc
+          .querySelectorAll('div[data-testid="stPlotlyChart"]')
+          .forEach((chart) => {
+            if (chart.dataset.androidScrollBound === "1") return;
+            chart.dataset.androidScrollBound = "1";
+
+            const stopSingleTouchCapture = (event) => {
+              if ((event.touches && event.touches.length === 1) || event.type === "touchend") {
+                event.stopPropagation();
+              }
+            };
+
+            ["touchstart", "touchmove", "touchend"].forEach((eventName) => {
+              chart.addEventListener(eventName, stopSingleTouchCapture, {
+                capture: true,
+                passive: true,
+              });
+            });
+          });
+      };
+
+      bindSingleTouchScroll();
+
+      if (parentWindow.__plotlyAndroidTouchObserver) {
+        parentWindow.__plotlyAndroidTouchObserver.disconnect();
+      }
+
+      parentWindow.__plotlyAndroidTouchObserver = new MutationObserver(bindSingleTouchScroll);
+      parentWindow.__plotlyAndroidTouchObserver.observe(parentDoc.body, {
+        childList: true,
+        subtree: true,
+      });
+    })();
+    </script>
+    """,
+    height=0,
 )
 
 # ==========================================
@@ -174,6 +227,14 @@ def get_display_entries(direction_groups, display_filter):
     for key in active_keys:
         entries.extend(direction_groups.get(key, []))
     return entries
+
+
+def get_display_filter_options():
+    return {
+        "all": "전체",
+        "buy": "매수↑↑",
+        "sell": "매도↓↓",
+    }
 
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
@@ -356,35 +417,52 @@ if is_filtered and allow_scan:
             )
             refresh_disabled = not bool(token)
             refresh_help = "KIS 토큰이 없어서 지금은 새로 집계할 수 없습니다." if refresh_disabled else "실시간으로 다시 스캔해서 목록을 갱신합니다."
-            if st.button(
-                "새로 집계",
-                key=f"{market_cache_key}_refresh_scan",
-                width="stretch",
-                disabled=refresh_disabled,
-                help=refresh_help,
-            ):
-                filtered_map, scan_summary, direction_groups = scan_all_stocks(target_dict, token)
-                st.session_state.filtered_map = filtered_map
-                st.session_state.scan_summary = scan_summary
-                st.session_state.scan_direction_groups = build_direction_groups(
-                    target_dict,
-                    filtered_map,
-                    direction_groups,
+            controls_col, selector_col = st.columns([1.05, 1.2])
+            with controls_col:
+                if st.button(
+                    "새로 집계",
+                    key=f"{market_cache_key}_refresh_scan",
+                    width="stretch",
+                    disabled=refresh_disabled,
+                    help=refresh_help,
+                ):
+                    filtered_map, scan_summary, direction_groups = scan_all_stocks(target_dict, token)
+                    st.session_state.filtered_map = filtered_map
+                    st.session_state.scan_summary = scan_summary
+                    st.session_state.scan_direction_groups = build_direction_groups(
+                        target_dict,
+                        filtered_map,
+                        direction_groups,
+                    )
+                    persist_market_scan_cache(
+                        market_cache_key,
+                        market_cache_label,
+                        len(target_dict),
+                        filtered_map,
+                        scan_summary,
+                        direction_groups,
+                    )
+                    scan_cache = get_scan_cache()
+                    cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
+                    cached_generated_at = scan_cache.get("generated_at_kst")
+                    target_date = current_target_date
+                    is_stale_cache = False
+                    direction_groups = st.session_state.scan_direction_groups
+            with selector_col:
+                filter_options = get_display_filter_options()
+                selector_state_key = f"{market_cache_key}_display_filter_label"
+                expected_filter_label = filter_options[st.session_state.scan_display_filter]
+                if st.session_state.get(selector_state_key) != expected_filter_label:
+                    st.session_state[selector_state_key] = expected_filter_label
+                selected_filter_label = st.selectbox(
+                    "표시 종목",
+                    options=list(filter_options.values()),
+                    label_visibility="collapsed",
+                    key=selector_state_key,
                 )
-                persist_market_scan_cache(
-                    market_cache_key,
-                    market_cache_label,
-                    len(target_dict),
-                    filtered_map,
-                    scan_summary,
-                    direction_groups,
-                )
-                scan_cache = get_scan_cache()
-                cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
-                cached_generated_at = scan_cache.get("generated_at_kst")
-                target_date = current_target_date
-                is_stale_cache = False
-                direction_groups = st.session_state.scan_direction_groups
+                reverse_filter_labels = {v: k for k, v in filter_options.items()}
+                st.session_state.scan_display_filter = reverse_filter_labels[selected_filter_label]
+
             buy_col, mixed_col, sell_col = st.columns(3)
             for direction, column in zip(
                 ["buy", "mixed", "sell"],
@@ -392,31 +470,22 @@ if is_filtered and allow_scan:
             ):
                 count = scan_summary[direction]
                 label, default_type = focus_meta[direction]
+                short_label = {
+                    "buy": "매수",
+                    "mixed": "엇갈림",
+                    "sell": "매도",
+                }[direction]
                 button_type = "primary" if st.session_state.scan_focus == direction else default_type
                 if column.button(
-                    f"{label} {count}",
+                    f"{short_label} {count}",
                     key=f"{market_cache_key}_{direction}_summary",
                     width="stretch",
                     type=button_type,
+                    help=f"{label} 종목 보기",
                 ):
                     st.session_state.scan_focus = direction
                     if direction in ("buy", "sell"):
                         st.session_state.scan_display_filter = direction
-
-            filter_labels = {
-                "all": "전체 보기",
-                "buy": "쌍끌이매수만",
-                "sell": "쌍끌이매도만",
-            }
-            reverse_filter_labels = {v: k for k, v in filter_labels.items()}
-            selected_filter_label = st.radio(
-                "표시 종목",
-                list(filter_labels.values()),
-                index=list(filter_labels.keys()).index(st.session_state.scan_display_filter),
-                horizontal=True,
-                label_visibility="collapsed",
-            )
-            st.session_state.scan_display_filter = reverse_filter_labels[selected_filter_label]
 
             focus = st.session_state.scan_focus
             if focus:
@@ -536,6 +605,15 @@ if token:
                 "scrollZoom": True,
                 "doubleClick": False,
                 "displaylogo": False,
+                "modeBarButtonsToRemove": [
+                    "zoom2d",
+                    "pan2d",
+                    "select2d",
+                    "lasso2d",
+                    "zoomIn2d",
+                    "zoomOut2d",
+                    "autoScale2d",
+                ],
             },
         )
 

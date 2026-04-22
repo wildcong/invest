@@ -1,38 +1,3007 @@
 {
-  "generated_at_kst": null,
-  "target_date": null,
+  "generated_at_kst": "2026-04-22T18:51:00.475529+09:00",
+  "target_date": "20260422",
   "markets": {
     "kospi200": {
       "label": "KOSPI 200",
-      "market_size": 0,
-      "filtered_map": {},
-      "direction_groups": {
-        "buy": [],
-        "mixed": [],
-        "sell": []
+      "market_size": 200,
+      "filtered_map": {
+        "SK하이닉스": "SK하이닉스 (↓↓)",
+        "삼성전자우": "삼성전자우 (↑↑)",
+        "LG에너지솔루션": "LG에너지솔루션 (↑↑)",
+        "SK스퀘어": "SK스퀘어 (↑↑)",
+        "두산에너빌리티": "두산에너빌리티 (↑↑)",
+        "한화에어로스페이스": "한화에어로스페이스 (↓↓)",
+        "기아": "기아 (↑↑)",
+        "KB금융": "KB금융 (↓↓)",
+        "삼성SDI": "삼성SDI (↑↑)",
+        "한화오션": "한화오션 (↑↑)",
+        "HD현대일렉트릭": "HD현대일렉트릭 (↑↑)",
+        "미래에셋증권": "미래에셋증권 (↓↓)",
+        "NAVER": "NAVER (↓↓)",
+        "POSCO홀딩스": "POSCO홀딩스 (↑↑)",
+        "삼성중공업": "삼성중공업 (↑↑)",
+        "한미반도체": "한미반도체 (↓↓)",
+        "LG화학": "LG화학 (↑↑)",
+        "현대로템": "현대로템 (↑↑)",
+        "포스코퓨처엠": "포스코퓨처엠 (↑↑)",
+        "SK이노베이션": "SK이노베이션 (↑↑)",
+        "LG전자": "LG전자 (↑↑)",
+        "카카오": "카카오 (↓↓)",
+        "삼성화재": "삼성화재 (↓↓)",
+        "현대건설": "현대건설 (↓↓)",
+        "한국항공우주": "한국항공우주 (↓↓)",
+        "기업은행": "기업은행 (↓↓)",
+        "KT": "KT (↓↓)",
+        "한국금융지주": "한국금융지주 (↓↓)",
+        "삼성에피스홀딩스": "삼성에피스홀딩스 (↓↓)",
+        "대우건설": "대우건설 (↓↓)",
+        "이수페타시스": "이수페타시스 (↑↑)",
+        "키움증권": "키움증권 (↓↓)",
+        "하이브": "하이브 (↓↓)",
+        "삼양식품": "삼양식품 (↑↑)",
+        "삼성E&A": "삼성E&A (↓↓)",
+        "한화": "한화 (↑↑)",
+        "대한항공": "대한항공 (↑↑)",
+        "현대차2우B": "현대차2우B (↓↓)",
+        "한국타이어앤테크놀로지": "한국타이어앤테크놀로지 (↓↓)",
+        "LG디스플레이": "LG디스플레이 (↑↑)",
+        "카카오페이": "카카오페이 (↑↑)",
+        "유한양행": "유한양행 (↓↓)",
+        "두산밥캣": "두산밥캣 (↑↑)",
+        "LG씨엔에스": "LG씨엔에스 (↑↑)",
+        "한미약품": "한미약품 (↓↓)",
+        "CJ": "CJ (↑↑)",
+        "두산로보틱스": "두산로보틱스 (↓↓)",
+        "현대차우": "현대차우 (↓↓)",
+        "에코프로머티": "에코프로머티 (↑↑)",
+        "JB금융지주": "JB금융지주 (↓↓)",
+        "포스코DX": "포스코DX (↓↓)",
+        "대덕전자": "대덕전자 (↑↑)",
+        "SKC": "SKC (↑↑)",
+        "넷마블": "넷마블 (↓↓)",
+        "한화비전": "한화비전 (↓↓)",
+        "이수스페셜티케미컬": "이수스페셜티케미컬 (↑↑)",
+        "대한조선": "대한조선 (↓↓)",
+        "강원랜드": "강원랜드 (↓↓)",
+        "신세계": "신세계 (↑↑)",
+        "GS건설": "GS건설 (↑↑)",
+        "금호석유화학": "금호석유화학 (↑↑)",
+        "SK바이오사이언스": "SK바이오사이언스 (↓↓)",
+        "롯데에너지머티리얼즈": "롯데에너지머티리얼즈 (↑↑)",
+        "두산퓨얼셀": "두산퓨얼셀 (↑↑)",
+        "팬오션": "팬오션 (↑↑)",
+        "미래에셋생명": "미래에셋생명 (↑↑)",
+        "가온전선": "가온전선 (↑↑)",
+        "씨에스윈드": "씨에스윈드 (↑↑)",
+        "미래에셋증권2우B": "미래에셋증권2우B (↑↑)",
+        "HJ중공업": "HJ중공업 (↑↑)",
+        "한미사이언스": "한미사이언스 (↓↓)",
+        "달바글로벌": "달바글로벌 (↑↑)",
+        "케이뱅크": "케이뱅크 (↑↑)",
+        "HL만도": "HL만도 (↓↓)",
+        "코스맥스": "코스맥스 (↑↑)",
+        "한국앤컴퍼니": "한국앤컴퍼니 (↓↓)",
+        "현대지에프홀딩스": "현대지에프홀딩스 (↓↓)",
+        "현대위아": "현대위아 (↓↓)",
+        "SK아이이테크놀로지": "SK아이이테크놀로지 (↓↓)",
+        "농심": "농심 (↓↓)",
+        "두산우": "두산우 (↑↑)",
+        "제일기획": "제일기획 (↓↓)",
+        "호텔신라": "호텔신라 (↑↑)",
+        "다우기술": "다우기술 (↓↓)",
+        "SK리츠": "SK리츠 (↑↑)",
+        "LX인터내셔널": "LX인터내셔널 (↑↑)",
+        "HD현대에너지솔루션": "HD현대에너지솔루션 (↑↑)",
+        "시프트업": "시프트업 (↑↑)",
+        "SNT다이내믹스": "SNT다이내믹스 (↑↑)",
+        "SK이터닉스": "SK이터닉스 (↓↓)"
       },
       "summary": {
-        "buy": 0,
-        "mixed": 0,
-        "sell": 0,
-        "scanned": 0
-      }
+        "buy": 49,
+        "mixed": 110,
+        "sell": 41,
+        "scanned": 200
+      },
+      "direction_groups": {
+        "buy": [
+          {
+            "name": "두산에너빌리티",
+            "label": "두산에너빌리티 (↑↑)",
+            "foreign_5d": 4207.4,
+            "inst_5d": 922.0,
+            "total_5d": 5129.4,
+            "strength": 5129.4
+          },
+          {
+            "name": "삼성SDI",
+            "label": "삼성SDI (↑↑)",
+            "foreign_5d": 1006.7,
+            "inst_5d": 2193.2,
+            "total_5d": 3199.9,
+            "strength": 3199.9
+          },
+          {
+            "name": "LG에너지솔루션",
+            "label": "LG에너지솔루션 (↑↑)",
+            "foreign_5d": 1244.7,
+            "inst_5d": 1523.6,
+            "total_5d": 2768.3,
+            "strength": 2768.3
+          },
+          {
+            "name": "이수페타시스",
+            "label": "이수페타시스 (↑↑)",
+            "foreign_5d": 2129.0,
+            "inst_5d": 126.7,
+            "total_5d": 2255.7,
+            "strength": 2255.7
+          },
+          {
+            "name": "POSCO홀딩스",
+            "label": "POSCO홀딩스 (↑↑)",
+            "foreign_5d": 780.4,
+            "inst_5d": 1395.6,
+            "total_5d": 2176.0,
+            "strength": 2176.0
+          },
+          {
+            "name": "한화오션",
+            "label": "한화오션 (↑↑)",
+            "foreign_5d": 1076.8,
+            "inst_5d": 1004.2,
+            "total_5d": 2081.0,
+            "strength": 2081.0
+          },
+          {
+            "name": "삼성전자우",
+            "label": "삼성전자우 (↑↑)",
+            "foreign_5d": 1873.6,
+            "inst_5d": 68.8,
+            "total_5d": 1942.4,
+            "strength": 1942.4
+          },
+          {
+            "name": "LG디스플레이",
+            "label": "LG디스플레이 (↑↑)",
+            "foreign_5d": 1347.7,
+            "inst_5d": 22.0,
+            "total_5d": 1369.7,
+            "strength": 1369.7
+          },
+          {
+            "name": "SK이노베이션",
+            "label": "SK이노베이션 (↑↑)",
+            "foreign_5d": 851.5,
+            "inst_5d": 388.4,
+            "total_5d": 1239.9,
+            "strength": 1239.9
+          },
+          {
+            "name": "포스코퓨처엠",
+            "label": "포스코퓨처엠 (↑↑)",
+            "foreign_5d": 858.5,
+            "inst_5d": 369.2,
+            "total_5d": 1227.7,
+            "strength": 1227.7
+          },
+          {
+            "name": "삼성중공업",
+            "label": "삼성중공업 (↑↑)",
+            "foreign_5d": 309.6,
+            "inst_5d": 875.2,
+            "total_5d": 1184.8,
+            "strength": 1184.8
+          },
+          {
+            "name": "현대로템",
+            "label": "현대로템 (↑↑)",
+            "foreign_5d": 829.6,
+            "inst_5d": 211.8,
+            "total_5d": 1041.4,
+            "strength": 1041.4
+          },
+          {
+            "name": "LG전자",
+            "label": "LG전자 (↑↑)",
+            "foreign_5d": 429.4,
+            "inst_5d": 275.8,
+            "total_5d": 705.2,
+            "strength": 705.2
+          },
+          {
+            "name": "대덕전자",
+            "label": "대덕전자 (↑↑)",
+            "foreign_5d": 535.6,
+            "inst_5d": 134.5,
+            "total_5d": 670.1,
+            "strength": 670.1
+          },
+          {
+            "name": "SK스퀘어",
+            "label": "SK스퀘어 (↑↑)",
+            "foreign_5d": 266.4,
+            "inst_5d": 372.1,
+            "total_5d": 638.5,
+            "strength": 638.5
+          },
+          {
+            "name": "호텔신라",
+            "label": "호텔신라 (↑↑)",
+            "foreign_5d": 264.5,
+            "inst_5d": 371.4,
+            "total_5d": 635.9,
+            "strength": 635.9
+          },
+          {
+            "name": "달바글로벌",
+            "label": "달바글로벌 (↑↑)",
+            "foreign_5d": 515.6,
+            "inst_5d": 96.4,
+            "total_5d": 612.0,
+            "strength": 612.0
+          },
+          {
+            "name": "LG화학",
+            "label": "LG화학 (↑↑)",
+            "foreign_5d": 507.3,
+            "inst_5d": 55.6,
+            "total_5d": 562.9,
+            "strength": 562.9
+          },
+          {
+            "name": "두산퓨얼셀",
+            "label": "두산퓨얼셀 (↑↑)",
+            "foreign_5d": 399.2,
+            "inst_5d": 100.0,
+            "total_5d": 499.2,
+            "strength": 499.2
+          },
+          {
+            "name": "HJ중공업",
+            "label": "HJ중공업 (↑↑)",
+            "foreign_5d": 409.4,
+            "inst_5d": 67.6,
+            "total_5d": 477.0,
+            "strength": 477.0
+          },
+          {
+            "name": "롯데에너지머티리얼즈",
+            "label": "롯데에너지머티리얼즈 (↑↑)",
+            "foreign_5d": 100.4,
+            "inst_5d": 360.2,
+            "total_5d": 460.6,
+            "strength": 460.6
+          },
+          {
+            "name": "에코프로머티",
+            "label": "에코프로머티 (↑↑)",
+            "foreign_5d": 120.5,
+            "inst_5d": 309.8,
+            "total_5d": 430.3,
+            "strength": 430.3
+          },
+          {
+            "name": "삼양식품",
+            "label": "삼양식품 (↑↑)",
+            "foreign_5d": 294.3,
+            "inst_5d": 130.8,
+            "total_5d": 425.1,
+            "strength": 425.1
+          },
+          {
+            "name": "기아",
+            "label": "기아 (↑↑)",
+            "foreign_5d": 187.7,
+            "inst_5d": 232.0,
+            "total_5d": 419.7,
+            "strength": 419.7
+          },
+          {
+            "name": "HD현대일렉트릭",
+            "label": "HD현대일렉트릭 (↑↑)",
+            "foreign_5d": 410.0,
+            "inst_5d": 7.3,
+            "total_5d": 417.3,
+            "strength": 417.3
+          },
+          {
+            "name": "이수스페셜티케미컬",
+            "label": "이수스페셜티케미컬 (↑↑)",
+            "foreign_5d": 276.7,
+            "inst_5d": 120.7,
+            "total_5d": 397.4,
+            "strength": 397.4
+          },
+          {
+            "name": "HD현대에너지솔루션",
+            "label": "HD현대에너지솔루션 (↑↑)",
+            "foreign_5d": 143.6,
+            "inst_5d": 179.0,
+            "total_5d": 322.6,
+            "strength": 322.6
+          },
+          {
+            "name": "씨에스윈드",
+            "label": "씨에스윈드 (↑↑)",
+            "foreign_5d": 114.1,
+            "inst_5d": 201.3,
+            "total_5d": 315.4,
+            "strength": 315.4
+          },
+          {
+            "name": "SKC",
+            "label": "SKC (↑↑)",
+            "foreign_5d": 245.0,
+            "inst_5d": 3.5,
+            "total_5d": 248.5,
+            "strength": 248.5
+          },
+          {
+            "name": "한화",
+            "label": "한화 (↑↑)",
+            "foreign_5d": 213.8,
+            "inst_5d": 23.4,
+            "total_5d": 237.2,
+            "strength": 237.2
+          },
+          {
+            "name": "가온전선",
+            "label": "가온전선 (↑↑)",
+            "foreign_5d": 45.8,
+            "inst_5d": 167.6,
+            "total_5d": 213.4,
+            "strength": 213.4
+          },
+          {
+            "name": "LG씨엔에스",
+            "label": "LG씨엔에스 (↑↑)",
+            "foreign_5d": 164.6,
+            "inst_5d": 32.7,
+            "total_5d": 197.3,
+            "strength": 197.3
+          },
+          {
+            "name": "코스맥스",
+            "label": "코스맥스 (↑↑)",
+            "foreign_5d": 80.6,
+            "inst_5d": 95.9,
+            "total_5d": 176.5,
+            "strength": 176.5
+          },
+          {
+            "name": "대한항공",
+            "label": "대한항공 (↑↑)",
+            "foreign_5d": 154.5,
+            "inst_5d": 20.1,
+            "total_5d": 174.6,
+            "strength": 174.6
+          },
+          {
+            "name": "두산밥캣",
+            "label": "두산밥캣 (↑↑)",
+            "foreign_5d": 80.0,
+            "inst_5d": 32.4,
+            "total_5d": 112.4,
+            "strength": 112.4
+          },
+          {
+            "name": "신세계",
+            "label": "신세계 (↑↑)",
+            "foreign_5d": 82.7,
+            "inst_5d": 23.7,
+            "total_5d": 106.4,
+            "strength": 106.4
+          },
+          {
+            "name": "CJ",
+            "label": "CJ (↑↑)",
+            "foreign_5d": 69.2,
+            "inst_5d": 36.0,
+            "total_5d": 105.2,
+            "strength": 105.2
+          },
+          {
+            "name": "두산우",
+            "label": "두산우 (↑↑)",
+            "foreign_5d": 49.5,
+            "inst_5d": 48.9,
+            "total_5d": 98.4,
+            "strength": 98.4
+          },
+          {
+            "name": "GS건설",
+            "label": "GS건설 (↑↑)",
+            "foreign_5d": 67.5,
+            "inst_5d": 23.1,
+            "total_5d": 90.6,
+            "strength": 90.6
+          },
+          {
+            "name": "카카오페이",
+            "label": "카카오페이 (↑↑)",
+            "foreign_5d": 29.4,
+            "inst_5d": 50.2,
+            "total_5d": 79.6,
+            "strength": 79.6
+          },
+          {
+            "name": "금호석유화학",
+            "label": "금호석유화학 (↑↑)",
+            "foreign_5d": 58.8,
+            "inst_5d": 8.5,
+            "total_5d": 67.3,
+            "strength": 67.3
+          },
+          {
+            "name": "SNT다이내믹스",
+            "label": "SNT다이내믹스 (↑↑)",
+            "foreign_5d": 32.0,
+            "inst_5d": 35.0,
+            "total_5d": 67.0,
+            "strength": 67.0
+          },
+          {
+            "name": "미래에셋생명",
+            "label": "미래에셋생명 (↑↑)",
+            "foreign_5d": 17.8,
+            "inst_5d": 48.1,
+            "total_5d": 65.9,
+            "strength": 65.9
+          },
+          {
+            "name": "팬오션",
+            "label": "팬오션 (↑↑)",
+            "foreign_5d": 1.7,
+            "inst_5d": 50.7,
+            "total_5d": 52.4,
+            "strength": 52.4
+          },
+          {
+            "name": "LX인터내셔널",
+            "label": "LX인터내셔널 (↑↑)",
+            "foreign_5d": 33.8,
+            "inst_5d": 12.1,
+            "total_5d": 45.9,
+            "strength": 45.9
+          },
+          {
+            "name": "케이뱅크",
+            "label": "케이뱅크 (↑↑)",
+            "foreign_5d": 29.8,
+            "inst_5d": 13.9,
+            "total_5d": 43.7,
+            "strength": 43.7
+          },
+          {
+            "name": "SK리츠",
+            "label": "SK리츠 (↑↑)",
+            "foreign_5d": 0.9,
+            "inst_5d": 34.3,
+            "total_5d": 35.2,
+            "strength": 35.2
+          },
+          {
+            "name": "미래에셋증권2우B",
+            "label": "미래에셋증권2우B (↑↑)",
+            "foreign_5d": 19.9,
+            "inst_5d": 3.7,
+            "total_5d": 23.6,
+            "strength": 23.6
+          },
+          {
+            "name": "시프트업",
+            "label": "시프트업 (↑↑)",
+            "foreign_5d": 11.1,
+            "inst_5d": 11.4,
+            "total_5d": 22.5,
+            "strength": 22.5
+          }
+        ],
+        "mixed": [
+          {
+            "name": "삼성전자",
+            "label": "삼성전자",
+            "foreign_5d": -9358.6,
+            "inst_5d": 6452.7,
+            "total_5d": -2905.9,
+            "strength": 15811.3
+          },
+          {
+            "name": "HD현대중공업",
+            "label": "HD현대중공업",
+            "foreign_5d": -3428.0,
+            "inst_5d": 3914.7,
+            "total_5d": 486.7,
+            "strength": 7342.7
+          },
+          {
+            "name": "현대차",
+            "label": "현대차",
+            "foreign_5d": -1152.4,
+            "inst_5d": 928.0,
+            "total_5d": -224.4,
+            "strength": 2080.4
+          },
+          {
+            "name": "LG이노텍",
+            "label": "LG이노텍",
+            "foreign_5d": -1025.5,
+            "inst_5d": 1008.4,
+            "total_5d": -17.1,
+            "strength": 2033.9
+          },
+          {
+            "name": "LS ELECTRIC",
+            "label": "LS ELECTRIC",
+            "foreign_5d": -1426.0,
+            "inst_5d": 216.7,
+            "total_5d": -1209.3,
+            "strength": 1642.7
+          },
+          {
+            "name": "한국전력",
+            "label": "한국전력",
+            "foreign_5d": -1040.5,
+            "inst_5d": 444.0,
+            "total_5d": -596.5,
+            "strength": 1484.5
+          },
+          {
+            "name": "HD한국조선해양",
+            "label": "HD한국조선해양",
+            "foreign_5d": -367.9,
+            "inst_5d": 905.8,
+            "total_5d": 537.9,
+            "strength": 1273.7
+          },
+          {
+            "name": "LIG디펜스앤에어로스페이스",
+            "label": "LIG디펜스앤에어로스페이스",
+            "foreign_5d": 931.2,
+            "inst_5d": -296.1,
+            "total_5d": 635.1,
+            "strength": 1227.3
+          },
+          {
+            "name": "한화엔진",
+            "label": "한화엔진",
+            "foreign_5d": -385.5,
+            "inst_5d": 803.5,
+            "total_5d": 418.0,
+            "strength": 1189.0
+          },
+          {
+            "name": "HD현대마린솔루션",
+            "label": "HD현대마린솔루션",
+            "foreign_5d": -510.8,
+            "inst_5d": 545.5,
+            "total_5d": 34.7,
+            "strength": 1056.3
+          },
+          {
+            "name": "두산",
+            "label": "두산",
+            "foreign_5d": -498.0,
+            "inst_5d": 489.9,
+            "total_5d": -8.1,
+            "strength": 987.9
+          },
+          {
+            "name": "DB손해보험",
+            "label": "DB손해보험",
+            "foreign_5d": 488.6,
+            "inst_5d": -442.5,
+            "total_5d": 46.1,
+            "strength": 931.1
+          },
+          {
+            "name": "DB하이텍",
+            "label": "DB하이텍",
+            "foreign_5d": -500.3,
+            "inst_5d": 424.6,
+            "total_5d": -75.7,
+            "strength": 924.9
+          },
+          {
+            "name": "코웨이",
+            "label": "코웨이",
+            "foreign_5d": -461.4,
+            "inst_5d": 441.1,
+            "total_5d": -20.3,
+            "strength": 902.5
+          },
+          {
+            "name": "OCI홀딩스",
+            "label": "OCI홀딩스",
+            "foreign_5d": -602.0,
+            "inst_5d": 223.0,
+            "total_5d": -379.0,
+            "strength": 825.0
+          },
+          {
+            "name": "삼성에스디에스",
+            "label": "삼성에스디에스",
+            "foreign_5d": -729.0,
+            "inst_5d": 92.6,
+            "total_5d": -636.4,
+            "strength": 821.6
+          },
+          {
+            "name": "에이피알",
+            "label": "에이피알",
+            "foreign_5d": 467.1,
+            "inst_5d": -353.9,
+            "total_5d": 113.2,
+            "strength": 821.0
+          },
+          {
+            "name": "엘앤에프",
+            "label": "엘앤에프",
+            "foreign_5d": -123.2,
+            "inst_5d": 690.9,
+            "total_5d": 567.7,
+            "strength": 814.1
+          },
+          {
+            "name": "한화솔루션",
+            "label": "한화솔루션",
+            "foreign_5d": -85.1,
+            "inst_5d": 722.6,
+            "total_5d": 637.5,
+            "strength": 807.7
+          },
+          {
+            "name": "효성중공업",
+            "label": "효성중공업",
+            "foreign_5d": 413.8,
+            "inst_5d": -330.0,
+            "total_5d": 83.8,
+            "strength": 743.8
+          },
+          {
+            "name": "NC",
+            "label": "NC",
+            "foreign_5d": -251.6,
+            "inst_5d": 437.7,
+            "total_5d": 186.1,
+            "strength": 689.3
+          },
+          {
+            "name": "KCC",
+            "label": "KCC",
+            "foreign_5d": 184.4,
+            "inst_5d": -480.3,
+            "total_5d": -295.9,
+            "strength": 664.7
+          },
+          {
+            "name": "삼성물산",
+            "label": "삼성물산",
+            "foreign_5d": 211.5,
+            "inst_5d": -415.3,
+            "total_5d": -203.8,
+            "strength": 626.8
+          },
+          {
+            "name": "HD건설기계",
+            "label": "HD건설기계",
+            "foreign_5d": -158.7,
+            "inst_5d": 432.7,
+            "total_5d": 274.0,
+            "strength": 591.4
+          },
+          {
+            "name": "포스코인터내셔널",
+            "label": "포스코인터내셔널",
+            "foreign_5d": 559.8,
+            "inst_5d": -8.1,
+            "total_5d": 551.7,
+            "strength": 567.9
+          },
+          {
+            "name": "삼성바이오로직스",
+            "label": "삼성바이오로직스",
+            "foreign_5d": 26.3,
+            "inst_5d": -539.8,
+            "total_5d": -513.5,
+            "strength": 566.1
+          },
+          {
+            "name": "한솔케미칼",
+            "label": "한솔케미칼",
+            "foreign_5d": 207.8,
+            "inst_5d": -340.1,
+            "total_5d": -132.3,
+            "strength": 547.9
+          },
+          {
+            "name": "셀트리온",
+            "label": "셀트리온",
+            "foreign_5d": 353.1,
+            "inst_5d": -179.7,
+            "total_5d": 173.4,
+            "strength": 532.8
+          },
+          {
+            "name": "KT&G",
+            "label": "KT&G",
+            "foreign_5d": 264.2,
+            "inst_5d": -244.7,
+            "total_5d": 19.5,
+            "strength": 508.9
+          },
+          {
+            "name": "SK텔레콤",
+            "label": "SK텔레콤",
+            "foreign_5d": -417.7,
+            "inst_5d": 83.9,
+            "total_5d": -333.8,
+            "strength": 501.6
+          },
+          {
+            "name": "SK",
+            "label": "SK",
+            "foreign_5d": 442.5,
+            "inst_5d": -36.2,
+            "total_5d": 406.3,
+            "strength": 478.7
+          },
+          {
+            "name": "한화시스템",
+            "label": "한화시스템",
+            "foreign_5d": 211.1,
+            "inst_5d": -247.1,
+            "total_5d": -36.0,
+            "strength": 458.2
+          },
+          {
+            "name": "HD현대마린엔진",
+            "label": "HD현대마린엔진",
+            "foreign_5d": -119.4,
+            "inst_5d": 330.9,
+            "total_5d": 211.5,
+            "strength": 450.3
+          },
+          {
+            "name": "HD현대",
+            "label": "HD현대",
+            "foreign_5d": 87.6,
+            "inst_5d": -362.4,
+            "total_5d": -274.8,
+            "strength": 450.0
+          },
+          {
+            "name": "삼성전기",
+            "label": "삼성전기",
+            "foreign_5d": 116.5,
+            "inst_5d": -331.7,
+            "total_5d": -215.2,
+            "strength": 448.2
+          },
+          {
+            "name": "삼성생명",
+            "label": "삼성생명",
+            "foreign_5d": 228.2,
+            "inst_5d": -195.9,
+            "total_5d": 32.3,
+            "strength": 424.1
+          },
+          {
+            "name": "우리금융지주",
+            "label": "우리금융지주",
+            "foreign_5d": -335.1,
+            "inst_5d": 57.8,
+            "total_5d": -277.3,
+            "strength": 392.9
+          },
+          {
+            "name": "STX엔진",
+            "label": "STX엔진",
+            "foreign_5d": -100.3,
+            "inst_5d": 259.2,
+            "total_5d": 158.9,
+            "strength": 359.5
+          },
+          {
+            "name": "현대모비스",
+            "label": "현대모비스",
+            "foreign_5d": 209.3,
+            "inst_5d": -146.8,
+            "total_5d": 62.5,
+            "strength": 356.1
+          },
+          {
+            "name": "신한지주",
+            "label": "신한지주",
+            "foreign_5d": -107.8,
+            "inst_5d": 246.1,
+            "total_5d": 138.3,
+            "strength": 353.9
+          },
+          {
+            "name": "아모레퍼시픽",
+            "label": "아모레퍼시픽",
+            "foreign_5d": 105.1,
+            "inst_5d": -229.8,
+            "total_5d": -124.7,
+            "strength": 334.9
+          },
+          {
+            "name": "롯데쇼핑",
+            "label": "롯데쇼핑",
+            "foreign_5d": -41.7,
+            "inst_5d": 257.6,
+            "total_5d": 215.9,
+            "strength": 299.3
+          },
+          {
+            "name": "하나금융지주",
+            "label": "하나금융지주",
+            "foreign_5d": -217.6,
+            "inst_5d": 76.2,
+            "total_5d": -141.4,
+            "strength": 293.8
+          },
+          {
+            "name": "코스모신소재",
+            "label": "코스모신소재",
+            "foreign_5d": 286.4,
+            "inst_5d": -1.6,
+            "total_5d": 284.8,
+            "strength": 288.0
+          },
+          {
+            "name": "맥쿼리인프라",
+            "label": "맥쿼리인프라",
+            "foreign_5d": 220.7,
+            "inst_5d": -60.8,
+            "total_5d": 159.9,
+            "strength": 281.5
+          },
+          {
+            "name": "DN오토모티브",
+            "label": "DN오토모티브",
+            "foreign_5d": -135.8,
+            "inst_5d": 144.4,
+            "total_5d": 8.6,
+            "strength": 280.2
+          },
+          {
+            "name": "S-Oil",
+            "label": "S-Oil",
+            "foreign_5d": 66.7,
+            "inst_5d": -211.5,
+            "total_5d": -144.8,
+            "strength": 278.2
+          },
+          {
+            "name": "한온시스템",
+            "label": "한온시스템",
+            "foreign_5d": -224.5,
+            "inst_5d": 25.6,
+            "total_5d": -198.9,
+            "strength": 250.1
+          },
+          {
+            "name": "GS",
+            "label": "GS",
+            "foreign_5d": 129.9,
+            "inst_5d": -115.6,
+            "total_5d": 14.3,
+            "strength": 245.5
+          },
+          {
+            "name": "iM금융지주",
+            "label": "iM금융지주",
+            "foreign_5d": -87.9,
+            "inst_5d": 135.1,
+            "total_5d": 47.2,
+            "strength": 223.0
+          },
+          {
+            "name": "현대글로비스",
+            "label": "현대글로비스",
+            "foreign_5d": -175.3,
+            "inst_5d": 46.0,
+            "total_5d": -129.3,
+            "strength": 221.3
+          },
+          {
+            "name": "이마트",
+            "label": "이마트",
+            "foreign_5d": 170.4,
+            "inst_5d": -42.0,
+            "total_5d": 128.4,
+            "strength": 212.4
+          },
+          {
+            "name": "대한전선",
+            "label": "대한전선",
+            "foreign_5d": -184.4,
+            "inst_5d": 24.4,
+            "total_5d": -160.0,
+            "strength": 208.8
+          },
+          {
+            "name": "DL이앤씨",
+            "label": "DL이앤씨",
+            "foreign_5d": 135.1,
+            "inst_5d": -66.8,
+            "total_5d": 68.3,
+            "strength": 201.9
+          },
+          {
+            "name": "풍산",
+            "label": "풍산",
+            "foreign_5d": 142.2,
+            "inst_5d": -51.6,
+            "total_5d": 90.6,
+            "strength": 193.8
+          },
+          {
+            "name": "현대제철",
+            "label": "현대제철",
+            "foreign_5d": 49.1,
+            "inst_5d": -141.7,
+            "total_5d": -92.6,
+            "strength": 190.8
+          },
+          {
+            "name": "산일전기",
+            "label": "산일전기",
+            "foreign_5d": 141.0,
+            "inst_5d": -49.4,
+            "total_5d": 91.6,
+            "strength": 190.4
+          },
+          {
+            "name": "LS",
+            "label": "LS",
+            "foreign_5d": -167.0,
+            "inst_5d": 15.4,
+            "total_5d": -151.6,
+            "strength": 182.4
+          },
+          {
+            "name": "고려아연",
+            "label": "고려아연",
+            "foreign_5d": -31.3,
+            "inst_5d": 149.7,
+            "total_5d": 118.4,
+            "strength": 181.0
+          },
+          {
+            "name": "한전기술",
+            "label": "한전기술",
+            "foreign_5d": -120.5,
+            "inst_5d": 57.2,
+            "total_5d": -63.3,
+            "strength": 177.7
+          },
+          {
+            "name": "크래프톤",
+            "label": "크래프톤",
+            "foreign_5d": -87.7,
+            "inst_5d": 83.7,
+            "total_5d": -4.0,
+            "strength": 171.4
+          },
+          {
+            "name": "SK바이오팜",
+            "label": "SK바이오팜",
+            "foreign_5d": -155.3,
+            "inst_5d": 14.7,
+            "total_5d": -140.6,
+            "strength": 170.0
+          },
+          {
+            "name": "현대해상",
+            "label": "현대해상",
+            "foreign_5d": 66.8,
+            "inst_5d": -101.0,
+            "total_5d": -34.2,
+            "strength": 167.8
+          },
+          {
+            "name": "메리츠금융지주",
+            "label": "메리츠금융지주",
+            "foreign_5d": -101.2,
+            "inst_5d": 65.2,
+            "total_5d": -36.0,
+            "strength": 166.4
+          },
+          {
+            "name": "CJ제일제당",
+            "label": "CJ제일제당",
+            "foreign_5d": 135.5,
+            "inst_5d": -22.2,
+            "total_5d": 113.3,
+            "strength": 157.7
+          },
+          {
+            "name": "코오롱인더",
+            "label": "코오롱인더",
+            "foreign_5d": -7.6,
+            "inst_5d": 147.1,
+            "total_5d": 139.5,
+            "strength": 154.7
+          },
+          {
+            "name": "삼성카드",
+            "label": "삼성카드",
+            "foreign_5d": 64.5,
+            "inst_5d": -89.4,
+            "total_5d": -24.9,
+            "strength": 153.9
+          },
+          {
+            "name": "한국콜마",
+            "label": "한국콜마",
+            "foreign_5d": -12.9,
+            "inst_5d": 140.4,
+            "total_5d": 127.5,
+            "strength": 153.3
+          },
+          {
+            "name": "일진전기",
+            "label": "일진전기",
+            "foreign_5d": 138.2,
+            "inst_5d": -14.2,
+            "total_5d": 124.0,
+            "strength": 152.4
+          },
+          {
+            "name": "오리온",
+            "label": "오리온",
+            "foreign_5d": 68.4,
+            "inst_5d": -82.5,
+            "total_5d": -14.1,
+            "strength": 150.9
+          },
+          {
+            "name": "CJ대한통운",
+            "label": "CJ대한통운",
+            "foreign_5d": 48.6,
+            "inst_5d": -102.3,
+            "total_5d": -53.7,
+            "strength": 150.9
+          },
+          {
+            "name": "코리아써키트",
+            "label": "코리아써키트",
+            "foreign_5d": -66.3,
+            "inst_5d": 76.9,
+            "total_5d": 10.6,
+            "strength": 143.2
+          },
+          {
+            "name": "BNK금융지주",
+            "label": "BNK금융지주",
+            "foreign_5d": -110.2,
+            "inst_5d": 32.4,
+            "total_5d": -77.8,
+            "strength": 142.6
+          },
+          {
+            "name": "HMM",
+            "label": "HMM",
+            "foreign_5d": 52.1,
+            "inst_5d": -82.4,
+            "total_5d": -30.3,
+            "strength": 134.5
+          },
+          {
+            "name": "삼성증권",
+            "label": "삼성증권",
+            "foreign_5d": 61.9,
+            "inst_5d": -72.3,
+            "total_5d": -10.4,
+            "strength": 134.2
+          },
+          {
+            "name": "LG생활건강",
+            "label": "LG생활건강",
+            "foreign_5d": 78.3,
+            "inst_5d": -55.3,
+            "total_5d": 23.0,
+            "strength": 133.6
+          },
+          {
+            "name": "롯데케미칼",
+            "label": "롯데케미칼",
+            "foreign_5d": -57.0,
+            "inst_5d": 67.0,
+            "total_5d": 10.0,
+            "strength": 124.0
+          },
+          {
+            "name": "효성티앤씨",
+            "label": "효성티앤씨",
+            "foreign_5d": 86.7,
+            "inst_5d": -37.2,
+            "total_5d": 49.5,
+            "strength": 123.9
+          },
+          {
+            "name": "효성",
+            "label": "효성",
+            "foreign_5d": 55.2,
+            "inst_5d": -60.0,
+            "total_5d": -4.8,
+            "strength": 115.2
+          },
+          {
+            "name": "F&F",
+            "label": "F&F",
+            "foreign_5d": 51.1,
+            "inst_5d": -63.0,
+            "total_5d": -11.9,
+            "strength": 114.1
+          },
+          {
+            "name": "에스엘",
+            "label": "에스엘",
+            "foreign_5d": -93.8,
+            "inst_5d": 3.4,
+            "total_5d": -90.4,
+            "strength": 97.2
+          },
+          {
+            "name": "한국카본",
+            "label": "한국카본",
+            "foreign_5d": 14.5,
+            "inst_5d": -77.0,
+            "total_5d": -62.5,
+            "strength": 91.5
+          },
+          {
+            "name": "LG",
+            "label": "LG",
+            "foreign_5d": 83.4,
+            "inst_5d": -6.5,
+            "total_5d": 76.9,
+            "strength": 89.9
+          },
+          {
+            "name": "코리안리",
+            "label": "코리안리",
+            "foreign_5d": 33.6,
+            "inst_5d": -52.5,
+            "total_5d": -18.9,
+            "strength": 86.1
+          },
+          {
+            "name": "현대오토에버",
+            "label": "현대오토에버",
+            "foreign_5d": -23.0,
+            "inst_5d": 61.3,
+            "total_5d": 38.3,
+            "strength": 84.3
+          },
+          {
+            "name": "BGF리테일",
+            "label": "BGF리테일",
+            "foreign_5d": 43.9,
+            "inst_5d": -34.3,
+            "total_5d": 9.6,
+            "strength": 78.2
+          },
+          {
+            "name": "한진칼",
+            "label": "한진칼",
+            "foreign_5d": 34.1,
+            "inst_5d": -41.2,
+            "total_5d": -7.1,
+            "strength": 75.3
+          },
+          {
+            "name": "LG유플러스",
+            "label": "LG유플러스",
+            "foreign_5d": -57.2,
+            "inst_5d": 16.0,
+            "total_5d": -41.2,
+            "strength": 73.2
+          },
+          {
+            "name": "롯데지주",
+            "label": "롯데지주",
+            "foreign_5d": 16.4,
+            "inst_5d": -56.8,
+            "total_5d": -40.4,
+            "strength": 73.2
+          },
+          {
+            "name": "GS리테일",
+            "label": "GS리테일",
+            "foreign_5d": 53.9,
+            "inst_5d": -8.9,
+            "total_5d": 45.0,
+            "strength": 62.8
+          },
+          {
+            "name": "영원무역홀딩스",
+            "label": "영원무역홀딩스",
+            "foreign_5d": -25.5,
+            "inst_5d": 29.9,
+            "total_5d": 4.4,
+            "strength": 55.4
+          },
+          {
+            "name": "한전KPS",
+            "label": "한전KPS",
+            "foreign_5d": -28.4,
+            "inst_5d": 26.8,
+            "total_5d": -1.6,
+            "strength": 55.2
+          },
+          {
+            "name": "카카오뱅크",
+            "label": "카카오뱅크",
+            "foreign_5d": 34.1,
+            "inst_5d": -18.3,
+            "total_5d": 15.8,
+            "strength": 52.4
+          },
+          {
+            "name": "세아베스틸지주",
+            "label": "세아베스틸지주",
+            "foreign_5d": -10.8,
+            "inst_5d": 41.3,
+            "total_5d": 30.5,
+            "strength": 52.1
+          },
+          {
+            "name": "현대엘리베이터",
+            "label": "현대엘리베이터",
+            "foreign_5d": -20.6,
+            "inst_5d": 27.7,
+            "total_5d": 7.1,
+            "strength": 48.3
+          },
+          {
+            "name": "NH투자증권",
+            "label": "NH투자증권",
+            "foreign_5d": -17.4,
+            "inst_5d": 30.0,
+            "total_5d": 12.6,
+            "strength": 47.4
+          },
+          {
+            "name": "한올바이오파마",
+            "label": "한올바이오파마",
+            "foreign_5d": -42.3,
+            "inst_5d": 4.5,
+            "total_5d": -37.8,
+            "strength": 46.8
+          },
+          {
+            "name": "대신증권",
+            "label": "대신증권",
+            "foreign_5d": -14.3,
+            "inst_5d": 24.7,
+            "total_5d": 10.4,
+            "strength": 39.0
+          },
+          {
+            "name": "더존비즈온",
+            "label": "더존비즈온",
+            "foreign_5d": -28.0,
+            "inst_5d": 8.5,
+            "total_5d": -19.5,
+            "strength": 36.5
+          },
+          {
+            "name": "현대백화점",
+            "label": "현대백화점",
+            "foreign_5d": -29.2,
+            "inst_5d": 6.9,
+            "total_5d": -22.3,
+            "strength": 36.1
+          },
+          {
+            "name": "미스토홀딩스",
+            "label": "미스토홀딩스",
+            "foreign_5d": 0.9,
+            "inst_5d": -35.1,
+            "total_5d": -34.2,
+            "strength": 36.0
+          },
+          {
+            "name": "한화생명",
+            "label": "한화생명",
+            "foreign_5d": 12.1,
+            "inst_5d": -22.0,
+            "total_5d": -9.9,
+            "strength": 34.1
+          },
+          {
+            "name": "서울보증보험",
+            "label": "서울보증보험",
+            "foreign_5d": 12.6,
+            "inst_5d": -21.5,
+            "total_5d": -8.9,
+            "strength": 34.1
+          },
+          {
+            "name": "아모레퍼시픽홀딩스",
+            "label": "아모레퍼시픽홀딩스",
+            "foreign_5d": 4.5,
+            "inst_5d": -26.9,
+            "total_5d": -22.4,
+            "strength": 31.4
+          },
+          {
+            "name": "한국가스공사",
+            "label": "한국가스공사",
+            "foreign_5d": 12.6,
+            "inst_5d": -17.6,
+            "total_5d": -5.0,
+            "strength": 30.2
+          },
+          {
+            "name": "SK가스",
+            "label": "SK가스",
+            "foreign_5d": -5.8,
+            "inst_5d": 15.4,
+            "total_5d": 9.6,
+            "strength": 21.2
+          },
+          {
+            "name": "에스원",
+            "label": "에스원",
+            "foreign_5d": -11.2,
+            "inst_5d": 2.6,
+            "total_5d": -8.6,
+            "strength": 13.8
+          },
+          {
+            "name": "동서",
+            "label": "동서",
+            "foreign_5d": -7.4,
+            "inst_5d": 5.6,
+            "total_5d": -1.8,
+            "strength": 13.0
+          },
+          {
+            "name": "신영증권",
+            "label": "신영증권",
+            "foreign_5d": 9.8,
+            "inst_5d": -2.0,
+            "total_5d": 7.8,
+            "strength": 11.8
+          },
+          {
+            "name": "영원무역",
+            "label": "영원무역",
+            "foreign_5d": 0.0,
+            "inst_5d": -9.9,
+            "total_5d": -9.9,
+            "strength": 9.9
+          }
+        ],
+        "sell": [
+          {
+            "name": "SK하이닉스",
+            "label": "SK하이닉스 (↓↓)",
+            "foreign_5d": -7278.6,
+            "inst_5d": -1436.6,
+            "total_5d": -8715.2,
+            "strength": 8715.2
+          },
+          {
+            "name": "한화에어로스페이스",
+            "label": "한화에어로스페이스 (↓↓)",
+            "foreign_5d": -2607.0,
+            "inst_5d": -689.7,
+            "total_5d": -3296.7,
+            "strength": 3296.7
+          },
+          {
+            "name": "하이브",
+            "label": "하이브 (↓↓)",
+            "foreign_5d": -991.2,
+            "inst_5d": -565.8,
+            "total_5d": -1557.0,
+            "strength": 1557.0
+          },
+          {
+            "name": "현대건설",
+            "label": "현대건설 (↓↓)",
+            "foreign_5d": -627.8,
+            "inst_5d": -591.2,
+            "total_5d": -1219.0,
+            "strength": 1219.0
+          },
+          {
+            "name": "NAVER",
+            "label": "NAVER (↓↓)",
+            "foreign_5d": -745.9,
+            "inst_5d": -445.5,
+            "total_5d": -1191.4,
+            "strength": 1191.4
+          },
+          {
+            "name": "대우건설",
+            "label": "대우건설 (↓↓)",
+            "foreign_5d": -600.6,
+            "inst_5d": -510.0,
+            "total_5d": -1110.6,
+            "strength": 1110.6
+          },
+          {
+            "name": "삼성E&A",
+            "label": "삼성E&A (↓↓)",
+            "foreign_5d": -945.6,
+            "inst_5d": -132.7,
+            "total_5d": -1078.3,
+            "strength": 1078.3
+          },
+          {
+            "name": "미래에셋증권",
+            "label": "미래에셋증권 (↓↓)",
+            "foreign_5d": -870.2,
+            "inst_5d": -206.9,
+            "total_5d": -1077.1,
+            "strength": 1077.1
+          },
+          {
+            "name": "한국항공우주",
+            "label": "한국항공우주 (↓↓)",
+            "foreign_5d": -280.6,
+            "inst_5d": -476.0,
+            "total_5d": -756.6,
+            "strength": 756.6
+          },
+          {
+            "name": "한미약품",
+            "label": "한미약품 (↓↓)",
+            "foreign_5d": -417.3,
+            "inst_5d": -286.2,
+            "total_5d": -703.5,
+            "strength": 703.5
+          },
+          {
+            "name": "키움증권",
+            "label": "키움증권 (↓↓)",
+            "foreign_5d": -399.2,
+            "inst_5d": -282.4,
+            "total_5d": -681.6,
+            "strength": 681.6
+          },
+          {
+            "name": "카카오",
+            "label": "카카오 (↓↓)",
+            "foreign_5d": -320.4,
+            "inst_5d": -113.9,
+            "total_5d": -434.3,
+            "strength": 434.3
+          },
+          {
+            "name": "현대위아",
+            "label": "현대위아 (↓↓)",
+            "foreign_5d": -228.7,
+            "inst_5d": -114.3,
+            "total_5d": -343.0,
+            "strength": 343.0
+          },
+          {
+            "name": "한미반도체",
+            "label": "한미반도체 (↓↓)",
+            "foreign_5d": -70.0,
+            "inst_5d": -255.8,
+            "total_5d": -325.8,
+            "strength": 325.8
+          },
+          {
+            "name": "삼성화재",
+            "label": "삼성화재 (↓↓)",
+            "foreign_5d": -38.9,
+            "inst_5d": -284.4,
+            "total_5d": -323.3,
+            "strength": 323.3
+          },
+          {
+            "name": "현대차2우B",
+            "label": "현대차2우B (↓↓)",
+            "foreign_5d": -48.1,
+            "inst_5d": -260.6,
+            "total_5d": -308.7,
+            "strength": 308.7
+          },
+          {
+            "name": "한국금융지주",
+            "label": "한국금융지주 (↓↓)",
+            "foreign_5d": -170.0,
+            "inst_5d": -81.1,
+            "total_5d": -251.1,
+            "strength": 251.1
+          },
+          {
+            "name": "KB금융",
+            "label": "KB금융 (↓↓)",
+            "foreign_5d": -18.4,
+            "inst_5d": -199.8,
+            "total_5d": -218.2,
+            "strength": 218.2
+          },
+          {
+            "name": "삼성에피스홀딩스",
+            "label": "삼성에피스홀딩스 (↓↓)",
+            "foreign_5d": -127.8,
+            "inst_5d": -72.2,
+            "total_5d": -200.0,
+            "strength": 200.0
+          },
+          {
+            "name": "KT",
+            "label": "KT (↓↓)",
+            "foreign_5d": -0.5,
+            "inst_5d": -170.8,
+            "total_5d": -171.3,
+            "strength": 171.3
+          },
+          {
+            "name": "포스코DX",
+            "label": "포스코DX (↓↓)",
+            "foreign_5d": -71.0,
+            "inst_5d": -78.3,
+            "total_5d": -149.3,
+            "strength": 149.3
+          },
+          {
+            "name": "기업은행",
+            "label": "기업은행 (↓↓)",
+            "foreign_5d": -105.9,
+            "inst_5d": -25.1,
+            "total_5d": -131.0,
+            "strength": 131.0
+          },
+          {
+            "name": "유한양행",
+            "label": "유한양행 (↓↓)",
+            "foreign_5d": -66.2,
+            "inst_5d": -47.6,
+            "total_5d": -113.8,
+            "strength": 113.8
+          },
+          {
+            "name": "한화비전",
+            "label": "한화비전 (↓↓)",
+            "foreign_5d": -75.2,
+            "inst_5d": -36.5,
+            "total_5d": -111.7,
+            "strength": 111.7
+          },
+          {
+            "name": "SK이터닉스",
+            "label": "SK이터닉스 (↓↓)",
+            "foreign_5d": -33.9,
+            "inst_5d": -73.6,
+            "total_5d": -107.5,
+            "strength": 107.5
+          },
+          {
+            "name": "HL만도",
+            "label": "HL만도 (↓↓)",
+            "foreign_5d": -64.1,
+            "inst_5d": -33.6,
+            "total_5d": -97.7,
+            "strength": 97.7
+          },
+          {
+            "name": "현대지에프홀딩스",
+            "label": "현대지에프홀딩스 (↓↓)",
+            "foreign_5d": -55.6,
+            "inst_5d": -29.3,
+            "total_5d": -84.9,
+            "strength": 84.9
+          },
+          {
+            "name": "대한조선",
+            "label": "대한조선 (↓↓)",
+            "foreign_5d": -32.3,
+            "inst_5d": -52.5,
+            "total_5d": -84.8,
+            "strength": 84.8
+          },
+          {
+            "name": "SK바이오사이언스",
+            "label": "SK바이오사이언스 (↓↓)",
+            "foreign_5d": -62.6,
+            "inst_5d": -19.6,
+            "total_5d": -82.2,
+            "strength": 82.2
+          },
+          {
+            "name": "농심",
+            "label": "농심 (↓↓)",
+            "foreign_5d": -50.8,
+            "inst_5d": -27.4,
+            "total_5d": -78.2,
+            "strength": 78.2
+          },
+          {
+            "name": "강원랜드",
+            "label": "강원랜드 (↓↓)",
+            "foreign_5d": -12.0,
+            "inst_5d": -58.4,
+            "total_5d": -70.4,
+            "strength": 70.4
+          },
+          {
+            "name": "한국타이어앤테크놀로지",
+            "label": "한국타이어앤테크놀로지 (↓↓)",
+            "foreign_5d": -30.9,
+            "inst_5d": -38.1,
+            "total_5d": -69.0,
+            "strength": 69.0
+          },
+          {
+            "name": "SK아이이테크놀로지",
+            "label": "SK아이이테크놀로지 (↓↓)",
+            "foreign_5d": -31.4,
+            "inst_5d": -27.3,
+            "total_5d": -58.7,
+            "strength": 58.7
+          },
+          {
+            "name": "제일기획",
+            "label": "제일기획 (↓↓)",
+            "foreign_5d": -20.6,
+            "inst_5d": -36.1,
+            "total_5d": -56.7,
+            "strength": 56.7
+          },
+          {
+            "name": "JB금융지주",
+            "label": "JB금융지주 (↓↓)",
+            "foreign_5d": -41.7,
+            "inst_5d": -6.1,
+            "total_5d": -47.8,
+            "strength": 47.8
+          },
+          {
+            "name": "한국앤컴퍼니",
+            "label": "한국앤컴퍼니 (↓↓)",
+            "foreign_5d": -7.3,
+            "inst_5d": -29.1,
+            "total_5d": -36.4,
+            "strength": 36.4
+          },
+          {
+            "name": "한미사이언스",
+            "label": "한미사이언스 (↓↓)",
+            "foreign_5d": -21.5,
+            "inst_5d": -11.4,
+            "total_5d": -32.9,
+            "strength": 32.9
+          },
+          {
+            "name": "넷마블",
+            "label": "넷마블 (↓↓)",
+            "foreign_5d": -10.3,
+            "inst_5d": -20.8,
+            "total_5d": -31.1,
+            "strength": 31.1
+          },
+          {
+            "name": "다우기술",
+            "label": "다우기술 (↓↓)",
+            "foreign_5d": -1.1,
+            "inst_5d": -28.6,
+            "total_5d": -29.7,
+            "strength": 29.7
+          },
+          {
+            "name": "두산로보틱스",
+            "label": "두산로보틱스 (↓↓)",
+            "foreign_5d": -15.8,
+            "inst_5d": -3.9,
+            "total_5d": -19.7,
+            "strength": 19.7
+          },
+          {
+            "name": "현대차우",
+            "label": "현대차우 (↓↓)",
+            "foreign_5d": -7.6,
+            "inst_5d": -6.5,
+            "total_5d": -14.1,
+            "strength": 14.1
+          }
+        ]
+      },
+      "target_date": "20260422"
     },
     "kosdaq150": {
       "label": "KOSDAQ 150",
-      "market_size": 0,
-      "filtered_map": {},
-      "direction_groups": {
-        "buy": [],
-        "mixed": [],
-        "sell": []
+      "market_size": 150,
+      "filtered_map": {
+        "에코프로": "에코프로 (↓↓)",
+        "알테오젠": "알테오젠 (↓↓)",
+        "레인보우로보틱스": "레인보우로보틱스 (↓↓)",
+        "삼천당제약": "삼천당제약 (↓↓)",
+        "코오롱티슈진": "코오롱티슈진 (↓↓)",
+        "에이비엘바이오": "에이비엘바이오 (↓↓)",
+        "HLB": "HLB (↓↓)",
+        "펩트론": "펩트론 (↓↓)",
+        "원익IPS": "원익IPS (↓↓)",
+        "주성엔지니어링": "주성엔지니어링 (↑↑)",
+        "보로노이": "보로노이 (↓↓)",
+        "로보티즈": "로보티즈 (↑↑)",
+        "디앤디파마텍": "디앤디파마텍 (↓↓)",
+        "올릭스": "올릭스 (↓↓)",
+        "심텍": "심텍 (↑↑)",
+        "서진시스템": "서진시스템 (↓↓)",
+        "미래에셋벤처투자": "미래에셋벤처투자 (↑↑)",
+        "에임드바이오": "에임드바이오 (↓↓)",
+        "비에이치아이": "비에이치아이 (↓↓)",
+        "실리콘투": "실리콘투 (↑↑)",
+        "메지온": "메지온 (↓↓)",
+        "하나마이크론": "하나마이크론 (↑↑)",
+        "에스피지": "에스피지 (↓↓)",
+        "알지노믹스": "알지노믹스 (↓↓)",
+        "셀트리온제약": "셀트리온제약 (↓↓)",
+        "피에스케이홀딩스": "피에스케이홀딩스 (↓↓)",
+        "원익홀딩스": "원익홀딩스 (↓↓)",
+        "고영": "고영 (↑↑)",
+        "태성": "태성 (↓↓)",
+        "스피어": "스피어 (↓↓)",
+        "테크윙": "테크윙 (↓↓)",
+        "LS마린솔루션": "LS마린솔루션 (↑↑)",
+        "LS머트리얼즈": "LS머트리얼즈 (↑↑)",
+        "삼현": "삼현 (↑↑)",
+        "신성델타테크": "신성델타테크 (↓↓)",
+        "차바이오텍": "차바이오텍 (↓↓)",
+        "코미코": "코미코 (↑↑)",
+        "큐리옥스바이오시스템즈": "큐리옥스바이오시스템즈 (↓↓)",
+        "하림지주": "하림지주 (↓↓)",
+        "인텔리안테크": "인텔리안테크 (↓↓)",
+        "씨엠티엑스": "씨엠티엑스 (↑↑)",
+        "로킷헬스케어": "로킷헬스케어 (↓↓)",
+        "큐리언트": "큐리언트 (↓↓)",
+        "현대바이오": "현대바이오 (↓↓)",
+        "네이처셀": "네이처셀 (↓↓)",
+        "솔브레인홀딩스": "솔브레인홀딩스 (↑↑)",
+        "씨아이에스": "씨아이에스 (↓↓)",
+        "케이엠더블유": "케이엠더블유 (↓↓)",
+        "씨젠": "씨젠 (↓↓)",
+        "SFA반도체": "SFA반도체 (↑↑)",
+        "클로봇": "클로봇 (↓↓)",
+        "CJ ENM": "CJ ENM (↓↓)",
+        "필옵틱스": "필옵틱스 (↑↑)",
+        "엔켐": "엔켐 (↓↓)",
+        "유일로보틱스": "유일로보틱스 (↓↓)",
+        "제이앤티씨": "제이앤티씨 (↓↓)",
+        "아이티센글로벌": "아이티센글로벌 (↓↓)",
+        "스튜디오드래곤": "스튜디오드래곤 (↓↓)",
+        "와이지엔터테인먼트": "와이지엔터테인먼트 (↓↓)",
+        "쏠리드": "쏠리드 (↓↓)",
+        "성일하이텍": "성일하이텍 (↑↑)",
+        "메디포스트": "메디포스트 (↑↑)",
+        "태웅": "태웅 (↓↓)",
+        "지아이이노베이션": "지아이이노베이션 (↑↑)",
+        "동운아나텍": "동운아나텍 (↑↑)",
+        "유진로봇": "유진로봇 (↓↓)",
+        "다우데이타": "다우데이타 (↓↓)",
+        "서부T&D": "서부T&D (↓↓)",
+        "포스코엠텍": "포스코엠텍 (↓↓)"
       },
       "summary": {
-        "buy": 0,
-        "mixed": 0,
-        "sell": 0,
-        "scanned": 0
-      }
+        "buy": 19,
+        "mixed": 81,
+        "sell": 50,
+        "scanned": 150
+      },
+      "direction_groups": {
+        "buy": [
+          {
+            "name": "주성엔지니어링",
+            "label": "주성엔지니어링 (↑↑)",
+            "foreign_5d": 1240.4,
+            "inst_5d": 685.1,
+            "total_5d": 1925.5,
+            "strength": 1925.5
+          },
+          {
+            "name": "하나마이크론",
+            "label": "하나마이크론 (↑↑)",
+            "foreign_5d": 710.4,
+            "inst_5d": 42.7,
+            "total_5d": 753.1,
+            "strength": 753.1
+          },
+          {
+            "name": "고영",
+            "label": "고영 (↑↑)",
+            "foreign_5d": 271.0,
+            "inst_5d": 41.5,
+            "total_5d": 312.5,
+            "strength": 312.5
+          },
+          {
+            "name": "심텍",
+            "label": "심텍 (↑↑)",
+            "foreign_5d": 32.7,
+            "inst_5d": 268.2,
+            "total_5d": 300.9,
+            "strength": 300.9
+          },
+          {
+            "name": "로보티즈",
+            "label": "로보티즈 (↑↑)",
+            "foreign_5d": 150.7,
+            "inst_5d": 92.9,
+            "total_5d": 243.6,
+            "strength": 243.6
+          },
+          {
+            "name": "코미코",
+            "label": "코미코 (↑↑)",
+            "foreign_5d": 49.5,
+            "inst_5d": 168.8,
+            "total_5d": 218.3,
+            "strength": 218.3
+          },
+          {
+            "name": "LS머트리얼즈",
+            "label": "LS머트리얼즈 (↑↑)",
+            "foreign_5d": 30.6,
+            "inst_5d": 111.4,
+            "total_5d": 142.0,
+            "strength": 142.0
+          },
+          {
+            "name": "실리콘투",
+            "label": "실리콘투 (↑↑)",
+            "foreign_5d": 90.0,
+            "inst_5d": 41.2,
+            "total_5d": 131.2,
+            "strength": 131.2
+          },
+          {
+            "name": "LS마린솔루션",
+            "label": "LS마린솔루션 (↑↑)",
+            "foreign_5d": 75.5,
+            "inst_5d": 32.6,
+            "total_5d": 108.1,
+            "strength": 108.1
+          },
+          {
+            "name": "성일하이텍",
+            "label": "성일하이텍 (↑↑)",
+            "foreign_5d": 9.7,
+            "inst_5d": 92.8,
+            "total_5d": 102.5,
+            "strength": 102.5
+          },
+          {
+            "name": "SFA반도체",
+            "label": "SFA반도체 (↑↑)",
+            "foreign_5d": 82.8,
+            "inst_5d": 9.8,
+            "total_5d": 92.6,
+            "strength": 92.6
+          },
+          {
+            "name": "미래에셋벤처투자",
+            "label": "미래에셋벤처투자 (↑↑)",
+            "foreign_5d": 41.3,
+            "inst_5d": 39.8,
+            "total_5d": 81.1,
+            "strength": 81.1
+          },
+          {
+            "name": "씨엠티엑스",
+            "label": "씨엠티엑스 (↑↑)",
+            "foreign_5d": 27.7,
+            "inst_5d": 50.3,
+            "total_5d": 78.0,
+            "strength": 78.0
+          },
+          {
+            "name": "필옵틱스",
+            "label": "필옵틱스 (↑↑)",
+            "foreign_5d": 0.5,
+            "inst_5d": 73.6,
+            "total_5d": 74.1,
+            "strength": 74.1
+          },
+          {
+            "name": "동운아나텍",
+            "label": "동운아나텍 (↑↑)",
+            "foreign_5d": 68.3,
+            "inst_5d": 0.9,
+            "total_5d": 69.2,
+            "strength": 69.2
+          },
+          {
+            "name": "삼현",
+            "label": "삼현 (↑↑)",
+            "foreign_5d": 8.9,
+            "inst_5d": 32.3,
+            "total_5d": 41.2,
+            "strength": 41.2
+          },
+          {
+            "name": "지아이이노베이션",
+            "label": "지아이이노베이션 (↑↑)",
+            "foreign_5d": 4.0,
+            "inst_5d": 31.8,
+            "total_5d": 35.8,
+            "strength": 35.8
+          },
+          {
+            "name": "솔브레인홀딩스",
+            "label": "솔브레인홀딩스 (↑↑)",
+            "foreign_5d": 22.1,
+            "inst_5d": 6.3,
+            "total_5d": 28.4,
+            "strength": 28.4
+          },
+          {
+            "name": "메디포스트",
+            "label": "메디포스트 (↑↑)",
+            "foreign_5d": 19.1,
+            "inst_5d": 5.9,
+            "total_5d": 25.0,
+            "strength": 25.0
+          }
+        ],
+        "mixed": [
+          {
+            "name": "우리기술",
+            "label": "우리기술",
+            "foreign_5d": -831.7,
+            "inst_5d": 27.4,
+            "total_5d": -804.3,
+            "strength": 859.1
+          },
+          {
+            "name": "리노공업",
+            "label": "리노공업",
+            "foreign_5d": 573.0,
+            "inst_5d": -197.4,
+            "total_5d": 375.6,
+            "strength": 770.4
+          },
+          {
+            "name": "비츠로셀",
+            "label": "비츠로셀",
+            "foreign_5d": -343.2,
+            "inst_5d": 393.2,
+            "total_5d": 50.0,
+            "strength": 736.4
+          },
+          {
+            "name": "ISC",
+            "label": "ISC",
+            "foreign_5d": 324.5,
+            "inst_5d": -365.8,
+            "total_5d": -41.3,
+            "strength": 690.3
+          },
+          {
+            "name": "선익시스템",
+            "label": "선익시스템",
+            "foreign_5d": -317.1,
+            "inst_5d": 364.4,
+            "total_5d": 47.3,
+            "strength": 681.5
+          },
+          {
+            "name": "리가켐바이오",
+            "label": "리가켐바이오",
+            "foreign_5d": 201.4,
+            "inst_5d": -419.8,
+            "total_5d": -218.4,
+            "strength": 621.2
+          },
+          {
+            "name": "RFHIC",
+            "label": "RFHIC",
+            "foreign_5d": 530.0,
+            "inst_5d": -76.8,
+            "total_5d": 453.2,
+            "strength": 606.8
+          },
+          {
+            "name": "이오테크닉스",
+            "label": "이오테크닉스",
+            "foreign_5d": 256.9,
+            "inst_5d": -291.0,
+            "total_5d": -34.1,
+            "strength": 547.9
+          },
+          {
+            "name": "브이엠",
+            "label": "브이엠",
+            "foreign_5d": 282.0,
+            "inst_5d": -213.6,
+            "total_5d": 68.4,
+            "strength": 495.6
+          },
+          {
+            "name": "에코프로비엠",
+            "label": "에코프로비엠",
+            "foreign_5d": 163.0,
+            "inst_5d": -288.5,
+            "total_5d": -125.5,
+            "strength": 451.5
+          },
+          {
+            "name": "테스",
+            "label": "테스",
+            "foreign_5d": 228.9,
+            "inst_5d": -199.5,
+            "total_5d": 29.4,
+            "strength": 428.4
+          },
+          {
+            "name": "앱클론",
+            "label": "앱클론",
+            "foreign_5d": -306.8,
+            "inst_5d": 119.4,
+            "total_5d": -187.4,
+            "strength": 426.2
+          },
+          {
+            "name": "대한광통신",
+            "label": "대한광통신",
+            "foreign_5d": 60.2,
+            "inst_5d": -317.8,
+            "total_5d": -257.6,
+            "strength": 378.0
+          },
+          {
+            "name": "피에스케이",
+            "label": "피에스케이",
+            "foreign_5d": 88.5,
+            "inst_5d": -284.5,
+            "total_5d": -196.0,
+            "strength": 373.0
+          },
+          {
+            "name": "티에스이",
+            "label": "티에스이",
+            "foreign_5d": -168.8,
+            "inst_5d": 201.4,
+            "total_5d": 32.6,
+            "strength": 370.2
+          },
+          {
+            "name": "씨어스",
+            "label": "씨어스",
+            "foreign_5d": -191.8,
+            "inst_5d": 145.0,
+            "total_5d": -46.8,
+            "strength": 336.8
+          },
+          {
+            "name": "나노신소재",
+            "label": "나노신소재",
+            "foreign_5d": -129.5,
+            "inst_5d": 191.2,
+            "total_5d": 61.7,
+            "strength": 320.7
+          },
+          {
+            "name": "파크시스템스",
+            "label": "파크시스템스",
+            "foreign_5d": 180.0,
+            "inst_5d": -132.2,
+            "total_5d": 47.8,
+            "strength": 312.2
+          },
+          {
+            "name": "티씨케이",
+            "label": "티씨케이",
+            "foreign_5d": 252.2,
+            "inst_5d": -39.9,
+            "total_5d": 212.3,
+            "strength": 292.1
+          },
+          {
+            "name": "휴젤",
+            "label": "휴젤",
+            "foreign_5d": 156.2,
+            "inst_5d": -121.5,
+            "total_5d": 34.7,
+            "strength": 277.7
+          },
+          {
+            "name": "펄어비스",
+            "label": "펄어비스",
+            "foreign_5d": 108.8,
+            "inst_5d": -166.6,
+            "total_5d": -57.8,
+            "strength": 275.4
+          },
+          {
+            "name": "두산테스나",
+            "label": "두산테스나",
+            "foreign_5d": -146.0,
+            "inst_5d": 119.1,
+            "total_5d": -26.9,
+            "strength": 265.1
+          },
+          {
+            "name": "제주반도체",
+            "label": "제주반도체",
+            "foreign_5d": 241.1,
+            "inst_5d": -6.3,
+            "total_5d": 234.8,
+            "strength": 247.4
+          },
+          {
+            "name": "오스코텍",
+            "label": "오스코텍",
+            "foreign_5d": 77.5,
+            "inst_5d": -159.3,
+            "total_5d": -81.8,
+            "strength": 236.8
+          },
+          {
+            "name": "에이치브이엠",
+            "label": "에이치브이엠",
+            "foreign_5d": -207.1,
+            "inst_5d": 27.6,
+            "total_5d": -179.5,
+            "strength": 234.7
+          },
+          {
+            "name": "파마리서치",
+            "label": "파마리서치",
+            "foreign_5d": 3.9,
+            "inst_5d": -225.8,
+            "total_5d": -221.9,
+            "strength": 229.7
+          },
+          {
+            "name": "RF머트리얼즈",
+            "label": "RF머트리얼즈",
+            "foreign_5d": 203.6,
+            "inst_5d": -16.4,
+            "total_5d": 187.2,
+            "strength": 220.0
+          },
+          {
+            "name": "레이크머티리얼즈",
+            "label": "레이크머티리얼즈",
+            "foreign_5d": -69.2,
+            "inst_5d": 147.2,
+            "total_5d": 78.0,
+            "strength": 216.4
+          },
+          {
+            "name": "오름테라퓨틱",
+            "label": "오름테라퓨틱",
+            "foreign_5d": 117.8,
+            "inst_5d": -94.1,
+            "total_5d": 23.7,
+            "strength": 211.9
+          },
+          {
+            "name": "코스메카코리아",
+            "label": "코스메카코리아",
+            "foreign_5d": 101.4,
+            "inst_5d": -109.6,
+            "total_5d": -8.2,
+            "strength": 211.0
+          },
+          {
+            "name": "파두",
+            "label": "파두",
+            "foreign_5d": 152.8,
+            "inst_5d": -58.1,
+            "total_5d": 94.7,
+            "strength": 210.9
+          },
+          {
+            "name": "대주전자재료",
+            "label": "대주전자재료",
+            "foreign_5d": -86.6,
+            "inst_5d": 124.3,
+            "total_5d": 37.7,
+            "strength": 210.9
+          },
+          {
+            "name": "리브스메드",
+            "label": "리브스메드",
+            "foreign_5d": 25.5,
+            "inst_5d": -175.6,
+            "total_5d": -150.1,
+            "strength": 201.1
+          },
+          {
+            "name": "쎄트렉아이",
+            "label": "쎄트렉아이",
+            "foreign_5d": 52.1,
+            "inst_5d": -141.0,
+            "total_5d": -88.9,
+            "strength": 193.1
+          },
+          {
+            "name": "솔브레인",
+            "label": "솔브레인",
+            "foreign_5d": 60.1,
+            "inst_5d": -131.6,
+            "total_5d": -71.5,
+            "strength": 191.7
+          },
+          {
+            "name": "JYP Ent.",
+            "label": "JYP Ent.",
+            "foreign_5d": 78.5,
+            "inst_5d": -109.8,
+            "total_5d": -31.3,
+            "strength": 188.3
+          },
+          {
+            "name": "유진테크",
+            "label": "유진테크",
+            "foreign_5d": 40.5,
+            "inst_5d": -137.8,
+            "total_5d": -97.3,
+            "strength": 178.3
+          },
+          {
+            "name": "에스엠",
+            "label": "에스엠",
+            "foreign_5d": 75.2,
+            "inst_5d": -95.5,
+            "total_5d": -20.3,
+            "strength": 170.7
+          },
+          {
+            "name": "휴림로봇",
+            "label": "휴림로봇",
+            "foreign_5d": -161.7,
+            "inst_5d": 2.8,
+            "total_5d": -158.9,
+            "strength": 164.5
+          },
+          {
+            "name": "엘앤씨바이오",
+            "label": "엘앤씨바이오",
+            "foreign_5d": 48.0,
+            "inst_5d": -113.6,
+            "total_5d": -65.6,
+            "strength": 161.6
+          },
+          {
+            "name": "태광",
+            "label": "태광",
+            "foreign_5d": 70.0,
+            "inst_5d": -86.1,
+            "total_5d": -16.1,
+            "strength": 156.1
+          },
+          {
+            "name": "와이씨",
+            "label": "와이씨",
+            "foreign_5d": 111.2,
+            "inst_5d": -41.0,
+            "total_5d": 70.2,
+            "strength": 152.2
+          },
+          {
+            "name": "온코닉테라퓨틱스",
+            "label": "온코닉테라퓨틱스",
+            "foreign_5d": -54.3,
+            "inst_5d": 88.3,
+            "total_5d": 34.0,
+            "strength": 142.6
+          },
+          {
+            "name": "동진쎄미켐",
+            "label": "동진쎄미켐",
+            "foreign_5d": -44.8,
+            "inst_5d": 88.7,
+            "total_5d": 43.9,
+            "strength": 133.5
+          },
+          {
+            "name": "하나머티리얼즈",
+            "label": "하나머티리얼즈",
+            "foreign_5d": 74.1,
+            "inst_5d": -58.0,
+            "total_5d": 16.1,
+            "strength": 132.1
+          },
+          {
+            "name": "코나아이",
+            "label": "코나아이",
+            "foreign_5d": 109.3,
+            "inst_5d": -20.9,
+            "total_5d": 88.4,
+            "strength": 130.2
+          },
+          {
+            "name": "원익QnC",
+            "label": "원익QnC",
+            "foreign_5d": 82.2,
+            "inst_5d": -45.9,
+            "total_5d": 36.3,
+            "strength": 128.1
+          },
+          {
+            "name": "이엔에프테크놀로지",
+            "label": "이엔에프테크놀로지",
+            "foreign_5d": 72.7,
+            "inst_5d": -52.0,
+            "total_5d": 20.7,
+            "strength": 124.7
+          },
+          {
+            "name": "지투지바이오",
+            "label": "지투지바이오",
+            "foreign_5d": -46.8,
+            "inst_5d": 75.3,
+            "total_5d": 28.5,
+            "strength": 122.1
+          },
+          {
+            "name": "뉴로메카",
+            "label": "뉴로메카",
+            "foreign_5d": -101.5,
+            "inst_5d": 18.3,
+            "total_5d": -83.2,
+            "strength": 119.8
+          },
+          {
+            "name": "아주IB투자",
+            "label": "아주IB투자",
+            "foreign_5d": -117.8,
+            "inst_5d": 1.0,
+            "total_5d": -116.8,
+            "strength": 118.8
+          },
+          {
+            "name": "에스티팜",
+            "label": "에스티팜",
+            "foreign_5d": 32.2,
+            "inst_5d": -82.5,
+            "total_5d": -50.3,
+            "strength": 114.7
+          },
+          {
+            "name": "성호전자",
+            "label": "성호전자",
+            "foreign_5d": 48.2,
+            "inst_5d": -58.5,
+            "total_5d": -10.3,
+            "strength": 106.7
+          },
+          {
+            "name": "천보",
+            "label": "천보",
+            "foreign_5d": -32.4,
+            "inst_5d": 73.8,
+            "total_5d": 41.4,
+            "strength": 106.2
+          },
+          {
+            "name": "피엔티",
+            "label": "피엔티",
+            "foreign_5d": 102.4,
+            "inst_5d": -2.1,
+            "total_5d": 100.3,
+            "strength": 104.5
+          },
+          {
+            "name": "루닛",
+            "label": "루닛",
+            "foreign_5d": 25.0,
+            "inst_5d": -69.6,
+            "total_5d": -44.6,
+            "strength": 94.6
+          },
+          {
+            "name": "비나텍",
+            "label": "비나텍",
+            "foreign_5d": -19.1,
+            "inst_5d": 73.6,
+            "total_5d": 54.5,
+            "strength": 92.7
+          },
+          {
+            "name": "케어젠",
+            "label": "케어젠",
+            "foreign_5d": 15.7,
+            "inst_5d": -63.4,
+            "total_5d": -47.7,
+            "strength": 79.1
+          },
+          {
+            "name": "에이프릴바이오",
+            "label": "에이프릴바이오",
+            "foreign_5d": -42.2,
+            "inst_5d": 32.1,
+            "total_5d": -10.1,
+            "strength": 74.3
+          },
+          {
+            "name": "HK이노엔",
+            "label": "HK이노엔",
+            "foreign_5d": 35.6,
+            "inst_5d": -35.7,
+            "total_5d": -0.1,
+            "strength": 71.3
+          },
+          {
+            "name": "성광벤드",
+            "label": "성광벤드",
+            "foreign_5d": 35.6,
+            "inst_5d": -35.5,
+            "total_5d": 0.1,
+            "strength": 71.1
+          },
+          {
+            "name": "큐로셀",
+            "label": "큐로셀",
+            "foreign_5d": -59.5,
+            "inst_5d": 6.1,
+            "total_5d": -53.4,
+            "strength": 65.6
+          },
+          {
+            "name": "에프에스티",
+            "label": "에프에스티",
+            "foreign_5d": 35.7,
+            "inst_5d": -29.7,
+            "total_5d": 6.0,
+            "strength": 65.4
+          },
+          {
+            "name": "덕산네오룩스",
+            "label": "덕산네오룩스",
+            "foreign_5d": 37.4,
+            "inst_5d": -27.7,
+            "total_5d": 9.7,
+            "strength": 65.1
+          },
+          {
+            "name": "HPSP",
+            "label": "HPSP",
+            "foreign_5d": 32.6,
+            "inst_5d": -32.2,
+            "total_5d": 0.4,
+            "strength": 64.8
+          },
+          {
+            "name": "기가비스",
+            "label": "기가비스",
+            "foreign_5d": -13.4,
+            "inst_5d": 50.4,
+            "total_5d": 37.0,
+            "strength": 63.8
+          },
+          {
+            "name": "현대무벡스",
+            "label": "현대무벡스",
+            "foreign_5d": -14.6,
+            "inst_5d": 46.1,
+            "total_5d": 31.5,
+            "strength": 60.7
+          },
+          {
+            "name": "제이에스링크",
+            "label": "제이에스링크",
+            "foreign_5d": -55.9,
+            "inst_5d": 4.3,
+            "total_5d": -51.6,
+            "strength": 60.2
+          },
+          {
+            "name": "클래시스",
+            "label": "클래시스",
+            "foreign_5d": 34.4,
+            "inst_5d": -25.2,
+            "total_5d": 9.2,
+            "strength": 59.6
+          },
+          {
+            "name": "동국제약",
+            "label": "동국제약",
+            "foreign_5d": 17.4,
+            "inst_5d": -40.2,
+            "total_5d": -22.8,
+            "strength": 57.6
+          },
+          {
+            "name": "동성화인텍",
+            "label": "동성화인텍",
+            "foreign_5d": -27.7,
+            "inst_5d": 25.6,
+            "total_5d": -2.1,
+            "strength": 53.3
+          },
+          {
+            "name": "제룡전기",
+            "label": "제룡전기",
+            "foreign_5d": -14.4,
+            "inst_5d": 31.3,
+            "total_5d": 16.9,
+            "strength": 45.7
+          },
+          {
+            "name": "에스앤에스텍",
+            "label": "에스앤에스텍",
+            "foreign_5d": 6.8,
+            "inst_5d": -38.7,
+            "total_5d": -31.9,
+            "strength": 45.5
+          },
+          {
+            "name": "하이젠알앤엠",
+            "label": "하이젠알앤엠",
+            "foreign_5d": -15.6,
+            "inst_5d": 19.8,
+            "total_5d": 4.2,
+            "strength": 35.4
+          },
+          {
+            "name": "에스에프에이",
+            "label": "에스에프에이",
+            "foreign_5d": 18.0,
+            "inst_5d": -16.5,
+            "total_5d": 1.5,
+            "strength": 34.5
+          },
+          {
+            "name": "에스티큐브",
+            "label": "에스티큐브",
+            "foreign_5d": -27.0,
+            "inst_5d": 6.0,
+            "total_5d": -21.0,
+            "strength": 33.0
+          },
+          {
+            "name": "젬백스",
+            "label": "젬백스",
+            "foreign_5d": 0.9,
+            "inst_5d": -22.2,
+            "total_5d": -21.3,
+            "strength": 23.1
+          },
+          {
+            "name": "카카오게임즈",
+            "label": "카카오게임즈",
+            "foreign_5d": 6.9,
+            "inst_5d": -13.4,
+            "total_5d": -6.5,
+            "strength": 20.3
+          },
+          {
+            "name": "툴젠",
+            "label": "툴젠",
+            "foreign_5d": 14.9,
+            "inst_5d": -2.0,
+            "total_5d": 12.9,
+            "strength": 16.9
+          },
+          {
+            "name": "세미파이브",
+            "label": "세미파이브",
+            "foreign_5d": 1.1,
+            "inst_5d": -13.2,
+            "total_5d": -12.1,
+            "strength": 14.3
+          },
+          {
+            "name": "삼표시멘트",
+            "label": "삼표시멘트",
+            "foreign_5d": -2.4,
+            "inst_5d": 4.4,
+            "total_5d": 2.0,
+            "strength": 6.8
+          }
+        ],
+        "sell": [
+          {
+            "name": "삼천당제약",
+            "label": "삼천당제약 (↓↓)",
+            "foreign_5d": -1106.5,
+            "inst_5d": -851.0,
+            "total_5d": -1957.5,
+            "strength": 1957.5
+          },
+          {
+            "name": "레인보우로보틱스",
+            "label": "레인보우로보틱스 (↓↓)",
+            "foreign_5d": -664.1,
+            "inst_5d": -208.6,
+            "total_5d": -872.7,
+            "strength": 872.7
+          },
+          {
+            "name": "알지노믹스",
+            "label": "알지노믹스 (↓↓)",
+            "foreign_5d": -141.6,
+            "inst_5d": -675.0,
+            "total_5d": -816.6,
+            "strength": 816.6
+          },
+          {
+            "name": "에이비엘바이오",
+            "label": "에이비엘바이오 (↓↓)",
+            "foreign_5d": -250.6,
+            "inst_5d": -534.5,
+            "total_5d": -785.1,
+            "strength": 785.1
+          },
+          {
+            "name": "서진시스템",
+            "label": "서진시스템 (↓↓)",
+            "foreign_5d": -110.5,
+            "inst_5d": -608.7,
+            "total_5d": -719.2,
+            "strength": 719.2
+          },
+          {
+            "name": "알테오젠",
+            "label": "알테오젠 (↓↓)",
+            "foreign_5d": -104.0,
+            "inst_5d": -491.4,
+            "total_5d": -595.4,
+            "strength": 595.4
+          },
+          {
+            "name": "원익IPS",
+            "label": "원익IPS (↓↓)",
+            "foreign_5d": -49.5,
+            "inst_5d": -401.3,
+            "total_5d": -450.8,
+            "strength": 450.8
+          },
+          {
+            "name": "에코프로",
+            "label": "에코프로 (↓↓)",
+            "foreign_5d": -181.1,
+            "inst_5d": -221.2,
+            "total_5d": -402.3,
+            "strength": 402.3
+          },
+          {
+            "name": "HLB",
+            "label": "HLB (↓↓)",
+            "foreign_5d": -168.0,
+            "inst_5d": -230.2,
+            "total_5d": -398.2,
+            "strength": 398.2
+          },
+          {
+            "name": "스피어",
+            "label": "스피어 (↓↓)",
+            "foreign_5d": -167.3,
+            "inst_5d": -183.5,
+            "total_5d": -350.8,
+            "strength": 350.8
+          },
+          {
+            "name": "펩트론",
+            "label": "펩트론 (↓↓)",
+            "foreign_5d": -77.3,
+            "inst_5d": -259.2,
+            "total_5d": -336.5,
+            "strength": 336.5
+          },
+          {
+            "name": "디앤디파마텍",
+            "label": "디앤디파마텍 (↓↓)",
+            "foreign_5d": -233.0,
+            "inst_5d": -99.6,
+            "total_5d": -332.6,
+            "strength": 332.6
+          },
+          {
+            "name": "쏠리드",
+            "label": "쏠리드 (↓↓)",
+            "foreign_5d": -273.3,
+            "inst_5d": -34.2,
+            "total_5d": -307.5,
+            "strength": 307.5
+          },
+          {
+            "name": "비에이치아이",
+            "label": "비에이치아이 (↓↓)",
+            "foreign_5d": -188.4,
+            "inst_5d": -99.4,
+            "total_5d": -287.8,
+            "strength": 287.8
+          },
+          {
+            "name": "에스피지",
+            "label": "에스피지 (↓↓)",
+            "foreign_5d": -158.2,
+            "inst_5d": -108.0,
+            "total_5d": -266.2,
+            "strength": 266.2
+          },
+          {
+            "name": "씨젠",
+            "label": "씨젠 (↓↓)",
+            "foreign_5d": -178.4,
+            "inst_5d": -73.5,
+            "total_5d": -251.9,
+            "strength": 251.9
+          },
+          {
+            "name": "로킷헬스케어",
+            "label": "로킷헬스케어 (↓↓)",
+            "foreign_5d": -147.9,
+            "inst_5d": -95.2,
+            "total_5d": -243.1,
+            "strength": 243.1
+          },
+          {
+            "name": "올릭스",
+            "label": "올릭스 (↓↓)",
+            "foreign_5d": -199.2,
+            "inst_5d": -42.2,
+            "total_5d": -241.4,
+            "strength": 241.4
+          },
+          {
+            "name": "현대바이오",
+            "label": "현대바이오 (↓↓)",
+            "foreign_5d": -183.2,
+            "inst_5d": -36.4,
+            "total_5d": -219.6,
+            "strength": 219.6
+          },
+          {
+            "name": "코오롱티슈진",
+            "label": "코오롱티슈진 (↓↓)",
+            "foreign_5d": -92.3,
+            "inst_5d": -125.5,
+            "total_5d": -217.8,
+            "strength": 217.8
+          },
+          {
+            "name": "태성",
+            "label": "태성 (↓↓)",
+            "foreign_5d": -205.9,
+            "inst_5d": -4.5,
+            "total_5d": -210.4,
+            "strength": 210.4
+          },
+          {
+            "name": "보로노이",
+            "label": "보로노이 (↓↓)",
+            "foreign_5d": -116.2,
+            "inst_5d": -60.5,
+            "total_5d": -176.7,
+            "strength": 176.7
+          },
+          {
+            "name": "에임드바이오",
+            "label": "에임드바이오 (↓↓)",
+            "foreign_5d": -85.7,
+            "inst_5d": -86.0,
+            "total_5d": -171.7,
+            "strength": 171.7
+          },
+          {
+            "name": "테크윙",
+            "label": "테크윙 (↓↓)",
+            "foreign_5d": -7.1,
+            "inst_5d": -162.7,
+            "total_5d": -169.8,
+            "strength": 169.8
+          },
+          {
+            "name": "케이엠더블유",
+            "label": "케이엠더블유 (↓↓)",
+            "foreign_5d": -91.7,
+            "inst_5d": -73.8,
+            "total_5d": -165.5,
+            "strength": 165.5
+          },
+          {
+            "name": "아이티센글로벌",
+            "label": "아이티센글로벌 (↓↓)",
+            "foreign_5d": -8.2,
+            "inst_5d": -119.7,
+            "total_5d": -127.9,
+            "strength": 127.9
+          },
+          {
+            "name": "큐리언트",
+            "label": "큐리언트 (↓↓)",
+            "foreign_5d": -53.7,
+            "inst_5d": -56.4,
+            "total_5d": -110.1,
+            "strength": 110.1
+          },
+          {
+            "name": "태웅",
+            "label": "태웅 (↓↓)",
+            "foreign_5d": -96.6,
+            "inst_5d": -0.2,
+            "total_5d": -96.8,
+            "strength": 96.8
+          },
+          {
+            "name": "피에스케이홀딩스",
+            "label": "피에스케이홀딩스 (↓↓)",
+            "foreign_5d": -33.4,
+            "inst_5d": -62.0,
+            "total_5d": -95.4,
+            "strength": 95.4
+          },
+          {
+            "name": "원익홀딩스",
+            "label": "원익홀딩스 (↓↓)",
+            "foreign_5d": -70.6,
+            "inst_5d": -23.2,
+            "total_5d": -93.8,
+            "strength": 93.8
+          },
+          {
+            "name": "엔켐",
+            "label": "엔켐 (↓↓)",
+            "foreign_5d": -77.5,
+            "inst_5d": -14.3,
+            "total_5d": -91.8,
+            "strength": 91.8
+          },
+          {
+            "name": "와이지엔터테인먼트",
+            "label": "와이지엔터테인먼트 (↓↓)",
+            "foreign_5d": -38.0,
+            "inst_5d": -30.5,
+            "total_5d": -68.5,
+            "strength": 68.5
+          },
+          {
+            "name": "클로봇",
+            "label": "클로봇 (↓↓)",
+            "foreign_5d": -54.2,
+            "inst_5d": -11.7,
+            "total_5d": -65.9,
+            "strength": 65.9
+          },
+          {
+            "name": "하림지주",
+            "label": "하림지주 (↓↓)",
+            "foreign_5d": -27.1,
+            "inst_5d": -34.4,
+            "total_5d": -61.5,
+            "strength": 61.5
+          },
+          {
+            "name": "큐리옥스바이오시스템즈",
+            "label": "큐리옥스바이오시스템즈 (↓↓)",
+            "foreign_5d": -20.6,
+            "inst_5d": -36.8,
+            "total_5d": -57.4,
+            "strength": 57.4
+          },
+          {
+            "name": "인텔리안테크",
+            "label": "인텔리안테크 (↓↓)",
+            "foreign_5d": -8.8,
+            "inst_5d": -46.0,
+            "total_5d": -54.8,
+            "strength": 54.8
+          },
+          {
+            "name": "CJ ENM",
+            "label": "CJ ENM (↓↓)",
+            "foreign_5d": -21.8,
+            "inst_5d": -26.3,
+            "total_5d": -48.1,
+            "strength": 48.1
+          },
+          {
+            "name": "차바이오텍",
+            "label": "차바이오텍 (↓↓)",
+            "foreign_5d": -16.6,
+            "inst_5d": -31.2,
+            "total_5d": -47.8,
+            "strength": 47.8
+          },
+          {
+            "name": "셀트리온제약",
+            "label": "셀트리온제약 (↓↓)",
+            "foreign_5d": -15.9,
+            "inst_5d": -31.5,
+            "total_5d": -47.4,
+            "strength": 47.4
+          },
+          {
+            "name": "유진로봇",
+            "label": "유진로봇 (↓↓)",
+            "foreign_5d": -43.2,
+            "inst_5d": -3.9,
+            "total_5d": -47.1,
+            "strength": 47.1
+          },
+          {
+            "name": "씨아이에스",
+            "label": "씨아이에스 (↓↓)",
+            "foreign_5d": -32.7,
+            "inst_5d": -11.9,
+            "total_5d": -44.6,
+            "strength": 44.6
+          },
+          {
+            "name": "신성델타테크",
+            "label": "신성델타테크 (↓↓)",
+            "foreign_5d": -13.0,
+            "inst_5d": -31.3,
+            "total_5d": -44.3,
+            "strength": 44.3
+          },
+          {
+            "name": "메지온",
+            "label": "메지온 (↓↓)",
+            "foreign_5d": -35.6,
+            "inst_5d": -0.7,
+            "total_5d": -36.3,
+            "strength": 36.3
+          },
+          {
+            "name": "다우데이타",
+            "label": "다우데이타 (↓↓)",
+            "foreign_5d": -2.4,
+            "inst_5d": -27.2,
+            "total_5d": -29.6,
+            "strength": 29.6
+          },
+          {
+            "name": "네이처셀",
+            "label": "네이처셀 (↓↓)",
+            "foreign_5d": -3.4,
+            "inst_5d": -23.0,
+            "total_5d": -26.4,
+            "strength": 26.4
+          },
+          {
+            "name": "스튜디오드래곤",
+            "label": "스튜디오드래곤 (↓↓)",
+            "foreign_5d": -2.7,
+            "inst_5d": -18.9,
+            "total_5d": -21.6,
+            "strength": 21.6
+          },
+          {
+            "name": "포스코엠텍",
+            "label": "포스코엠텍 (↓↓)",
+            "foreign_5d": -0.2,
+            "inst_5d": -17.7,
+            "total_5d": -17.9,
+            "strength": 17.9
+          },
+          {
+            "name": "서부T&D",
+            "label": "서부T&D (↓↓)",
+            "foreign_5d": -3.4,
+            "inst_5d": -13.9,
+            "total_5d": -17.3,
+            "strength": 17.3
+          },
+          {
+            "name": "유일로보틱스",
+            "label": "유일로보틱스 (↓↓)",
+            "foreign_5d": -7.9,
+            "inst_5d": -4.2,
+            "total_5d": -12.1,
+            "strength": 12.1
+          },
+          {
+            "name": "제이앤티씨",
+            "label": "제이앤티씨 (↓↓)",
+            "foreign_5d": -4.4,
+            "inst_5d": -5.2,
+            "total_5d": -9.6,
+            "strength": 9.6
+          }
+        ]
+      },
+      "target_date": "20260422"
     }
   }
 }

@@ -6,6 +6,7 @@ import json
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import time
+import inspect
 from datetime import datetime, timedelta, timezone
 import streamlit.components.v1 as components
 from scanner import classify_5day_direction, get_investor_data as fetch_investor_data
@@ -21,6 +22,7 @@ APP_KEY = st.secrets["KIS_APP_KEY"]
 APP_SECRET = st.secrets["KIS_APP_SECRET"]
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
+DATAFRAME_SUPPORTS_SELECTION = "on_select" in inspect.signature(st.dataframe).parameters
 
 st.set_page_config(page_title="수급 쌍끌이 스캐너", layout="wide")
 st.markdown(
@@ -380,10 +382,6 @@ if 'scan_focus' not in st.session_state:
 if 'pending_selected_disp' not in st.session_state:
     st.session_state.pending_selected_disp = None
 
-
-def select_from_focus(display_label):
-    st.session_state.pending_selected_disp = display_label
-
 # 🎯 탭에 따른 로직 분리 (전체 종목 탭은 스캔 불가 처리)
 if market_mode == "🔵 KOSPI 200":
     target_dict = dict_k200
@@ -569,19 +567,25 @@ if is_filtered and allow_scan:
                                 "합계": [item.get("total_5d", "-") for item in focus_items],
                             }
                         )
-                        st.dataframe(focus_df, width="stretch")
-                        st.caption("아래 종목명을 누르면 차트가 바로 해당 종목으로 이동합니다.")
-
-                        jump_cols = st.columns(3)
-                        for idx, item in enumerate(focus_items):
-                            display_label = item.get("label", item["name"])
-                            jump_cols[idx % 3].button(
-                                item["name"],
-                                key=f"{market_cache_key}_{focus}_{item['name']}_jump",
+                        if DATAFRAME_SUPPORTS_SELECTION:
+                            selection = st.dataframe(
+                                focus_df,
                                 width="stretch",
-                                on_click=select_from_focus,
-                                args=(display_label,),
+                                hide_index=True,
+                                on_select="rerun",
+                                selection_mode="single-row",
+                                key=f"{market_cache_key}_{focus}_focus_table",
                             )
+                            selected_rows = list(getattr(selection.selection, "rows", []))
+                            if selected_rows:
+                                selected_item = focus_items[selected_rows[0]]
+                                st.session_state.pending_selected_disp = selected_item.get(
+                                    "label",
+                                    selected_item["name"],
+                                )
+                        else:
+                            st.dataframe(focus_df, width="stretch", hide_index=True)
+                            st.caption("현재 환경에서는 표 선택 이동을 지원하지 않습니다.")
                     else:
                         st.caption("현재 조건에 맞는 종목이 없습니다.")
                     if st.button("목록 닫기", key=f"{market_cache_key}_{focus}_close", width="stretch"):

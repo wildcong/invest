@@ -573,10 +573,17 @@ if is_filtered and allow_scan:
                                 width="stretch",
                                 hide_index=True,
                                 on_select="rerun",
-                                selection_mode="single-row",
+                                selection_mode=["single-row", "single-cell"],
                                 key=f"{market_cache_key}_{focus}_focus_table",
                             )
                             selected_rows = list(getattr(selection.selection, "rows", []))
+                            selected_cells = list(getattr(selection.selection, "cells", []))
+                            if not selected_rows and selected_cells:
+                                first_cell = selected_cells[0]
+                                if isinstance(first_cell, (list, tuple)) and first_cell:
+                                    selected_rows = [first_cell[0]]
+                                elif isinstance(first_cell, dict) and "row" in first_cell:
+                                    selected_rows = [first_cell["row"]]
                             if selected_rows:
                                 selected_item = focus_items[selected_rows[0]]
                                 st.session_state.pending_selected_disp = selected_item.get(

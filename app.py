@@ -380,6 +380,10 @@ if 'scan_focus' not in st.session_state:
 if 'pending_selected_disp' not in st.session_state:
     st.session_state.pending_selected_disp = None
 
+
+def select_from_focus(display_label):
+    st.session_state.pending_selected_disp = display_label
+
 # 🎯 탭에 따른 로직 분리 (전체 종목 탭은 스캔 불가 처리)
 if market_mode == "🔵 KOSPI 200":
     target_dict = dict_k200
@@ -624,8 +628,6 @@ def go_next():
 def on_change():
     if 'stock_selector' in st.session_state and st.session_state.stock_selector in display_names:
         st.session_state.current_idx = display_names.index(st.session_state.stock_selector)
-def select_from_focus(display_label):
-    st.session_state.pending_selected_disp = display_label
 
 c1, c2, c3 = st.columns([1, 2, 1])
 with c1: st.button("⬅️ 이전", on_click=go_prev, width="stretch")

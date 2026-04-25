@@ -3,7 +3,7 @@ name: Prefetch Scan Cache
 
 on:
   schedule:
-    - cron: "43 7 * * 1-5"
+    - cron: "30 7 * * 1-5"
     - cron: "5 8 * * 1-5"
   workflow_dispatch:
 

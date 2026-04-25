@@ -11,7 +11,7 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
 AUTO_REFRESH_PRIMARY_HOUR = 16
-AUTO_REFRESH_PRIMARY_MINUTE = 43
+AUTO_REFRESH_PRIMARY_MINUTE = 30
 AUTO_REFRESH_BACKUP_HOUR = 17
 AUTO_REFRESH_BACKUP_MINUTE = 5
 

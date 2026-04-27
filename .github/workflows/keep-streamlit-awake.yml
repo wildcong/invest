@@ -1,8 +1,8 @@
-name: Keep Streamlit Awake
+name: Keep Streamlit Awake (Public App Only)
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -24,6 +24,12 @@ jobs:
           fi
           echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "app_url=$APP_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Explain private-app limitation
+        if: steps.resolve.outputs.skip == 'false'
+        run: |
+          echo "This workflow only works for public Streamlit apps."
+          echo "Private apps redirect anonymous requests to Streamlit auth and cannot be kept awake from GitHub Actions."
 
       - name: Ping Streamlit app
         if: steps.resolve.outputs.skip == 'false'

@@ -24,6 +24,13 @@ APP_SECRET = st.secrets["KIS_APP_SECRET"]
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 DATAFRAME_SUPPORTS_SELECTION = "on_select" in inspect.signature(st.dataframe).parameters
+THEME_BASE = st.get_option("theme.base") or "light"
+
+
+def get_new_entry_highlight_style():
+    if THEME_BASE == "dark":
+        return "background-color: #0f3d5e; color: #f3f8fc; font-weight: 700;"
+    return "background-color: #fff3bf; color: #1f2328; font-weight: 700;"
 
 st.set_page_config(page_title="수급 쌍끌이 스캐너", layout="wide")
 st.markdown(
@@ -309,7 +316,6 @@ def get_previous_direction_names(cached_market, direction):
         elif isinstance(item, dict) and item.get("name"):
             names.add(item["name"])
     return names
-
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
     summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
@@ -585,9 +591,10 @@ if is_filtered and allow_scan:
                                 "합계": [item.get("total_5d", "-") for item in focus_items],
                             }
                         )
+                        highlight_style = get_new_entry_highlight_style()
                         styled_focus_df = focus_df.style.apply(
                             lambda col: [
-                                "background-color: #fff3bf; font-weight: 700;" if name in new_entry_names else ""
+                                highlight_style if name in new_entry_names else ""
                                 for name in col
                             ],
                             subset=["종목"],

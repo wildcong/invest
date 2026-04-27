@@ -1,4 +1,4 @@
-name: Keep Streamlit Awake (Public App Only)
+name: Keep Streamlit Awake
 
 on:
   schedule:
@@ -25,33 +25,41 @@ jobs:
           echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "app_url=$APP_URL" >> "$GITHUB_OUTPUT"
 
-      - name: Explain private-app limitation
-        if: steps.resolve.outputs.skip == 'false'
-        run: |
-          echo "This workflow only works for public Streamlit apps."
-          echo "Private apps redirect anonymous requests to Streamlit auth and cannot be kept awake from GitHub Actions."
-
       - name: Ping Streamlit app
         if: steps.resolve.outputs.skip == 'false'
         env:
           APP_URL: ${{ steps.resolve.outputs.app_url }}
         run: |
+          ROOT_URL="${APP_URL%/}/"
           HEALTH_URL="${APP_URL%/}/_stcore/health"
-          RESPONSE_HEADERS="$(mktemp)"
+          COOKIE_JAR="$(mktemp)"
 
-          curl --head --silent --show-error \
-            --max-time 30 \
-            --user-agent "github-actions-keep-awake" \
-            --dump-header "$RESPONSE_HEADERS" \
-            "$HEALTH_URL" >/dev/null
+          ROOT_STATUS="$(
+            curl --silent --show-error --location \
+              --cookie "$COOKIE_JAR" \
+              --cookie-jar "$COOKIE_JAR" \
+              --max-time 30 \
+              --output /dev/null \
+              --user-agent "github-actions-keep-awake" \
+              --write-out "%{http_code}" \
+              "$ROOT_URL"
+          )"
 
-          if grep -qi 'location: https://share.streamlit.io/-/auth/app' "$RESPONSE_HEADERS"; then
-            echo "Streamlit app requires authentication, so GitHub Actions cannot keep it awake anonymously."
-            echo "Make the app public or use an authenticated local wake-up job instead."
-            exit 0
+          HEALTH_STATUS="$(
+            curl --silent --show-error --location \
+              --cookie "$COOKIE_JAR" \
+              --cookie-jar "$COOKIE_JAR" \
+              --max-time 30 \
+              --output /dev/null \
+              --user-agent "github-actions-keep-awake" \
+              --write-out "%{http_code}" \
+              "$HEALTH_URL"
+          )"
+
+          echo "Root status: $ROOT_STATUS"
+          echo "Health status: $HEALTH_STATUS"
+
+          if [ "$ROOT_STATUS" != "200" ] || [ "$HEALTH_STATUS" != "200" ]; then
+            echo "Streamlit wake-up ping did not finish successfully."
+            exit 1
           fi
-
-          curl --fail --silent --show-error \
-            --max-time 30 \
-            --user-agent "github-actions-keep-awake" \
-            "$HEALTH_URL" >/dev/null

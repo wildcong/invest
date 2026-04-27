@@ -1,6 +1,14 @@
 import os
 
-from scanner import CACHE_FILE, build_scan_cache, cache_has_target_date, get_target_date, load_scan_cache, save_scan_cache
+from scanner import (
+    CACHE_FILE,
+    attach_previous_market_snapshots,
+    build_scan_cache,
+    cache_has_target_date,
+    get_target_date,
+    load_scan_cache,
+    save_scan_cache,
+)
 
 
 def main():
@@ -17,6 +25,7 @@ def main():
         return
 
     cache = build_scan_cache(app_key, app_secret)
+    cache = attach_previous_market_snapshots(existing_cache, cache)
     save_scan_cache(cache)
 
     print(f"scan cache updated: {CACHE_FILE}")
@@ -31,4 +40,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 import streamlit.components.v1 as components
 from scanner import classify_5day_direction, get_investor_data as fetch_investor_data
 from scanner import get_access_token as fetch_access_token
+from scanner import attach_previous_market_snapshots
 from scanner import get_auto_refresh_window
 from scanner import get_stock_lists as fetch_stock_lists
 from scanner import get_target_date, load_scan_cache, save_scan_cache, summarize_5day_flow
@@ -156,14 +157,13 @@ def persist_market_scan_cache(market_key, market_label, market_size, market_symb
         "target_date": target_date,
     }
 
-    save_scan_cache(
-        {
-            **existing_cache,
-            "generated_at_kst": generated_at,
-            "target_date": target_date,
-            "markets": markets,
-        }
-    )
+    payload = {
+        **existing_cache,
+        "generated_at_kst": generated_at,
+        "target_date": target_date,
+        "markets": markets,
+    }
+    save_scan_cache(attach_previous_market_snapshots(existing_cache, payload))
     get_scan_cache.clear()
 
 def format_cache_timestamp(timestamp):
@@ -298,6 +298,17 @@ def get_display_entries(direction_groups, display_filter):
     for key in active_keys:
         entries.extend(direction_groups.get(key, []))
     return entries
+
+
+def get_previous_direction_names(cached_market, direction):
+    groups = cached_market.get("previous_direction_groups", {}) if isinstance(cached_market, dict) else {}
+    names = set()
+    for item in groups.get(direction, []):
+        if isinstance(item, str):
+            names.add(item)
+        elif isinstance(item, dict) and item.get("name"):
+            names.add(item["name"])
+    return names
 
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
@@ -557,6 +568,13 @@ if is_filtered and allow_scan:
             if focus:
                 focus_items = direction_groups.get(focus, [])
                 focus_title = focus_meta[focus][0]
+                previous_target_date = cached_market.get("previous_target_date")
+                previous_direction_names = get_previous_direction_names(cached_market, focus)
+                new_entry_names = {
+                    item["name"]
+                    for item in focus_items
+                    if item["name"] not in previous_direction_names
+                }
                 with st.expander(f"{focus_title} 종목 {len(focus_items)}개", expanded=True):
                     if focus_items:
                         focus_df = pd.DataFrame(
@@ -567,9 +585,16 @@ if is_filtered and allow_scan:
                                 "합계": [item.get("total_5d", "-") for item in focus_items],
                             }
                         )
+                        styled_focus_df = focus_df.style.apply(
+                            lambda col: [
+                                "background-color: #fff3bf; font-weight: 700;" if name in new_entry_names else ""
+                                for name in col
+                            ],
+                            subset=["종목"],
+                        )
                         if DATAFRAME_SUPPORTS_SELECTION:
                             selection = st.dataframe(
-                                focus_df,
+                                styled_focus_df,
                                 width="stretch",
                                 hide_index=True,
                                 on_select="rerun",
@@ -591,8 +616,13 @@ if is_filtered and allow_scan:
                                     selected_item["name"],
                                 )
                         else:
-                            st.dataframe(focus_df, width="stretch", hide_index=True)
+                            st.dataframe(styled_focus_df, width="stretch", hide_index=True)
                             st.caption("현재 환경에서는 표 선택 이동을 지원하지 않습니다.")
+                        if previous_target_date:
+                            new_count = len(new_entry_names)
+                            st.caption(
+                                f"노란 배경 = {format_target_date(previous_target_date)} 대비 오늘 새 진입 {new_count}개"
+                            )
                     else:
                         st.caption("현재 조건에 맞는 종목이 없습니다.")
                     if st.button("목록 닫기", key=f"{market_cache_key}_{focus}_close", width="stretch"):

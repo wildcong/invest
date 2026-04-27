@@ -2125,7 +2125,1816 @@
           }
         ]
       },
-      "target_date": "20260427"
+      "target_date": "20260427",
+      "previous_target_date": "20260424",
+      "previous_direction_groups": {
+        "buy": [
+          {
+            "name": "두산에너빌리티",
+            "ticker": "034020",
+            "label": "두산에너빌리티 (↑↑)",
+            "foreign_5d": 5332.6,
+            "inst_5d": 575.0,
+            "total_5d": 5907.6,
+            "strength": 5907.6
+          },
+          {
+            "name": "LG에너지솔루션",
+            "ticker": "373220",
+            "label": "LG에너지솔루션 (↑↑)",
+            "foreign_5d": 955.0,
+            "inst_5d": 1520.4,
+            "total_5d": 2475.4,
+            "strength": 2475.4
+          },
+          {
+            "name": "이수페타시스",
+            "ticker": "007660",
+            "label": "이수페타시스 (↑↑)",
+            "foreign_5d": 2033.3,
+            "inst_5d": 155.3,
+            "total_5d": 2188.6,
+            "strength": 2188.6
+          },
+          {
+            "name": "효성중공업",
+            "ticker": "298040",
+            "label": "효성중공업 (↑↑)",
+            "foreign_5d": 1673.2,
+            "inst_5d": 294.7,
+            "total_5d": 1967.9,
+            "strength": 1967.9
+          },
+          {
+            "name": "POSCO홀딩스",
+            "ticker": "005490",
+            "label": "POSCO홀딩스 (↑↑)",
+            "foreign_5d": 909.8,
+            "inst_5d": 906.1,
+            "total_5d": 1815.9,
+            "strength": 1815.9
+          },
+          {
+            "name": "삼성중공업",
+            "ticker": "010140",
+            "label": "삼성중공업 (↑↑)",
+            "foreign_5d": 307.9,
+            "inst_5d": 1239.7,
+            "total_5d": 1547.6,
+            "strength": 1547.6
+          },
+          {
+            "name": "현대로템",
+            "ticker": "064350",
+            "label": "현대로템 (↑↑)",
+            "foreign_5d": 1030.7,
+            "inst_5d": 362.2,
+            "total_5d": 1392.9,
+            "strength": 1392.9
+          },
+          {
+            "name": "SK이노베이션",
+            "ticker": "096770",
+            "label": "SK이노베이션 (↑↑)",
+            "foreign_5d": 742.2,
+            "inst_5d": 272.5,
+            "total_5d": 1014.7,
+            "strength": 1014.7
+          },
+          {
+            "name": "SK스퀘어",
+            "ticker": "402340",
+            "label": "SK스퀘어 (↑↑)",
+            "foreign_5d": 370.5,
+            "inst_5d": 618.3,
+            "total_5d": 988.8,
+            "strength": 988.8
+          },
+          {
+            "name": "한화엔진",
+            "ticker": "082740",
+            "label": "한화엔진 (↑↑)",
+            "foreign_5d": 55.3,
+            "inst_5d": 918.3,
+            "total_5d": 973.6,
+            "strength": 973.6
+          },
+          {
+            "name": "한화오션",
+            "ticker": "042660",
+            "label": "한화오션 (↑↑)",
+            "foreign_5d": 504.3,
+            "inst_5d": 452.4,
+            "total_5d": 956.7,
+            "strength": 956.7
+          },
+          {
+            "name": "호텔신라",
+            "ticker": "008770",
+            "label": "호텔신라 (↑↑)",
+            "foreign_5d": 259.5,
+            "inst_5d": 634.6,
+            "total_5d": 894.1,
+            "strength": 894.1
+          },
+          {
+            "name": "HD현대일렉트릭",
+            "ticker": "267260",
+            "label": "HD현대일렉트릭 (↑↑)",
+            "foreign_5d": 429.0,
+            "inst_5d": 452.8,
+            "total_5d": 881.8,
+            "strength": 881.8
+          },
+          {
+            "name": "HD현대마린엔진",
+            "ticker": "071970",
+            "label": "HD현대마린엔진 (↑↑)",
+            "foreign_5d": 518.2,
+            "inst_5d": 339.8,
+            "total_5d": 858.0,
+            "strength": 858.0
+          },
+          {
+            "name": "포스코인터내셔널",
+            "ticker": "047050",
+            "label": "포스코인터내셔널 (↑↑)",
+            "foreign_5d": 646.5,
+            "inst_5d": 122.0,
+            "total_5d": 768.5,
+            "strength": 768.5
+          },
+          {
+            "name": "LG화학",
+            "ticker": "051910",
+            "label": "LG화학 (↑↑)",
+            "foreign_5d": 440.2,
+            "inst_5d": 307.7,
+            "total_5d": 747.9,
+            "strength": 747.9
+          },
+          {
+            "name": "SK",
+            "ticker": "034730",
+            "label": "SK (↑↑)",
+            "foreign_5d": 728.6,
+            "inst_5d": 15.1,
+            "total_5d": 743.7,
+            "strength": 743.7
+          },
+          {
+            "name": "달바글로벌",
+            "ticker": "483650",
+            "label": "달바글로벌 (↑↑)",
+            "foreign_5d": 581.1,
+            "inst_5d": 111.9,
+            "total_5d": 693.0,
+            "strength": 693.0
+          },
+          {
+            "name": "HJ중공업",
+            "ticker": "097230",
+            "label": "HJ중공업 (↑↑)",
+            "foreign_5d": 483.7,
+            "inst_5d": 103.4,
+            "total_5d": 587.1,
+            "strength": 587.1
+          },
+          {
+            "name": "한미반도체",
+            "ticker": "042700",
+            "label": "한미반도체 (↑↑)",
+            "foreign_5d": 359.8,
+            "inst_5d": 211.7,
+            "total_5d": 571.5,
+            "strength": 571.5
+          },
+          {
+            "name": "일진전기",
+            "ticker": "103590",
+            "label": "일진전기 (↑↑)",
+            "foreign_5d": 278.3,
+            "inst_5d": 270.7,
+            "total_5d": 549.0,
+            "strength": 549.0
+          },
+          {
+            "name": "씨에스윈드",
+            "ticker": "112610",
+            "label": "씨에스윈드 (↑↑)",
+            "foreign_5d": 194.9,
+            "inst_5d": 315.5,
+            "total_5d": 510.4,
+            "strength": 510.4
+          },
+          {
+            "name": "HD현대에너지솔루션",
+            "ticker": "322000",
+            "label": "HD현대에너지솔루션 (↑↑)",
+            "foreign_5d": 242.6,
+            "inst_5d": 238.3,
+            "total_5d": 480.9,
+            "strength": 480.9
+          },
+          {
+            "name": "DL이앤씨",
+            "ticker": "375500",
+            "label": "DL이앤씨 (↑↑)",
+            "foreign_5d": 352.3,
+            "inst_5d": 105.8,
+            "total_5d": 458.1,
+            "strength": 458.1
+          },
+          {
+            "name": "두산퓨얼셀",
+            "ticker": "336260",
+            "label": "두산퓨얼셀 (↑↑)",
+            "foreign_5d": 318.8,
+            "inst_5d": 79.0,
+            "total_5d": 397.8,
+            "strength": 397.8
+          },
+          {
+            "name": "산일전기",
+            "ticker": "062040",
+            "label": "산일전기 (↑↑)",
+            "foreign_5d": 114.8,
+            "inst_5d": 224.6,
+            "total_5d": 339.4,
+            "strength": 339.4
+          },
+          {
+            "name": "포스코퓨처엠",
+            "ticker": "003670",
+            "label": "포스코퓨처엠 (↑↑)",
+            "foreign_5d": 177.7,
+            "inst_5d": 153.5,
+            "total_5d": 331.2,
+            "strength": 331.2
+          },
+          {
+            "name": "한전기술",
+            "ticker": "052690",
+            "label": "한전기술 (↑↑)",
+            "foreign_5d": 76.2,
+            "inst_5d": 148.9,
+            "total_5d": 225.1,
+            "strength": 225.1
+          },
+          {
+            "name": "코스맥스",
+            "ticker": "192820",
+            "label": "코스맥스 (↑↑)",
+            "foreign_5d": 87.5,
+            "inst_5d": 99.9,
+            "total_5d": 187.4,
+            "strength": 187.4
+          },
+          {
+            "name": "GS건설",
+            "ticker": "006360",
+            "label": "GS건설 (↑↑)",
+            "foreign_5d": 126.0,
+            "inst_5d": 44.5,
+            "total_5d": 170.5,
+            "strength": 170.5
+          },
+          {
+            "name": "아모레퍼시픽",
+            "ticker": "090430",
+            "label": "아모레퍼시픽 (↑↑)",
+            "foreign_5d": 111.7,
+            "inst_5d": 34.8,
+            "total_5d": 146.5,
+            "strength": 146.5
+          },
+          {
+            "name": "한올바이오파마",
+            "ticker": "009420",
+            "label": "한올바이오파마 (↑↑)",
+            "foreign_5d": 58.3,
+            "inst_5d": 70.8,
+            "total_5d": 129.1,
+            "strength": 129.1
+          },
+          {
+            "name": "한국콜마",
+            "ticker": "161890",
+            "label": "한국콜마 (↑↑)",
+            "foreign_5d": 15.3,
+            "inst_5d": 112.8,
+            "total_5d": 128.1,
+            "strength": 128.1
+          },
+          {
+            "name": "두산우",
+            "ticker": "000155",
+            "label": "두산우 (↑↑)",
+            "foreign_5d": 82.4,
+            "inst_5d": 39.9,
+            "total_5d": 122.3,
+            "strength": 122.3
+          },
+          {
+            "name": "코스모신소재",
+            "ticker": "005070",
+            "label": "코스모신소재 (↑↑)",
+            "foreign_5d": 114.4,
+            "inst_5d": 3.0,
+            "total_5d": 117.4,
+            "strength": 117.4
+          },
+          {
+            "name": "한국가스공사",
+            "ticker": "036460",
+            "label": "한국가스공사 (↑↑)",
+            "foreign_5d": 85.5,
+            "inst_5d": 21.7,
+            "total_5d": 107.2,
+            "strength": 107.2
+          },
+          {
+            "name": "효성티앤씨",
+            "ticker": "298020",
+            "label": "효성티앤씨 (↑↑)",
+            "foreign_5d": 44.1,
+            "inst_5d": 53.2,
+            "total_5d": 97.3,
+            "strength": 97.3
+          },
+          {
+            "name": "한전KPS",
+            "ticker": "051600",
+            "label": "한전KPS (↑↑)",
+            "foreign_5d": 70.0,
+            "inst_5d": 26.2,
+            "total_5d": 96.2,
+            "strength": 96.2
+          },
+          {
+            "name": "LX인터내셔널",
+            "ticker": "001120",
+            "label": "LX인터내셔널 (↑↑)",
+            "foreign_5d": 9.0,
+            "inst_5d": 84.7,
+            "total_5d": 93.7,
+            "strength": 93.7
+          },
+          {
+            "name": "LG씨엔에스",
+            "ticker": "064400",
+            "label": "LG씨엔에스 (↑↑)",
+            "foreign_5d": 81.2,
+            "inst_5d": 5.1,
+            "total_5d": 86.3,
+            "strength": 86.3
+          },
+          {
+            "name": "케이뱅크",
+            "ticker": "279570",
+            "label": "케이뱅크 (↑↑)",
+            "foreign_5d": 61.2,
+            "inst_5d": 8.0,
+            "total_5d": 69.2,
+            "strength": 69.2
+          },
+          {
+            "name": "오리온",
+            "ticker": "271560",
+            "label": "오리온 (↑↑)",
+            "foreign_5d": 12.6,
+            "inst_5d": 46.1,
+            "total_5d": 58.7,
+            "strength": 58.7
+          },
+          {
+            "name": "SNT다이내믹스",
+            "ticker": "003570",
+            "label": "SNT다이내믹스 (↑↑)",
+            "foreign_5d": 18.7,
+            "inst_5d": 30.2,
+            "total_5d": 48.9,
+            "strength": 48.9
+          },
+          {
+            "name": "미래에셋생명",
+            "ticker": "085620",
+            "label": "미래에셋생명 (↑↑)",
+            "foreign_5d": 8.6,
+            "inst_5d": 40.0,
+            "total_5d": 48.6,
+            "strength": 48.6
+          },
+          {
+            "name": "SK가스",
+            "ticker": "018670",
+            "label": "SK가스 (↑↑)",
+            "foreign_5d": 9.4,
+            "inst_5d": 19.4,
+            "total_5d": 28.8,
+            "strength": 28.8
+          },
+          {
+            "name": "시프트업",
+            "ticker": "462870",
+            "label": "시프트업 (↑↑)",
+            "foreign_5d": 5.2,
+            "inst_5d": 13.3,
+            "total_5d": 18.5,
+            "strength": 18.5
+          }
+        ],
+        "mixed": [
+          {
+            "name": "삼성전자",
+            "ticker": "005930",
+            "label": "삼성전자",
+            "foreign_5d": -9450.3,
+            "inst_5d": 2933.3,
+            "total_5d": -6517.0,
+            "strength": 12383.6
+          },
+          {
+            "name": "SK하이닉스",
+            "ticker": "000660",
+            "label": "SK하이닉스",
+            "foreign_5d": -5625.4,
+            "inst_5d": 590.9,
+            "total_5d": -5034.5,
+            "strength": 6216.3
+          },
+          {
+            "name": "HD현대중공업",
+            "ticker": "329180",
+            "label": "HD현대중공업",
+            "foreign_5d": -2538.2,
+            "inst_5d": 3597.9,
+            "total_5d": 1059.7,
+            "strength": 6136.1
+          },
+          {
+            "name": "LG이노텍",
+            "ticker": "011070",
+            "label": "LG이노텍",
+            "foreign_5d": -1900.6,
+            "inst_5d": 1387.6,
+            "total_5d": -513.0,
+            "strength": 3288.2
+          },
+          {
+            "name": "삼성SDI",
+            "ticker": "006400",
+            "label": "삼성SDI",
+            "foreign_5d": -1428.8,
+            "inst_5d": 1270.8,
+            "total_5d": -158.0,
+            "strength": 2699.6
+          },
+          {
+            "name": "HD현대마린솔루션",
+            "ticker": "443060",
+            "label": "HD현대마린솔루션",
+            "foreign_5d": -1299.7,
+            "inst_5d": 1246.8,
+            "total_5d": -52.9,
+            "strength": 2546.5
+          },
+          {
+            "name": "LS ELECTRIC",
+            "ticker": "010120",
+            "label": "LS ELECTRIC",
+            "foreign_5d": -1432.5,
+            "inst_5d": 579.5,
+            "total_5d": -853.0,
+            "strength": 2012.0
+          },
+          {
+            "name": "코웨이",
+            "ticker": "021240",
+            "label": "코웨이",
+            "foreign_5d": -795.8,
+            "inst_5d": 777.1,
+            "total_5d": -18.7,
+            "strength": 1572.9
+          },
+          {
+            "name": "삼성전자우",
+            "ticker": "005935",
+            "label": "삼성전자우",
+            "foreign_5d": 1113.1,
+            "inst_5d": -369.2,
+            "total_5d": 743.9,
+            "strength": 1482.3
+          },
+          {
+            "name": "한국전력",
+            "ticker": "015760",
+            "label": "한국전력",
+            "foreign_5d": -1024.6,
+            "inst_5d": 329.7,
+            "total_5d": -694.9,
+            "strength": 1354.3
+          },
+          {
+            "name": "HD건설기계",
+            "ticker": "267270",
+            "label": "HD건설기계",
+            "foreign_5d": -485.2,
+            "inst_5d": 810.4,
+            "total_5d": 325.2,
+            "strength": 1295.6
+          },
+          {
+            "name": "KB금융",
+            "ticker": "105560",
+            "label": "KB금융",
+            "foreign_5d": -1086.0,
+            "inst_5d": 139.6,
+            "total_5d": -946.4,
+            "strength": 1225.6
+          },
+          {
+            "name": "삼양식품",
+            "ticker": "003230",
+            "label": "삼양식품",
+            "foreign_5d": 635.3,
+            "inst_5d": -555.8,
+            "total_5d": 79.5,
+            "strength": 1191.1
+          },
+          {
+            "name": "DB하이텍",
+            "ticker": "000990",
+            "label": "DB하이텍",
+            "foreign_5d": -692.3,
+            "inst_5d": 471.2,
+            "total_5d": -221.1,
+            "strength": 1163.5
+          },
+          {
+            "name": "한화솔루션",
+            "ticker": "009830",
+            "label": "한화솔루션",
+            "foreign_5d": -128.4,
+            "inst_5d": 1012.2,
+            "total_5d": 883.8,
+            "strength": 1140.6
+          },
+          {
+            "name": "대덕전자",
+            "ticker": "353200",
+            "label": "대덕전자",
+            "foreign_5d": 1008.8,
+            "inst_5d": -117.3,
+            "total_5d": 891.5,
+            "strength": 1126.1
+          },
+          {
+            "name": "두산",
+            "ticker": "000150",
+            "label": "두산",
+            "foreign_5d": -380.7,
+            "inst_5d": 718.0,
+            "total_5d": 337.3,
+            "strength": 1098.7
+          },
+          {
+            "name": "HD한국조선해양",
+            "ticker": "009540",
+            "label": "HD한국조선해양",
+            "foreign_5d": -35.1,
+            "inst_5d": 923.4,
+            "total_5d": 888.3,
+            "strength": 958.5
+          },
+          {
+            "name": "현대건설",
+            "ticker": "000720",
+            "label": "현대건설",
+            "foreign_5d": 298.2,
+            "inst_5d": -649.8,
+            "total_5d": -351.6,
+            "strength": 948.0
+          },
+          {
+            "name": "LIG디펜스앤에어로스페이스",
+            "ticker": "079550",
+            "label": "LIG디펜스앤에어로스페이스",
+            "foreign_5d": 731.0,
+            "inst_5d": -210.4,
+            "total_5d": 520.6,
+            "strength": 941.4
+          },
+          {
+            "name": "한화에어로스페이스",
+            "ticker": "012450",
+            "label": "한화에어로스페이스",
+            "foreign_5d": 617.0,
+            "inst_5d": -161.4,
+            "total_5d": 455.6,
+            "strength": 778.4
+          },
+          {
+            "name": "에이피알",
+            "ticker": "278470",
+            "label": "에이피알",
+            "foreign_5d": 505.6,
+            "inst_5d": -267.0,
+            "total_5d": 238.6,
+            "strength": 772.6
+          },
+          {
+            "name": "DB손해보험",
+            "ticker": "005830",
+            "label": "DB손해보험",
+            "foreign_5d": 344.5,
+            "inst_5d": -387.0,
+            "total_5d": -42.5,
+            "strength": 731.5
+          },
+          {
+            "name": "롯데에너지머티리얼즈",
+            "ticker": "020150",
+            "label": "롯데에너지머티리얼즈",
+            "foreign_5d": -142.5,
+            "inst_5d": 573.2,
+            "total_5d": 430.7,
+            "strength": 715.7
+          },
+          {
+            "name": "삼성생명",
+            "ticker": "032830",
+            "label": "삼성생명",
+            "foreign_5d": 315.1,
+            "inst_5d": -378.7,
+            "total_5d": -63.6,
+            "strength": 693.8
+          },
+          {
+            "name": "엘앤에프",
+            "ticker": "066970",
+            "label": "엘앤에프",
+            "foreign_5d": -97.3,
+            "inst_5d": 577.7,
+            "total_5d": 480.4,
+            "strength": 675.0
+          },
+          {
+            "name": "KCC",
+            "ticker": "002380",
+            "label": "KCC",
+            "foreign_5d": 164.0,
+            "inst_5d": -434.0,
+            "total_5d": -270.0,
+            "strength": 598.0
+          },
+          {
+            "name": "NC",
+            "ticker": "036570",
+            "label": "NC",
+            "foreign_5d": -280.7,
+            "inst_5d": 315.0,
+            "total_5d": 34.3,
+            "strength": 595.7
+          },
+          {
+            "name": "OCI홀딩스",
+            "ticker": "010060",
+            "label": "OCI홀딩스",
+            "foreign_5d": -42.7,
+            "inst_5d": 516.6,
+            "total_5d": 473.9,
+            "strength": 559.3
+          },
+          {
+            "name": "LS",
+            "ticker": "006260",
+            "label": "LS",
+            "foreign_5d": -332.6,
+            "inst_5d": 197.2,
+            "total_5d": -135.4,
+            "strength": 529.8
+          },
+          {
+            "name": "한국카본",
+            "ticker": "017960",
+            "label": "한국카본",
+            "foreign_5d": 241.4,
+            "inst_5d": -264.4,
+            "total_5d": -23.0,
+            "strength": 505.8
+          },
+          {
+            "name": "한솔케미칼",
+            "ticker": "014680",
+            "label": "한솔케미칼",
+            "foreign_5d": 156.8,
+            "inst_5d": -322.6,
+            "total_5d": -165.8,
+            "strength": 479.4
+          },
+          {
+            "name": "KT&G",
+            "ticker": "033780",
+            "label": "KT&G",
+            "foreign_5d": 329.9,
+            "inst_5d": -148.4,
+            "total_5d": 181.5,
+            "strength": 478.3
+          },
+          {
+            "name": "신한지주",
+            "ticker": "055550",
+            "label": "신한지주",
+            "foreign_5d": -169.6,
+            "inst_5d": 292.3,
+            "total_5d": 122.7,
+            "strength": 461.9
+          },
+          {
+            "name": "에코프로머티",
+            "ticker": "450080",
+            "label": "에코프로머티",
+            "foreign_5d": -66.2,
+            "inst_5d": 327.4,
+            "total_5d": 261.2,
+            "strength": 393.6
+          },
+          {
+            "name": "코오롱인더",
+            "ticker": "120110",
+            "label": "코오롱인더",
+            "foreign_5d": -97.7,
+            "inst_5d": 295.4,
+            "total_5d": 197.7,
+            "strength": 393.1
+          },
+          {
+            "name": "한화",
+            "ticker": "000880",
+            "label": "한화",
+            "foreign_5d": 251.1,
+            "inst_5d": -114.6,
+            "total_5d": 136.5,
+            "strength": 365.7
+          },
+          {
+            "name": "삼성E&A",
+            "ticker": "028050",
+            "label": "삼성E&A",
+            "foreign_5d": -291.9,
+            "inst_5d": 55.7,
+            "total_5d": -236.2,
+            "strength": 347.6
+          },
+          {
+            "name": "크래프톤",
+            "ticker": "259960",
+            "label": "크래프톤",
+            "foreign_5d": -254.0,
+            "inst_5d": 86.8,
+            "total_5d": -167.2,
+            "strength": 340.8
+          },
+          {
+            "name": "HMM",
+            "ticker": "011200",
+            "label": "HMM",
+            "foreign_5d": 184.2,
+            "inst_5d": -154.6,
+            "total_5d": 29.6,
+            "strength": 338.8
+          },
+          {
+            "name": "STX엔진",
+            "ticker": "077970",
+            "label": "STX엔진",
+            "foreign_5d": -173.6,
+            "inst_5d": 136.6,
+            "total_5d": -37.0,
+            "strength": 310.2
+          },
+          {
+            "name": "한화시스템",
+            "ticker": "272210",
+            "label": "한화시스템",
+            "foreign_5d": 17.7,
+            "inst_5d": -286.8,
+            "total_5d": -269.1,
+            "strength": 304.5
+          },
+          {
+            "name": "S-Oil",
+            "ticker": "010950",
+            "label": "S-Oil",
+            "foreign_5d": 201.8,
+            "inst_5d": -87.9,
+            "total_5d": 113.9,
+            "strength": 289.7
+          },
+          {
+            "name": "롯데케미칼",
+            "ticker": "011170",
+            "label": "롯데케미칼",
+            "foreign_5d": -55.0,
+            "inst_5d": 226.3,
+            "total_5d": 171.3,
+            "strength": 281.3
+          },
+          {
+            "name": "셀트리온",
+            "ticker": "068270",
+            "label": "셀트리온",
+            "foreign_5d": 144.8,
+            "inst_5d": -136.4,
+            "total_5d": 8.4,
+            "strength": 281.2
+          },
+          {
+            "name": "이마트",
+            "ticker": "139480",
+            "label": "이마트",
+            "foreign_5d": 167.7,
+            "inst_5d": -71.8,
+            "total_5d": 95.9,
+            "strength": 239.5
+          },
+          {
+            "name": "롯데쇼핑",
+            "ticker": "023530",
+            "label": "롯데쇼핑",
+            "foreign_5d": -94.2,
+            "inst_5d": 142.3,
+            "total_5d": 48.1,
+            "strength": 236.5
+          },
+          {
+            "name": "DN오토모티브",
+            "ticker": "007340",
+            "label": "DN오토모티브",
+            "foreign_5d": -88.0,
+            "inst_5d": 135.6,
+            "total_5d": 47.6,
+            "strength": 223.6
+          },
+          {
+            "name": "이수스페셜티케미컬",
+            "ticker": "457190",
+            "label": "이수스페셜티케미컬",
+            "foreign_5d": -110.9,
+            "inst_5d": 102.5,
+            "total_5d": -8.4,
+            "strength": 213.4
+          },
+          {
+            "name": "가온전선",
+            "ticker": "000500",
+            "label": "가온전선",
+            "foreign_5d": -118.1,
+            "inst_5d": 90.2,
+            "total_5d": -27.9,
+            "strength": 208.3
+          },
+          {
+            "name": "iM금융지주",
+            "ticker": "139130",
+            "label": "iM금융지주",
+            "foreign_5d": -80.7,
+            "inst_5d": 98.9,
+            "total_5d": 18.2,
+            "strength": 179.6
+          },
+          {
+            "name": "LG",
+            "ticker": "003550",
+            "label": "LG",
+            "foreign_5d": 99.8,
+            "inst_5d": -73.6,
+            "total_5d": 26.2,
+            "strength": 173.4
+          },
+          {
+            "name": "GS",
+            "ticker": "078930",
+            "label": "GS",
+            "foreign_5d": 126.2,
+            "inst_5d": -36.5,
+            "total_5d": 89.7,
+            "strength": 162.7
+          },
+          {
+            "name": "CJ제일제당",
+            "ticker": "097950",
+            "label": "CJ제일제당",
+            "foreign_5d": 124.0,
+            "inst_5d": -37.0,
+            "total_5d": 87.0,
+            "strength": 161.0
+          },
+          {
+            "name": "BNK금융지주",
+            "ticker": "138930",
+            "label": "BNK금융지주",
+            "foreign_5d": -111.8,
+            "inst_5d": 47.6,
+            "total_5d": -64.2,
+            "strength": 159.4
+          },
+          {
+            "name": "메리츠금융지주",
+            "ticker": "138040",
+            "label": "메리츠금융지주",
+            "foreign_5d": -102.8,
+            "inst_5d": 44.9,
+            "total_5d": -57.9,
+            "strength": 147.7
+          },
+          {
+            "name": "CJ",
+            "ticker": "001040",
+            "label": "CJ",
+            "foreign_5d": 109.8,
+            "inst_5d": -33.6,
+            "total_5d": 76.2,
+            "strength": 143.4
+          },
+          {
+            "name": "금호석유화학",
+            "ticker": "011780",
+            "label": "금호석유화학",
+            "foreign_5d": 64.1,
+            "inst_5d": -79.0,
+            "total_5d": -14.9,
+            "strength": 143.1
+          },
+          {
+            "name": "한진칼",
+            "ticker": "180640",
+            "label": "한진칼",
+            "foreign_5d": 26.9,
+            "inst_5d": -105.6,
+            "total_5d": -78.7,
+            "strength": 132.5
+          },
+          {
+            "name": "현대해상",
+            "ticker": "001450",
+            "label": "현대해상",
+            "foreign_5d": 36.8,
+            "inst_5d": -93.6,
+            "total_5d": -56.8,
+            "strength": 130.4
+          },
+          {
+            "name": "풍산",
+            "ticker": "103140",
+            "label": "풍산",
+            "foreign_5d": 69.9,
+            "inst_5d": -57.3,
+            "total_5d": 12.6,
+            "strength": 127.2
+          },
+          {
+            "name": "대한항공",
+            "ticker": "003490",
+            "label": "대한항공",
+            "foreign_5d": 47.7,
+            "inst_5d": -77.2,
+            "total_5d": -29.5,
+            "strength": 124.9
+          },
+          {
+            "name": "두산로보틱스",
+            "ticker": "454910",
+            "label": "두산로보틱스",
+            "foreign_5d": 83.9,
+            "inst_5d": -39.8,
+            "total_5d": 44.1,
+            "strength": 123.7
+          },
+          {
+            "name": "대한전선",
+            "ticker": "001440",
+            "label": "대한전선",
+            "foreign_5d": 19.8,
+            "inst_5d": -101.7,
+            "total_5d": -81.9,
+            "strength": 121.5
+          },
+          {
+            "name": "삼성물산",
+            "ticker": "028260",
+            "label": "삼성물산",
+            "foreign_5d": 37.1,
+            "inst_5d": -83.9,
+            "total_5d": -46.8,
+            "strength": 121.0
+          },
+          {
+            "name": "삼성카드",
+            "ticker": "029780",
+            "label": "삼성카드",
+            "foreign_5d": 36.9,
+            "inst_5d": -75.3,
+            "total_5d": -38.4,
+            "strength": 112.2
+          },
+          {
+            "name": "현대엘리베이터",
+            "ticker": "017800",
+            "label": "현대엘리베이터",
+            "foreign_5d": 23.9,
+            "inst_5d": -87.3,
+            "total_5d": -63.4,
+            "strength": 111.2
+          },
+          {
+            "name": "카카오뱅크",
+            "ticker": "323410",
+            "label": "카카오뱅크",
+            "foreign_5d": 81.6,
+            "inst_5d": -22.1,
+            "total_5d": 59.5,
+            "strength": 103.7
+          },
+          {
+            "name": "한화생명",
+            "ticker": "088350",
+            "label": "한화생명",
+            "foreign_5d": 82.8,
+            "inst_5d": -19.6,
+            "total_5d": 63.2,
+            "strength": 102.4
+          },
+          {
+            "name": "신세계",
+            "ticker": "004170",
+            "label": "신세계",
+            "foreign_5d": 86.9,
+            "inst_5d": -12.2,
+            "total_5d": 74.7,
+            "strength": 99.1
+          },
+          {
+            "name": "F&F",
+            "ticker": "383220",
+            "label": "F&F",
+            "foreign_5d": 44.9,
+            "inst_5d": -44.7,
+            "total_5d": 0.2,
+            "strength": 89.6
+          },
+          {
+            "name": "삼성증권",
+            "ticker": "016360",
+            "label": "삼성증권",
+            "foreign_5d": 25.6,
+            "inst_5d": -52.1,
+            "total_5d": -26.5,
+            "strength": 77.7
+          },
+          {
+            "name": "효성",
+            "ticker": "004800",
+            "label": "효성",
+            "foreign_5d": 47.0,
+            "inst_5d": -23.0,
+            "total_5d": 24.0,
+            "strength": 70.0
+          },
+          {
+            "name": "현대백화점",
+            "ticker": "069960",
+            "label": "현대백화점",
+            "foreign_5d": -21.8,
+            "inst_5d": 46.9,
+            "total_5d": 25.1,
+            "strength": 68.7
+          },
+          {
+            "name": "맥쿼리인프라",
+            "ticker": "088980",
+            "label": "맥쿼리인프라",
+            "foreign_5d": 58.6,
+            "inst_5d": -6.3,
+            "total_5d": 52.3,
+            "strength": 64.9
+          },
+          {
+            "name": "코리안리",
+            "ticker": "003690",
+            "label": "코리안리",
+            "foreign_5d": 19.6,
+            "inst_5d": -43.4,
+            "total_5d": -23.8,
+            "strength": 63.0
+          },
+          {
+            "name": "팬오션",
+            "ticker": "028670",
+            "label": "팬오션",
+            "foreign_5d": -16.7,
+            "inst_5d": 44.3,
+            "total_5d": 27.6,
+            "strength": 61.0
+          },
+          {
+            "name": "LG생활건강",
+            "ticker": "051900",
+            "label": "LG생활건강",
+            "foreign_5d": 8.5,
+            "inst_5d": -52.3,
+            "total_5d": -43.8,
+            "strength": 60.8
+          },
+          {
+            "name": "코리아써키트",
+            "ticker": "007810",
+            "label": "코리아써키트",
+            "foreign_5d": -50.1,
+            "inst_5d": 9.9,
+            "total_5d": -40.2,
+            "strength": 60.0
+          },
+          {
+            "name": "두산밥캣",
+            "ticker": "241560",
+            "label": "두산밥캣",
+            "foreign_5d": -3.2,
+            "inst_5d": 55.4,
+            "total_5d": 52.2,
+            "strength": 58.6
+          },
+          {
+            "name": "신영증권",
+            "ticker": "001720",
+            "label": "신영증권",
+            "foreign_5d": 12.4,
+            "inst_5d": -46.2,
+            "total_5d": -33.8,
+            "strength": 58.6
+          },
+          {
+            "name": "미래에셋증권2우B",
+            "ticker": "00680K",
+            "label": "미래에셋증권2우B",
+            "foreign_5d": 20.6,
+            "inst_5d": -38.0,
+            "total_5d": -17.4,
+            "strength": 58.6
+          },
+          {
+            "name": "BGF리테일",
+            "ticker": "282330",
+            "label": "BGF리테일",
+            "foreign_5d": 32.5,
+            "inst_5d": -21.3,
+            "total_5d": 11.2,
+            "strength": 53.8
+          },
+          {
+            "name": "한국타이어앤테크놀로지",
+            "ticker": "161390",
+            "label": "한국타이어앤테크놀로지",
+            "foreign_5d": 18.9,
+            "inst_5d": -33.0,
+            "total_5d": -14.1,
+            "strength": 51.9
+          },
+          {
+            "name": "LS에코에너지",
+            "ticker": "229640",
+            "label": "LS에코에너지",
+            "foreign_5d": -10.8,
+            "inst_5d": 38.6,
+            "total_5d": 27.8,
+            "strength": 49.4
+          },
+          {
+            "name": "롯데지주",
+            "ticker": "004990",
+            "label": "롯데지주",
+            "foreign_5d": 2.9,
+            "inst_5d": -44.4,
+            "total_5d": -41.5,
+            "strength": 47.3
+          },
+          {
+            "name": "다우기술",
+            "ticker": "023590",
+            "label": "다우기술",
+            "foreign_5d": 5.6,
+            "inst_5d": -37.8,
+            "total_5d": -32.2,
+            "strength": 43.4
+          },
+          {
+            "name": "영원무역",
+            "ticker": "111770",
+            "label": "영원무역",
+            "foreign_5d": 14.2,
+            "inst_5d": -26.1,
+            "total_5d": -11.9,
+            "strength": 40.3
+          },
+          {
+            "name": "미스토홀딩스",
+            "ticker": "081660",
+            "label": "미스토홀딩스",
+            "foreign_5d": 7.7,
+            "inst_5d": -32.2,
+            "total_5d": -24.5,
+            "strength": 39.9
+          },
+          {
+            "name": "영원무역홀딩스",
+            "ticker": "009970",
+            "label": "영원무역홀딩스",
+            "foreign_5d": -20.4,
+            "inst_5d": 19.1,
+            "total_5d": -1.3,
+            "strength": 39.5
+          },
+          {
+            "name": "GS리테일",
+            "ticker": "007070",
+            "label": "GS리테일",
+            "foreign_5d": 30.5,
+            "inst_5d": -8.0,
+            "total_5d": 22.5,
+            "strength": 38.5
+          },
+          {
+            "name": "현대오토에버",
+            "ticker": "307950",
+            "label": "현대오토에버",
+            "foreign_5d": 10.6,
+            "inst_5d": -26.3,
+            "total_5d": -15.7,
+            "strength": 36.9
+          },
+          {
+            "name": "SK리츠",
+            "ticker": "395400",
+            "label": "SK리츠",
+            "foreign_5d": -0.1,
+            "inst_5d": 33.7,
+            "total_5d": 33.6,
+            "strength": 33.8
+          },
+          {
+            "name": "아모레퍼시픽홀딩스",
+            "ticker": "002790",
+            "label": "아모레퍼시픽홀딩스",
+            "foreign_5d": 20.2,
+            "inst_5d": -9.7,
+            "total_5d": 10.5,
+            "strength": 29.9
+          },
+          {
+            "name": "대신증권",
+            "ticker": "003540",
+            "label": "대신증권",
+            "foreign_5d": -7.7,
+            "inst_5d": 22.0,
+            "total_5d": 14.3,
+            "strength": 29.7
+          },
+          {
+            "name": "더존비즈온",
+            "ticker": "012510",
+            "label": "더존비즈온",
+            "foreign_5d": -19.4,
+            "inst_5d": 10.0,
+            "total_5d": -9.4,
+            "strength": 29.4
+          }
+        ],
+        "sell": [
+          {
+            "name": "현대차",
+            "ticker": "005380",
+            "label": "현대차 (↓↓)",
+            "foreign_5d": -3908.7,
+            "inst_5d": -1438.5,
+            "total_5d": -5347.2,
+            "strength": 5347.2
+          },
+          {
+            "name": "한국항공우주",
+            "ticker": "047810",
+            "label": "한국항공우주 (↓↓)",
+            "foreign_5d": -1808.5,
+            "inst_5d": -2076.1,
+            "total_5d": -3884.6,
+            "strength": 3884.6
+          },
+          {
+            "name": "삼성바이오로직스",
+            "ticker": "207940",
+            "label": "삼성바이오로직스 (↓↓)",
+            "foreign_5d": -906.0,
+            "inst_5d": -1245.0,
+            "total_5d": -2151.0,
+            "strength": 2151.0
+          },
+          {
+            "name": "삼성전기",
+            "ticker": "009150",
+            "label": "삼성전기 (↓↓)",
+            "foreign_5d": -874.9,
+            "inst_5d": -880.1,
+            "total_5d": -1755.0,
+            "strength": 1755.0
+          },
+          {
+            "name": "NAVER",
+            "ticker": "035420",
+            "label": "NAVER (↓↓)",
+            "foreign_5d": -783.4,
+            "inst_5d": -971.5,
+            "total_5d": -1754.9,
+            "strength": 1754.9
+          },
+          {
+            "name": "미래에셋증권",
+            "ticker": "006800",
+            "label": "미래에셋증권 (↓↓)",
+            "foreign_5d": -1078.6,
+            "inst_5d": -468.5,
+            "total_5d": -1547.1,
+            "strength": 1547.1
+          },
+          {
+            "name": "하이브",
+            "ticker": "352820",
+            "label": "하이브 (↓↓)",
+            "foreign_5d": -606.6,
+            "inst_5d": -701.6,
+            "total_5d": -1308.2,
+            "strength": 1308.2
+          },
+          {
+            "name": "삼성에스디에스",
+            "ticker": "018260",
+            "label": "삼성에스디에스 (↓↓)",
+            "foreign_5d": -629.5,
+            "inst_5d": -435.2,
+            "total_5d": -1064.7,
+            "strength": 1064.7
+          },
+          {
+            "name": "대우건설",
+            "ticker": "047040",
+            "label": "대우건설 (↓↓)",
+            "foreign_5d": -331.9,
+            "inst_5d": -664.8,
+            "total_5d": -996.7,
+            "strength": 996.7
+          },
+          {
+            "name": "현대모비스",
+            "ticker": "012330",
+            "label": "현대모비스 (↓↓)",
+            "foreign_5d": -469.1,
+            "inst_5d": -474.3,
+            "total_5d": -943.4,
+            "strength": 943.4
+          },
+          {
+            "name": "카카오",
+            "ticker": "035720",
+            "label": "카카오 (↓↓)",
+            "foreign_5d": -567.3,
+            "inst_5d": -355.9,
+            "total_5d": -923.2,
+            "strength": 923.2
+          },
+          {
+            "name": "기아",
+            "ticker": "000270",
+            "label": "기아 (↓↓)",
+            "foreign_5d": -51.6,
+            "inst_5d": -745.5,
+            "total_5d": -797.1,
+            "strength": 797.1
+          },
+          {
+            "name": "현대글로비스",
+            "ticker": "086280",
+            "label": "현대글로비스 (↓↓)",
+            "foreign_5d": -577.8,
+            "inst_5d": -9.9,
+            "total_5d": -587.7,
+            "strength": 587.7
+          },
+          {
+            "name": "한미약품",
+            "ticker": "128940",
+            "label": "한미약품 (↓↓)",
+            "foreign_5d": -58.8,
+            "inst_5d": -517.1,
+            "total_5d": -575.9,
+            "strength": 575.9
+          },
+          {
+            "name": "키움증권",
+            "ticker": "039490",
+            "label": "키움증권 (↓↓)",
+            "foreign_5d": -320.3,
+            "inst_5d": -205.0,
+            "total_5d": -525.3,
+            "strength": 525.3
+          },
+          {
+            "name": "우리금융지주",
+            "ticker": "316140",
+            "label": "우리금융지주 (↓↓)",
+            "foreign_5d": -331.1,
+            "inst_5d": -70.1,
+            "total_5d": -401.2,
+            "strength": 401.2
+          },
+          {
+            "name": "현대차2우B",
+            "ticker": "005387",
+            "label": "현대차2우B (↓↓)",
+            "foreign_5d": -219.7,
+            "inst_5d": -165.9,
+            "total_5d": -385.6,
+            "strength": 385.6
+          },
+          {
+            "name": "삼성화재",
+            "ticker": "000810",
+            "label": "삼성화재 (↓↓)",
+            "foreign_5d": -158.2,
+            "inst_5d": -210.7,
+            "total_5d": -368.9,
+            "strength": 368.9
+          },
+          {
+            "name": "SK텔레콤",
+            "ticker": "017670",
+            "label": "SK텔레콤 (↓↓)",
+            "foreign_5d": -157.9,
+            "inst_5d": -135.9,
+            "total_5d": -293.8,
+            "strength": 293.8
+          },
+          {
+            "name": "한국금융지주",
+            "ticker": "071050",
+            "label": "한국금융지주 (↓↓)",
+            "foreign_5d": -95.2,
+            "inst_5d": -178.7,
+            "total_5d": -273.9,
+            "strength": 273.9
+          },
+          {
+            "name": "KT",
+            "ticker": "030200",
+            "label": "KT (↓↓)",
+            "foreign_5d": -3.0,
+            "inst_5d": -248.6,
+            "total_5d": -251.6,
+            "strength": 251.6
+          },
+          {
+            "name": "LG디스플레이",
+            "ticker": "034220",
+            "label": "LG디스플레이 (↓↓)",
+            "foreign_5d": -69.3,
+            "inst_5d": -169.2,
+            "total_5d": -238.5,
+            "strength": 238.5
+          },
+          {
+            "name": "삼성에피스홀딩스",
+            "ticker": "0126Z0",
+            "label": "삼성에피스홀딩스 (↓↓)",
+            "foreign_5d": -172.5,
+            "inst_5d": -54.4,
+            "total_5d": -226.9,
+            "strength": 226.9
+          },
+          {
+            "name": "고려아연",
+            "ticker": "010130",
+            "label": "고려아연 (↓↓)",
+            "foreign_5d": -184.2,
+            "inst_5d": -40.1,
+            "total_5d": -224.3,
+            "strength": 224.3
+          },
+          {
+            "name": "현대제철",
+            "ticker": "004020",
+            "label": "현대제철 (↓↓)",
+            "foreign_5d": -155.0,
+            "inst_5d": -58.4,
+            "total_5d": -213.4,
+            "strength": 213.4
+          },
+          {
+            "name": "유한양행",
+            "ticker": "000100",
+            "label": "유한양행 (↓↓)",
+            "foreign_5d": -70.0,
+            "inst_5d": -98.6,
+            "total_5d": -168.6,
+            "strength": 168.6
+          },
+          {
+            "name": "포스코DX",
+            "ticker": "022100",
+            "label": "포스코DX (↓↓)",
+            "foreign_5d": -84.1,
+            "inst_5d": -66.8,
+            "total_5d": -150.9,
+            "strength": 150.9
+          },
+          {
+            "name": "CJ대한통운",
+            "ticker": "000120",
+            "label": "CJ대한통운 (↓↓)",
+            "foreign_5d": -2.9,
+            "inst_5d": -140.6,
+            "total_5d": -143.5,
+            "strength": 143.5
+          },
+          {
+            "name": "현대차우",
+            "ticker": "005385",
+            "label": "현대차우 (↓↓)",
+            "foreign_5d": -100.9,
+            "inst_5d": -37.9,
+            "total_5d": -138.8,
+            "strength": 138.8
+          },
+          {
+            "name": "HL만도",
+            "ticker": "204320",
+            "label": "HL만도 (↓↓)",
+            "foreign_5d": -21.0,
+            "inst_5d": -110.9,
+            "total_5d": -131.9,
+            "strength": 131.9
+          },
+          {
+            "name": "에스엘",
+            "ticker": "005850",
+            "label": "에스엘 (↓↓)",
+            "foreign_5d": -97.1,
+            "inst_5d": -33.3,
+            "total_5d": -130.4,
+            "strength": 130.4
+          },
+          {
+            "name": "JB금융지주",
+            "ticker": "175330",
+            "label": "JB금융지주 (↓↓)",
+            "foreign_5d": -50.2,
+            "inst_5d": -77.1,
+            "total_5d": -127.3,
+            "strength": 127.3
+          },
+          {
+            "name": "대한조선",
+            "ticker": "439260",
+            "label": "대한조선 (↓↓)",
+            "foreign_5d": -70.2,
+            "inst_5d": -54.9,
+            "total_5d": -125.1,
+            "strength": 125.1
+          },
+          {
+            "name": "한화비전",
+            "ticker": "489790",
+            "label": "한화비전 (↓↓)",
+            "foreign_5d": -67.1,
+            "inst_5d": -57.5,
+            "total_5d": -124.6,
+            "strength": 124.6
+          },
+          {
+            "name": "기업은행",
+            "ticker": "024110",
+            "label": "기업은행 (↓↓)",
+            "foreign_5d": -58.9,
+            "inst_5d": -60.1,
+            "total_5d": -119.0,
+            "strength": 119.0
+          },
+          {
+            "name": "넷마블",
+            "ticker": "251270",
+            "label": "넷마블 (↓↓)",
+            "foreign_5d": -43.6,
+            "inst_5d": -72.8,
+            "total_5d": -116.4,
+            "strength": 116.4
+          },
+          {
+            "name": "한온시스템",
+            "ticker": "018880",
+            "label": "한온시스템 (↓↓)",
+            "foreign_5d": -102.0,
+            "inst_5d": -13.5,
+            "total_5d": -115.5,
+            "strength": 115.5
+          },
+          {
+            "name": "HD현대",
+            "ticker": "267250",
+            "label": "HD현대 (↓↓)",
+            "foreign_5d": -48.1,
+            "inst_5d": -65.8,
+            "total_5d": -113.9,
+            "strength": 113.9
+          },
+          {
+            "name": "SK바이오팜",
+            "ticker": "326030",
+            "label": "SK바이오팜 (↓↓)",
+            "foreign_5d": -92.1,
+            "inst_5d": -20.2,
+            "total_5d": -112.3,
+            "strength": 112.3
+          },
+          {
+            "name": "하나금융지주",
+            "ticker": "086790",
+            "label": "하나금융지주 (↓↓)",
+            "foreign_5d": -34.6,
+            "inst_5d": -75.3,
+            "total_5d": -109.9,
+            "strength": 109.9
+          },
+          {
+            "name": "강원랜드",
+            "ticker": "035250",
+            "label": "강원랜드 (↓↓)",
+            "foreign_5d": -14.7,
+            "inst_5d": -87.9,
+            "total_5d": -102.6,
+            "strength": 102.6
+          },
+          {
+            "name": "카카오페이",
+            "ticker": "377300",
+            "label": "카카오페이 (↓↓)",
+            "foreign_5d": -50.1,
+            "inst_5d": -50.0,
+            "total_5d": -100.1,
+            "strength": 100.1
+          },
+          {
+            "name": "LG유플러스",
+            "ticker": "032640",
+            "label": "LG유플러스 (↓↓)",
+            "foreign_5d": -80.6,
+            "inst_5d": -9.3,
+            "total_5d": -89.9,
+            "strength": 89.9
+          },
+          {
+            "name": "LG전자",
+            "ticker": "066570",
+            "label": "LG전자 (↓↓)",
+            "foreign_5d": -75.8,
+            "inst_5d": -7.9,
+            "total_5d": -83.7,
+            "strength": 83.7
+          },
+          {
+            "name": "농심",
+            "ticker": "004370",
+            "label": "농심 (↓↓)",
+            "foreign_5d": -42.8,
+            "inst_5d": -40.3,
+            "total_5d": -83.1,
+            "strength": 83.1
+          },
+          {
+            "name": "제일기획",
+            "ticker": "030000",
+            "label": "제일기획 (↓↓)",
+            "foreign_5d": -39.8,
+            "inst_5d": -42.5,
+            "total_5d": -82.3,
+            "strength": 82.3
+          },
+          {
+            "name": "SK아이이테크놀로지",
+            "ticker": "361610",
+            "label": "SK아이이테크놀로지 (↓↓)",
+            "foreign_5d": -53.4,
+            "inst_5d": -25.6,
+            "total_5d": -79.0,
+            "strength": 79.0
+          },
+          {
+            "name": "NH투자증권",
+            "ticker": "005940",
+            "label": "NH투자증권 (↓↓)",
+            "foreign_5d": -17.2,
+            "inst_5d": -50.0,
+            "total_5d": -67.2,
+            "strength": 67.2
+          },
+          {
+            "name": "SK바이오사이언스",
+            "ticker": "302440",
+            "label": "SK바이오사이언스 (↓↓)",
+            "foreign_5d": -35.1,
+            "inst_5d": -31.4,
+            "total_5d": -66.5,
+            "strength": 66.5
+          },
+          {
+            "name": "현대지에프홀딩스",
+            "ticker": "005440",
+            "label": "현대지에프홀딩스 (↓↓)",
+            "foreign_5d": -39.3,
+            "inst_5d": -20.0,
+            "total_5d": -59.3,
+            "strength": 59.3
+          },
+          {
+            "name": "현대위아",
+            "ticker": "011210",
+            "label": "현대위아 (↓↓)",
+            "foreign_5d": -2.2,
+            "inst_5d": -51.4,
+            "total_5d": -53.6,
+            "strength": 53.6
+          },
+          {
+            "name": "세아베스틸지주",
+            "ticker": "001430",
+            "label": "세아베스틸지주 (↓↓)",
+            "foreign_5d": -48.1,
+            "inst_5d": -5.1,
+            "total_5d": -53.2,
+            "strength": 53.2
+          },
+          {
+            "name": "한미사이언스",
+            "ticker": "008930",
+            "label": "한미사이언스 (↓↓)",
+            "foreign_5d": -26.0,
+            "inst_5d": -19.6,
+            "total_5d": -45.6,
+            "strength": 45.6
+          },
+          {
+            "name": "한국앤컴퍼니",
+            "ticker": "000240",
+            "label": "한국앤컴퍼니 (↓↓)",
+            "foreign_5d": -5.8,
+            "inst_5d": -29.6,
+            "total_5d": -35.4,
+            "strength": 35.4
+          },
+          {
+            "name": "SKC",
+            "ticker": "011790",
+            "label": "SKC (↓↓)",
+            "foreign_5d": -11.4,
+            "inst_5d": -19.7,
+            "total_5d": -31.1,
+            "strength": 31.1
+          },
+          {
+            "name": "에스원",
+            "ticker": "012750",
+            "label": "에스원 (↓↓)",
+            "foreign_5d": -5.1,
+            "inst_5d": -9.5,
+            "total_5d": -14.6,
+            "strength": 14.6
+          },
+          {
+            "name": "동서",
+            "ticker": "026960",
+            "label": "동서 (↓↓)",
+            "foreign_5d": -9.5,
+            "inst_5d": -4.8,
+            "total_5d": -14.3,
+            "strength": 14.3
+          },
+          {
+            "name": "서울보증보험",
+            "ticker": "031210",
+            "label": "서울보증보험 (↓↓)",
+            "foreign_5d": -1.8,
+            "inst_5d": -3.2,
+            "total_5d": -5.0,
+            "strength": 5.0
+          }
+        ]
+      }
     },
     "kosdaq150": {
       "label": "KOSDAQ 150",
@@ -3701,7 +5510,1366 @@
           }
         ]
       },
-      "target_date": "20260427"
+      "target_date": "20260427",
+      "previous_target_date": "20260424",
+      "previous_direction_groups": {
+        "buy": [
+          {
+            "name": "주성엔지니어링",
+            "ticker": "036930",
+            "label": "주성엔지니어링 (↑↑)",
+            "foreign_5d": 1554.8,
+            "inst_5d": 552.1,
+            "total_5d": 2106.9,
+            "strength": 2106.9
+          },
+          {
+            "name": "HPSP",
+            "ticker": "403870",
+            "label": "HPSP (↑↑)",
+            "foreign_5d": 875.0,
+            "inst_5d": 191.4,
+            "total_5d": 1066.4,
+            "strength": 1066.4
+          },
+          {
+            "name": "고영",
+            "ticker": "098460",
+            "label": "고영 (↑↑)",
+            "foreign_5d": 853.6,
+            "inst_5d": 119.0,
+            "total_5d": 972.6,
+            "strength": 972.6
+          },
+          {
+            "name": "하나마이크론",
+            "ticker": "067310",
+            "label": "하나마이크론 (↑↑)",
+            "foreign_5d": 636.8,
+            "inst_5d": 68.5,
+            "total_5d": 705.3,
+            "strength": 705.3
+          },
+          {
+            "name": "아주IB투자",
+            "ticker": "027360",
+            "label": "아주IB투자 (↑↑)",
+            "foreign_5d": 608.7,
+            "inst_5d": 2.2,
+            "total_5d": 610.9,
+            "strength": 610.9
+          },
+          {
+            "name": "SFA반도체",
+            "ticker": "036540",
+            "label": "SFA반도체 (↑↑)",
+            "foreign_5d": 571.2,
+            "inst_5d": 36.2,
+            "total_5d": 607.4,
+            "strength": 607.4
+          },
+          {
+            "name": "파두",
+            "ticker": "440110",
+            "label": "파두 (↑↑)",
+            "foreign_5d": 129.3,
+            "inst_5d": 284.7,
+            "total_5d": 414.0,
+            "strength": 414.0
+          },
+          {
+            "name": "심텍",
+            "ticker": "222800",
+            "label": "심텍 (↑↑)",
+            "foreign_5d": 85.9,
+            "inst_5d": 270.6,
+            "total_5d": 356.5,
+            "strength": 356.5
+          },
+          {
+            "name": "RFHIC",
+            "ticker": "218410",
+            "label": "RFHIC (↑↑)",
+            "foreign_5d": 236.4,
+            "inst_5d": 113.6,
+            "total_5d": 350.0,
+            "strength": 350.0
+          },
+          {
+            "name": "세미파이브",
+            "ticker": "490470",
+            "label": "세미파이브 (↑↑)",
+            "foreign_5d": 239.8,
+            "inst_5d": 94.7,
+            "total_5d": 334.5,
+            "strength": 334.5
+          },
+          {
+            "name": "동진쎄미켐",
+            "ticker": "005290",
+            "label": "동진쎄미켐 (↑↑)",
+            "foreign_5d": 298.4,
+            "inst_5d": 14.5,
+            "total_5d": 312.9,
+            "strength": 312.9
+          },
+          {
+            "name": "휴림로봇",
+            "ticker": "090710",
+            "label": "휴림로봇 (↑↑)",
+            "foreign_5d": 247.8,
+            "inst_5d": 0.5,
+            "total_5d": 248.3,
+            "strength": 248.3
+          },
+          {
+            "name": "로보티즈",
+            "ticker": "108490",
+            "label": "로보티즈 (↑↑)",
+            "foreign_5d": 165.5,
+            "inst_5d": 31.4,
+            "total_5d": 196.9,
+            "strength": 196.9
+          },
+          {
+            "name": "리노공업",
+            "ticker": "058470",
+            "label": "리노공업 (↑↑)",
+            "foreign_5d": 145.6,
+            "inst_5d": 22.8,
+            "total_5d": 168.4,
+            "strength": 168.4
+          },
+          {
+            "name": "펄어비스",
+            "ticker": "263750",
+            "label": "펄어비스 (↑↑)",
+            "foreign_5d": 102.4,
+            "inst_5d": 40.8,
+            "total_5d": 143.2,
+            "strength": 143.2
+          },
+          {
+            "name": "실리콘투",
+            "ticker": "257720",
+            "label": "실리콘투 (↑↑)",
+            "foreign_5d": 48.0,
+            "inst_5d": 72.7,
+            "total_5d": 120.7,
+            "strength": 120.7
+          },
+          {
+            "name": "올릭스",
+            "ticker": "226950",
+            "label": "올릭스 (↑↑)",
+            "foreign_5d": 77.2,
+            "inst_5d": 6.8,
+            "total_5d": 84.0,
+            "strength": 84.0
+          },
+          {
+            "name": "에스티팜",
+            "ticker": "237690",
+            "label": "에스티팜 (↑↑)",
+            "foreign_5d": 59.0,
+            "inst_5d": 3.4,
+            "total_5d": 62.4,
+            "strength": 62.4
+          },
+          {
+            "name": "메디포스트",
+            "ticker": "078160",
+            "label": "메디포스트 (↑↑)",
+            "foreign_5d": 8.8,
+            "inst_5d": 39.3,
+            "total_5d": 48.1,
+            "strength": 48.1
+          },
+          {
+            "name": "현대무벡스",
+            "ticker": "319400",
+            "label": "현대무벡스 (↑↑)",
+            "foreign_5d": 23.8,
+            "inst_5d": 24.1,
+            "total_5d": 47.9,
+            "strength": 47.9
+          },
+          {
+            "name": "솔브레인홀딩스",
+            "ticker": "036830",
+            "label": "솔브레인홀딩스 (↑↑)",
+            "foreign_5d": 5.0,
+            "inst_5d": 17.7,
+            "total_5d": 22.7,
+            "strength": 22.7
+          },
+          {
+            "name": "삼현",
+            "ticker": "437730",
+            "label": "삼현 (↑↑)",
+            "foreign_5d": 8.2,
+            "inst_5d": 13.8,
+            "total_5d": 22.0,
+            "strength": 22.0
+          },
+          {
+            "name": "삼표시멘트",
+            "ticker": "038500",
+            "label": "삼표시멘트 (↑↑)",
+            "foreign_5d": 15.0,
+            "inst_5d": 6.7,
+            "total_5d": 21.7,
+            "strength": 21.7
+          },
+          {
+            "name": "하이젠알앤엠",
+            "ticker": "160190",
+            "label": "하이젠알앤엠 (↑↑)",
+            "foreign_5d": 4.5,
+            "inst_5d": 7.8,
+            "total_5d": 12.3,
+            "strength": 12.3
+          }
+        ],
+        "mixed": [
+          {
+            "name": "제주반도체",
+            "ticker": "080220",
+            "label": "제주반도체",
+            "foreign_5d": 1590.3,
+            "inst_5d": -3.9,
+            "total_5d": 1586.4,
+            "strength": 1594.2
+          },
+          {
+            "name": "리가켐바이오",
+            "ticker": "141080",
+            "label": "리가켐바이오",
+            "foreign_5d": 426.0,
+            "inst_5d": -343.5,
+            "total_5d": 82.5,
+            "strength": 769.5
+          },
+          {
+            "name": "알테오젠",
+            "ticker": "196170",
+            "label": "알테오젠",
+            "foreign_5d": 377.5,
+            "inst_5d": -328.1,
+            "total_5d": 49.4,
+            "strength": 705.6
+          },
+          {
+            "name": "삼천당제약",
+            "ticker": "000250",
+            "label": "삼천당제약",
+            "foreign_5d": 198.0,
+            "inst_5d": -487.1,
+            "total_5d": -289.1,
+            "strength": 685.1
+          },
+          {
+            "name": "에이비엘바이오",
+            "ticker": "298380",
+            "label": "에이비엘바이오",
+            "foreign_5d": 171.7,
+            "inst_5d": -402.6,
+            "total_5d": -230.9,
+            "strength": 574.3
+          },
+          {
+            "name": "이오테크닉스",
+            "ticker": "039030",
+            "label": "이오테크닉스",
+            "foreign_5d": 320.3,
+            "inst_5d": -225.4,
+            "total_5d": 94.9,
+            "strength": 545.7
+          },
+          {
+            "name": "테크윙",
+            "ticker": "089030",
+            "label": "테크윙",
+            "foreign_5d": 316.5,
+            "inst_5d": -165.9,
+            "total_5d": 150.6,
+            "strength": 482.4
+          },
+          {
+            "name": "LS머트리얼즈",
+            "ticker": "417200",
+            "label": "LS머트리얼즈",
+            "foreign_5d": -184.5,
+            "inst_5d": 282.6,
+            "total_5d": 98.1,
+            "strength": 467.1
+          },
+          {
+            "name": "선익시스템",
+            "ticker": "171090",
+            "label": "선익시스템",
+            "foreign_5d": -235.3,
+            "inst_5d": 227.4,
+            "total_5d": -7.9,
+            "strength": 462.7
+          },
+          {
+            "name": "피에스케이홀딩스",
+            "ticker": "031980",
+            "label": "피에스케이홀딩스",
+            "foreign_5d": 85.1,
+            "inst_5d": -284.6,
+            "total_5d": -199.5,
+            "strength": 369.7
+          },
+          {
+            "name": "씨어스",
+            "ticker": "458870",
+            "label": "씨어스",
+            "foreign_5d": -204.4,
+            "inst_5d": 154.4,
+            "total_5d": -50.0,
+            "strength": 358.8
+          },
+          {
+            "name": "와이씨",
+            "ticker": "232140",
+            "label": "와이씨",
+            "foreign_5d": 313.0,
+            "inst_5d": -43.7,
+            "total_5d": 269.3,
+            "strength": 356.7
+          },
+          {
+            "name": "ISC",
+            "ticker": "095340",
+            "label": "ISC",
+            "foreign_5d": 84.5,
+            "inst_5d": -266.7,
+            "total_5d": -182.2,
+            "strength": 351.2
+          },
+          {
+            "name": "파크시스템스",
+            "ticker": "140860",
+            "label": "파크시스템스",
+            "foreign_5d": 240.2,
+            "inst_5d": -108.8,
+            "total_5d": 131.4,
+            "strength": 349.0
+          },
+          {
+            "name": "두산테스나",
+            "ticker": "131970",
+            "label": "두산테스나",
+            "foreign_5d": -181.6,
+            "inst_5d": 144.9,
+            "total_5d": -36.7,
+            "strength": 326.5
+          },
+          {
+            "name": "펩트론",
+            "ticker": "087010",
+            "label": "펩트론",
+            "foreign_5d": 53.1,
+            "inst_5d": -271.2,
+            "total_5d": -218.1,
+            "strength": 324.3
+          },
+          {
+            "name": "대주전자재료",
+            "ticker": "078600",
+            "label": "대주전자재료",
+            "foreign_5d": -146.4,
+            "inst_5d": 169.7,
+            "total_5d": 23.3,
+            "strength": 316.1
+          },
+          {
+            "name": "나노신소재",
+            "ticker": "121600",
+            "label": "나노신소재",
+            "foreign_5d": -85.6,
+            "inst_5d": 206.0,
+            "total_5d": 120.4,
+            "strength": 291.6
+          },
+          {
+            "name": "휴젤",
+            "ticker": "145020",
+            "label": "휴젤",
+            "foreign_5d": 139.5,
+            "inst_5d": -148.3,
+            "total_5d": -8.8,
+            "strength": 287.8
+          },
+          {
+            "name": "코스메카코리아",
+            "ticker": "241710",
+            "label": "코스메카코리아",
+            "foreign_5d": 132.1,
+            "inst_5d": -147.6,
+            "total_5d": -15.5,
+            "strength": 279.7
+          },
+          {
+            "name": "HLB",
+            "ticker": "028300",
+            "label": "HLB",
+            "foreign_5d": 53.2,
+            "inst_5d": -213.6,
+            "total_5d": -160.4,
+            "strength": 266.8
+          },
+          {
+            "name": "미래에셋벤처투자",
+            "ticker": "100790",
+            "label": "미래에셋벤처투자",
+            "foreign_5d": -216.5,
+            "inst_5d": 45.0,
+            "total_5d": -171.5,
+            "strength": 261.5
+          },
+          {
+            "name": "씨엠티엑스",
+            "ticker": "388210",
+            "label": "씨엠티엑스",
+            "foreign_5d": 29.2,
+            "inst_5d": -230.2,
+            "total_5d": -201.0,
+            "strength": 259.4
+          },
+          {
+            "name": "티씨케이",
+            "ticker": "064760",
+            "label": "티씨케이",
+            "foreign_5d": 169.6,
+            "inst_5d": -87.6,
+            "total_5d": 82.0,
+            "strength": 257.2
+          },
+          {
+            "name": "레이크머티리얼즈",
+            "ticker": "281740",
+            "label": "레이크머티리얼즈",
+            "foreign_5d": -64.6,
+            "inst_5d": 179.7,
+            "total_5d": 115.1,
+            "strength": 244.3
+          },
+          {
+            "name": "지투지바이오",
+            "ticker": "456160",
+            "label": "지투지바이오",
+            "foreign_5d": -0.3,
+            "inst_5d": 239.7,
+            "total_5d": 239.4,
+            "strength": 240.0
+          },
+          {
+            "name": "유진테크",
+            "ticker": "084370",
+            "label": "유진테크",
+            "foreign_5d": 73.2,
+            "inst_5d": -158.4,
+            "total_5d": -85.2,
+            "strength": 231.6
+          },
+          {
+            "name": "테스",
+            "ticker": "095610",
+            "label": "테스",
+            "foreign_5d": 175.4,
+            "inst_5d": -49.3,
+            "total_5d": 126.1,
+            "strength": 224.7
+          },
+          {
+            "name": "인텔리안테크",
+            "ticker": "189300",
+            "label": "인텔리안테크",
+            "foreign_5d": 27.9,
+            "inst_5d": -187.0,
+            "total_5d": -159.1,
+            "strength": 214.9
+          },
+          {
+            "name": "피에스케이",
+            "ticker": "319660",
+            "label": "피에스케이",
+            "foreign_5d": 126.2,
+            "inst_5d": -87.0,
+            "total_5d": 39.2,
+            "strength": 213.2
+          },
+          {
+            "name": "엔켐",
+            "ticker": "348370",
+            "label": "엔켐",
+            "foreign_5d": -190.9,
+            "inst_5d": 21.6,
+            "total_5d": -169.3,
+            "strength": 212.5
+          },
+          {
+            "name": "에스엠",
+            "ticker": "041510",
+            "label": "에스엠",
+            "foreign_5d": 69.0,
+            "inst_5d": -122.6,
+            "total_5d": -53.6,
+            "strength": 191.6
+          },
+          {
+            "name": "JYP Ent.",
+            "ticker": "035900",
+            "label": "JYP Ent.",
+            "foreign_5d": 80.7,
+            "inst_5d": -105.5,
+            "total_5d": -24.8,
+            "strength": 186.2
+          },
+          {
+            "name": "루닛",
+            "ticker": "328130",
+            "label": "루닛",
+            "foreign_5d": 55.4,
+            "inst_5d": -117.3,
+            "total_5d": -61.9,
+            "strength": 172.7
+          },
+          {
+            "name": "원익QnC",
+            "ticker": "074600",
+            "label": "원익QnC",
+            "foreign_5d": 145.4,
+            "inst_5d": -18.6,
+            "total_5d": 126.8,
+            "strength": 164.0
+          },
+          {
+            "name": "오름테라퓨틱",
+            "ticker": "475830",
+            "label": "오름테라퓨틱",
+            "foreign_5d": 131.2,
+            "inst_5d": -31.0,
+            "total_5d": 100.2,
+            "strength": 162.2
+          },
+          {
+            "name": "아이티센글로벌",
+            "ticker": "124500",
+            "label": "아이티센글로벌",
+            "foreign_5d": 11.8,
+            "inst_5d": -150.0,
+            "total_5d": -138.2,
+            "strength": 161.8
+          },
+          {
+            "name": "비츠로셀",
+            "ticker": "082920",
+            "label": "비츠로셀",
+            "foreign_5d": 121.1,
+            "inst_5d": -38.1,
+            "total_5d": 83.0,
+            "strength": 159.2
+          },
+          {
+            "name": "이엔에프테크놀로지",
+            "ticker": "102710",
+            "label": "이엔에프테크놀로지",
+            "foreign_5d": 121.0,
+            "inst_5d": -35.0,
+            "total_5d": 86.0,
+            "strength": 156.0
+          },
+          {
+            "name": "엘앤씨바이오",
+            "ticker": "290650",
+            "label": "엘앤씨바이오",
+            "foreign_5d": 18.6,
+            "inst_5d": -136.7,
+            "total_5d": -118.1,
+            "strength": 155.3
+          },
+          {
+            "name": "피노",
+            "ticker": "033790",
+            "label": "피노",
+            "foreign_5d": -98.0,
+            "inst_5d": 53.7,
+            "total_5d": -44.3,
+            "strength": 151.7
+          },
+          {
+            "name": "디앤디파마텍",
+            "ticker": "347850",
+            "label": "디앤디파마텍",
+            "foreign_5d": 48.0,
+            "inst_5d": -103.2,
+            "total_5d": -55.2,
+            "strength": 151.2
+          },
+          {
+            "name": "태광",
+            "ticker": "023160",
+            "label": "태광",
+            "foreign_5d": 75.8,
+            "inst_5d": -71.4,
+            "total_5d": 4.4,
+            "strength": 147.2
+          },
+          {
+            "name": "기가비스",
+            "ticker": "420770",
+            "label": "기가비스",
+            "foreign_5d": -22.2,
+            "inst_5d": 115.5,
+            "total_5d": 93.3,
+            "strength": 137.7
+          },
+          {
+            "name": "리브스메드",
+            "ticker": "491000",
+            "label": "리브스메드",
+            "foreign_5d": 57.1,
+            "inst_5d": -80.0,
+            "total_5d": -22.9,
+            "strength": 137.1
+          },
+          {
+            "name": "하나머티리얼즈",
+            "ticker": "166090",
+            "label": "하나머티리얼즈",
+            "foreign_5d": 76.7,
+            "inst_5d": -56.2,
+            "total_5d": 20.5,
+            "strength": 132.9
+          },
+          {
+            "name": "코나아이",
+            "ticker": "052400",
+            "label": "코나아이",
+            "foreign_5d": 14.7,
+            "inst_5d": -117.9,
+            "total_5d": -103.2,
+            "strength": 132.6
+          },
+          {
+            "name": "성광벤드",
+            "ticker": "014620",
+            "label": "성광벤드",
+            "foreign_5d": 127.1,
+            "inst_5d": -3.9,
+            "total_5d": 123.2,
+            "strength": 131.0
+          },
+          {
+            "name": "덕산네오룩스",
+            "ticker": "213420",
+            "label": "덕산네오룩스",
+            "foreign_5d": 33.0,
+            "inst_5d": -96.8,
+            "total_5d": -63.8,
+            "strength": 129.8
+          },
+          {
+            "name": "비나텍",
+            "ticker": "126340",
+            "label": "비나텍",
+            "foreign_5d": -22.9,
+            "inst_5d": 89.5,
+            "total_5d": 66.6,
+            "strength": 112.4
+          },
+          {
+            "name": "브이엠",
+            "ticker": "089970",
+            "label": "브이엠",
+            "foreign_5d": 70.1,
+            "inst_5d": -39.9,
+            "total_5d": 30.2,
+            "strength": 110.0
+          },
+          {
+            "name": "티에스이",
+            "ticker": "131290",
+            "label": "티에스이",
+            "foreign_5d": -96.8,
+            "inst_5d": 11.4,
+            "total_5d": -85.4,
+            "strength": 108.2
+          },
+          {
+            "name": "제룡전기",
+            "ticker": "033100",
+            "label": "제룡전기",
+            "foreign_5d": -65.0,
+            "inst_5d": 42.7,
+            "total_5d": -22.3,
+            "strength": 107.7
+          },
+          {
+            "name": "클래시스",
+            "ticker": "214150",
+            "label": "클래시스",
+            "foreign_5d": 67.7,
+            "inst_5d": -33.8,
+            "total_5d": 33.9,
+            "strength": 101.5
+          },
+          {
+            "name": "피엔티",
+            "ticker": "137400",
+            "label": "피엔티",
+            "foreign_5d": 77.6,
+            "inst_5d": -18.5,
+            "total_5d": 59.1,
+            "strength": 96.1
+          },
+          {
+            "name": "필옵틱스",
+            "ticker": "161580",
+            "label": "필옵틱스",
+            "foreign_5d": -32.8,
+            "inst_5d": 63.3,
+            "total_5d": 30.5,
+            "strength": 96.1
+          },
+          {
+            "name": "에이프릴바이오",
+            "ticker": "397030",
+            "label": "에이프릴바이오",
+            "foreign_5d": -11.2,
+            "inst_5d": 81.4,
+            "total_5d": 70.2,
+            "strength": 92.6
+          },
+          {
+            "name": "성일하이텍",
+            "ticker": "365340",
+            "label": "성일하이텍",
+            "foreign_5d": -46.5,
+            "inst_5d": 37.7,
+            "total_5d": -8.8,
+            "strength": 84.2
+          },
+          {
+            "name": "로킷헬스케어",
+            "ticker": "376900",
+            "label": "로킷헬스케어",
+            "foreign_5d": 14.5,
+            "inst_5d": -68.4,
+            "total_5d": -53.9,
+            "strength": 82.9
+          },
+          {
+            "name": "프로텍",
+            "ticker": "053610",
+            "label": "프로텍",
+            "foreign_5d": -29.9,
+            "inst_5d": 49.8,
+            "total_5d": 19.9,
+            "strength": 79.7
+          },
+          {
+            "name": "제이에스링크",
+            "ticker": "127120",
+            "label": "제이에스링크",
+            "foreign_5d": -63.5,
+            "inst_5d": 16.1,
+            "total_5d": -47.4,
+            "strength": 79.6
+          },
+          {
+            "name": "에프에스티",
+            "ticker": "036810",
+            "label": "에프에스티",
+            "foreign_5d": 63.6,
+            "inst_5d": -13.9,
+            "total_5d": 49.7,
+            "strength": 77.5
+          },
+          {
+            "name": "지아이이노베이션",
+            "ticker": "358570",
+            "label": "지아이이노베이션",
+            "foreign_5d": -8.3,
+            "inst_5d": 66.7,
+            "total_5d": 58.4,
+            "strength": 75.0
+          },
+          {
+            "name": "태웅",
+            "ticker": "044490",
+            "label": "태웅",
+            "foreign_5d": -63.2,
+            "inst_5d": 11.4,
+            "total_5d": -51.8,
+            "strength": 74.6
+          },
+          {
+            "name": "원익홀딩스",
+            "ticker": "030530",
+            "label": "원익홀딩스",
+            "foreign_5d": 42.1,
+            "inst_5d": -26.1,
+            "total_5d": 16.0,
+            "strength": 68.2
+          },
+          {
+            "name": "케이엠더블유",
+            "ticker": "032500",
+            "label": "케이엠더블유",
+            "foreign_5d": 10.4,
+            "inst_5d": -56.8,
+            "total_5d": -46.4,
+            "strength": 67.2
+          },
+          {
+            "name": "LS마린솔루션",
+            "ticker": "060370",
+            "label": "LS마린솔루션",
+            "foreign_5d": -14.9,
+            "inst_5d": 48.9,
+            "total_5d": 34.0,
+            "strength": 63.8
+          },
+          {
+            "name": "케어젠",
+            "ticker": "214370",
+            "label": "케어젠",
+            "foreign_5d": 19.0,
+            "inst_5d": -41.7,
+            "total_5d": -22.7,
+            "strength": 60.7
+          },
+          {
+            "name": "뉴로메카",
+            "ticker": "348340",
+            "label": "뉴로메카",
+            "foreign_5d": -51.6,
+            "inst_5d": 9.1,
+            "total_5d": -42.5,
+            "strength": 60.7
+          },
+          {
+            "name": "우리기술",
+            "ticker": "032820",
+            "label": "우리기술",
+            "foreign_5d": -34.8,
+            "inst_5d": 23.6,
+            "total_5d": -11.2,
+            "strength": 58.4
+          },
+          {
+            "name": "차바이오텍",
+            "ticker": "085660",
+            "label": "차바이오텍",
+            "foreign_5d": 25.3,
+            "inst_5d": -30.1,
+            "total_5d": -4.8,
+            "strength": 55.4
+          },
+          {
+            "name": "HK이노엔",
+            "ticker": "195940",
+            "label": "HK이노엔",
+            "foreign_5d": 26.8,
+            "inst_5d": -27.9,
+            "total_5d": -1.1,
+            "strength": 54.7
+          },
+          {
+            "name": "에스에프에이",
+            "ticker": "056190",
+            "label": "에스에프에이",
+            "foreign_5d": 34.3,
+            "inst_5d": -17.5,
+            "total_5d": 16.8,
+            "strength": 51.8
+          },
+          {
+            "name": "다우데이타",
+            "ticker": "032190",
+            "label": "다우데이타",
+            "foreign_5d": 14.0,
+            "inst_5d": -36.0,
+            "total_5d": -22.0,
+            "strength": 50.0
+          },
+          {
+            "name": "씨젠",
+            "ticker": "096530",
+            "label": "씨젠",
+            "foreign_5d": 27.7,
+            "inst_5d": -22.2,
+            "total_5d": 5.5,
+            "strength": 49.9
+          },
+          {
+            "name": "신성델타테크",
+            "ticker": "065350",
+            "label": "신성델타테크",
+            "foreign_5d": 18.5,
+            "inst_5d": -29.0,
+            "total_5d": -10.5,
+            "strength": 47.5
+          },
+          {
+            "name": "네이처셀",
+            "ticker": "007390",
+            "label": "네이처셀",
+            "foreign_5d": 24.8,
+            "inst_5d": -22.0,
+            "total_5d": 2.8,
+            "strength": 46.8
+          },
+          {
+            "name": "유일로보틱스",
+            "ticker": "388720",
+            "label": "유일로보틱스",
+            "foreign_5d": 15.0,
+            "inst_5d": -23.4,
+            "total_5d": -8.4,
+            "strength": 38.4
+          },
+          {
+            "name": "젬백스",
+            "ticker": "082270",
+            "label": "젬백스",
+            "foreign_5d": 16.7,
+            "inst_5d": -19.8,
+            "total_5d": -3.1,
+            "strength": 36.5
+          },
+          {
+            "name": "동성화인텍",
+            "ticker": "033500",
+            "label": "동성화인텍",
+            "foreign_5d": -8.6,
+            "inst_5d": 12.5,
+            "total_5d": 3.9,
+            "strength": 21.1
+          },
+          {
+            "name": "카카오게임즈",
+            "ticker": "293490",
+            "label": "카카오게임즈",
+            "foreign_5d": 3.0,
+            "inst_5d": -15.9,
+            "total_5d": -12.9,
+            "strength": 18.9
+          },
+          {
+            "name": "제이앤티씨",
+            "ticker": "204270",
+            "label": "제이앤티씨",
+            "foreign_5d": 9.7,
+            "inst_5d": -8.1,
+            "total_5d": 1.6,
+            "strength": 17.8
+          },
+          {
+            "name": "큐로셀",
+            "ticker": "372320",
+            "label": "큐로셀",
+            "foreign_5d": -15.4,
+            "inst_5d": 1.8,
+            "total_5d": -13.6,
+            "strength": 17.2
+          },
+          {
+            "name": "동운아나텍",
+            "ticker": "094170",
+            "label": "동운아나텍",
+            "foreign_5d": 13.6,
+            "inst_5d": -2.9,
+            "total_5d": 10.7,
+            "strength": 16.5
+          },
+          {
+            "name": "동국제약",
+            "ticker": "086450",
+            "label": "동국제약",
+            "foreign_5d": 6.9,
+            "inst_5d": -9.0,
+            "total_5d": -2.1,
+            "strength": 15.9
+          },
+          {
+            "name": "에스티큐브",
+            "ticker": "052020",
+            "label": "에스티큐브",
+            "foreign_5d": 12.2,
+            "inst_5d": -0.2,
+            "total_5d": 12.0,
+            "strength": 12.4
+          },
+          {
+            "name": "메지온",
+            "ticker": "140410",
+            "label": "메지온",
+            "foreign_5d": 5.9,
+            "inst_5d": -0.6,
+            "total_5d": 5.3,
+            "strength": 6.5
+          },
+          {
+            "name": "툴젠",
+            "ticker": "199800",
+            "label": "툴젠",
+            "foreign_5d": 1.7,
+            "inst_5d": -0.1,
+            "total_5d": 1.6,
+            "strength": 1.8
+          }
+        ],
+        "sell": [
+          {
+            "name": "에코프로",
+            "ticker": "086520",
+            "label": "에코프로 (↓↓)",
+            "foreign_5d": -943.3,
+            "inst_5d": -466.4,
+            "total_5d": -1409.7,
+            "strength": 1409.7
+          },
+          {
+            "name": "에코프로비엠",
+            "ticker": "247540",
+            "label": "에코프로비엠 (↓↓)",
+            "foreign_5d": -550.2,
+            "inst_5d": -690.4,
+            "total_5d": -1240.6,
+            "strength": 1240.6
+          },
+          {
+            "name": "레인보우로보틱스",
+            "ticker": "277810",
+            "label": "레인보우로보틱스 (↓↓)",
+            "foreign_5d": -440.6,
+            "inst_5d": -269.0,
+            "total_5d": -709.6,
+            "strength": 709.6
+          },
+          {
+            "name": "대한광통신",
+            "ticker": "010170",
+            "label": "대한광통신 (↓↓)",
+            "foreign_5d": -614.6,
+            "inst_5d": -53.0,
+            "total_5d": -667.6,
+            "strength": 667.6
+          },
+          {
+            "name": "원익IPS",
+            "ticker": "240810",
+            "label": "원익IPS (↓↓)",
+            "foreign_5d": -247.8,
+            "inst_5d": -292.8,
+            "total_5d": -540.6,
+            "strength": 540.6
+          },
+          {
+            "name": "알지노믹스",
+            "ticker": "476830",
+            "label": "알지노믹스 (↓↓)",
+            "foreign_5d": -53.9,
+            "inst_5d": -475.3,
+            "total_5d": -529.2,
+            "strength": 529.2
+          },
+          {
+            "name": "비에이치아이",
+            "ticker": "083650",
+            "label": "비에이치아이 (↓↓)",
+            "foreign_5d": -260.2,
+            "inst_5d": -241.2,
+            "total_5d": -501.4,
+            "strength": 501.4
+          },
+          {
+            "name": "성호전자",
+            "ticker": "043260",
+            "label": "성호전자 (↓↓)",
+            "foreign_5d": -319.7,
+            "inst_5d": -83.5,
+            "total_5d": -403.2,
+            "strength": 403.2
+          },
+          {
+            "name": "서진시스템",
+            "ticker": "178320",
+            "label": "서진시스템 (↓↓)",
+            "foreign_5d": -310.0,
+            "inst_5d": -71.6,
+            "total_5d": -381.6,
+            "strength": 381.6
+          },
+          {
+            "name": "스피어",
+            "ticker": "347700",
+            "label": "스피어 (↓↓)",
+            "foreign_5d": -164.3,
+            "inst_5d": -195.5,
+            "total_5d": -359.8,
+            "strength": 359.8
+          },
+          {
+            "name": "쎄트렉아이",
+            "ticker": "099320",
+            "label": "쎄트렉아이 (↓↓)",
+            "foreign_5d": -145.2,
+            "inst_5d": -196.5,
+            "total_5d": -341.7,
+            "strength": 341.7
+          },
+          {
+            "name": "코오롱티슈진",
+            "ticker": "950160",
+            "label": "코오롱티슈진 (↓↓)",
+            "foreign_5d": -182.1,
+            "inst_5d": -123.5,
+            "total_5d": -305.6,
+            "strength": 305.6
+          },
+          {
+            "name": "에이치브이엠",
+            "ticker": "295310",
+            "label": "에이치브이엠 (↓↓)",
+            "foreign_5d": -131.6,
+            "inst_5d": -137.3,
+            "total_5d": -268.9,
+            "strength": 268.9
+          },
+          {
+            "name": "파마리서치",
+            "ticker": "214450",
+            "label": "파마리서치 (↓↓)",
+            "foreign_5d": -58.5,
+            "inst_5d": -121.8,
+            "total_5d": -180.3,
+            "strength": 180.3
+          },
+          {
+            "name": "보로노이",
+            "ticker": "310210",
+            "label": "보로노이 (↓↓)",
+            "foreign_5d": -172.9,
+            "inst_5d": -5.7,
+            "total_5d": -178.6,
+            "strength": 178.6
+          },
+          {
+            "name": "에스피지",
+            "ticker": "058610",
+            "label": "에스피지 (↓↓)",
+            "foreign_5d": -29.3,
+            "inst_5d": -128.3,
+            "total_5d": -157.6,
+            "strength": 157.6
+          },
+          {
+            "name": "씨아이에스",
+            "ticker": "222080",
+            "label": "씨아이에스 (↓↓)",
+            "foreign_5d": -137.6,
+            "inst_5d": -18.0,
+            "total_5d": -155.6,
+            "strength": 155.6
+          },
+          {
+            "name": "오스코텍",
+            "ticker": "039200",
+            "label": "오스코텍 (↓↓)",
+            "foreign_5d": -7.9,
+            "inst_5d": -130.9,
+            "total_5d": -138.8,
+            "strength": 138.8
+          },
+          {
+            "name": "태성",
+            "ticker": "323280",
+            "label": "태성 (↓↓)",
+            "foreign_5d": -132.2,
+            "inst_5d": -6.3,
+            "total_5d": -138.5,
+            "strength": 138.5
+          },
+          {
+            "name": "쏠리드",
+            "ticker": "050890",
+            "label": "쏠리드 (↓↓)",
+            "foreign_5d": -88.1,
+            "inst_5d": -29.9,
+            "total_5d": -118.0,
+            "strength": 118.0
+          },
+          {
+            "name": "에임드바이오",
+            "ticker": "0009K0",
+            "label": "에임드바이오 (↓↓)",
+            "foreign_5d": -28.1,
+            "inst_5d": -82.6,
+            "total_5d": -110.7,
+            "strength": 110.7
+          },
+          {
+            "name": "솔브레인",
+            "ticker": "357780",
+            "label": "솔브레인 (↓↓)",
+            "foreign_5d": -66.9,
+            "inst_5d": -35.4,
+            "total_5d": -102.3,
+            "strength": 102.3
+          },
+          {
+            "name": "현대바이오",
+            "ticker": "048410",
+            "label": "현대바이오 (↓↓)",
+            "foreign_5d": -65.9,
+            "inst_5d": -36.0,
+            "total_5d": -101.9,
+            "strength": 101.9
+          },
+          {
+            "name": "앱클론",
+            "ticker": "174900",
+            "label": "앱클론 (↓↓)",
+            "foreign_5d": -90.7,
+            "inst_5d": -8.9,
+            "total_5d": -99.6,
+            "strength": 99.6
+          },
+          {
+            "name": "클로봇",
+            "ticker": "466100",
+            "label": "클로봇 (↓↓)",
+            "foreign_5d": -15.9,
+            "inst_5d": -54.2,
+            "total_5d": -70.1,
+            "strength": 70.1
+          },
+          {
+            "name": "유진로봇",
+            "ticker": "056080",
+            "label": "유진로봇 (↓↓)",
+            "foreign_5d": -56.3,
+            "inst_5d": -11.0,
+            "total_5d": -67.3,
+            "strength": 67.3
+          },
+          {
+            "name": "에스앤에스텍",
+            "ticker": "101490",
+            "label": "에스앤에스텍 (↓↓)",
+            "foreign_5d": -18.4,
+            "inst_5d": -43.3,
+            "total_5d": -61.7,
+            "strength": 61.7
+          },
+          {
+            "name": "와이지엔터테인먼트",
+            "ticker": "122870",
+            "label": "와이지엔터테인먼트 (↓↓)",
+            "foreign_5d": -11.5,
+            "inst_5d": -48.6,
+            "total_5d": -60.1,
+            "strength": 60.1
+          },
+          {
+            "name": "CJ ENM",
+            "ticker": "035760",
+            "label": "CJ ENM (↓↓)",
+            "foreign_5d": -28.9,
+            "inst_5d": -29.4,
+            "total_5d": -58.3,
+            "strength": 58.3
+          },
+          {
+            "name": "하림지주",
+            "ticker": "003380",
+            "label": "하림지주 (↓↓)",
+            "foreign_5d": -40.6,
+            "inst_5d": -16.5,
+            "total_5d": -57.1,
+            "strength": 57.1
+          },
+          {
+            "name": "큐리언트",
+            "ticker": "115180",
+            "label": "큐리언트 (↓↓)",
+            "foreign_5d": -8.8,
+            "inst_5d": -46.2,
+            "total_5d": -55.0,
+            "strength": 55.0
+          },
+          {
+            "name": "온코닉테라퓨틱스",
+            "ticker": "476060",
+            "label": "온코닉테라퓨틱스 (↓↓)",
+            "foreign_5d": -38.2,
+            "inst_5d": -7.8,
+            "total_5d": -46.0,
+            "strength": 46.0
+          },
+          {
+            "name": "큐리옥스바이오시스템즈",
+            "ticker": "445680",
+            "label": "큐리옥스바이오시스템즈 (↓↓)",
+            "foreign_5d": -6.4,
+            "inst_5d": -35.6,
+            "total_5d": -42.0,
+            "strength": 42.0
+          },
+          {
+            "name": "휴온스글로벌",
+            "ticker": "084110",
+            "label": "휴온스글로벌 (↓↓)",
+            "foreign_5d": -34.2,
+            "inst_5d": -6.8,
+            "total_5d": -41.0,
+            "strength": 41.0
+          },
+          {
+            "name": "서부T&D",
+            "ticker": "006730",
+            "label": "서부T&D (↓↓)",
+            "foreign_5d": -11.2,
+            "inst_5d": -27.0,
+            "total_5d": -38.2,
+            "strength": 38.2
+          },
+          {
+            "name": "셀트리온제약",
+            "ticker": "068760",
+            "label": "셀트리온제약 (↓↓)",
+            "foreign_5d": -4.1,
+            "inst_5d": -28.0,
+            "total_5d": -32.1,
+            "strength": 32.1
+          },
+          {
+            "name": "스튜디오드래곤",
+            "ticker": "253450",
+            "label": "스튜디오드래곤 (↓↓)",
+            "foreign_5d": -6.9,
+            "inst_5d": -22.4,
+            "total_5d": -29.3,
+            "strength": 29.3
+          },
+          {
+            "name": "코미코",
+            "ticker": "183300",
+            "label": "코미코 (↓↓)",
+            "foreign_5d": -4.1,
+            "inst_5d": -24.2,
+            "total_5d": -28.3,
+            "strength": 28.3
+          }
+        ]
+      }
     }
   }
 }

@@ -250,6 +250,25 @@ def build_scan_cache(app_key: str, app_secret: str):
     }
 
 
+def attach_previous_market_snapshots(existing_cache: Dict, new_cache: Dict):
+    existing_markets = existing_cache.get("markets", {}) if isinstance(existing_cache, dict) else {}
+    new_markets = new_cache.get("markets", {}) if isinstance(new_cache, dict) else {}
+
+    for market_key, market_payload in new_markets.items():
+        existing_market = existing_markets.get(market_key, {})
+        existing_target_date = existing_market.get("target_date")
+        new_target_date = market_payload.get("target_date")
+
+        if existing_target_date and existing_target_date != new_target_date:
+            market_payload["previous_target_date"] = existing_target_date
+            market_payload["previous_direction_groups"] = existing_market.get("direction_groups", {})
+        else:
+            market_payload["previous_target_date"] = existing_market.get("previous_target_date")
+            market_payload["previous_direction_groups"] = existing_market.get("previous_direction_groups", {})
+
+    return new_cache
+
+
 def load_scan_cache(path: Path = CACHE_FILE):
     if not path.exists():
         return {}

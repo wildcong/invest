@@ -310,10 +310,12 @@ def has_usable_cached_scan(cached_market, target_dict):
 def get_display_entries(direction_groups, display_filter):
     if display_filter == "buy":
         active_keys = ["buy"]
+    elif display_filter == "mixed":
+        active_keys = ["mixed"]
     elif display_filter == "sell":
         active_keys = ["sell"]
     else:
-        active_keys = ["buy", "sell"]
+        active_keys = ["buy", "mixed", "sell"]
 
     entries = []
     for key in active_keys:
@@ -582,7 +584,7 @@ if is_filtered and allow_scan:
                         st.session_state.scan_display_filter = "all"
                     else:
                         st.session_state.scan_focus = direction
-                        st.session_state.scan_display_filter = direction if direction in ("buy", "sell") else "all"
+                        st.session_state.scan_display_filter = direction
 
             focus = st.session_state.scan_focus
             if focus:

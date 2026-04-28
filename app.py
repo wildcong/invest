@@ -32,6 +32,20 @@ def get_new_entry_highlight_style():
         return "background-color: #0f3d5e; color: #f3f8fc; font-weight: 700;"
     return "background-color: #fff3bf; color: #1f2328; font-weight: 700;"
 
+
+def get_mixed_transition_highlight_styles():
+    if THEME_BASE == "dark":
+        return {
+            "from_buy": "background-color: #15543c; color: #f2fbf5; font-weight: 700;",
+            "from_sell": "background-color: #6a2436; color: #fff4f6; font-weight: 700;",
+            "new": get_new_entry_highlight_style(),
+        }
+    return {
+        "from_buy": "background-color: #d7f5df; color: #184d2d; font-weight: 700;",
+        "from_sell": "background-color: #f8d7df; color: #6f1d2d; font-weight: 700;",
+        "new": get_new_entry_highlight_style(),
+    }
+
 st.set_page_config(page_title="수급 쌍끌이 스캐너", layout="wide")
 st.markdown(
     """
@@ -576,11 +590,32 @@ if is_filtered and allow_scan:
                 focus_title = focus_meta[focus][0]
                 previous_target_date = cached_market.get("previous_target_date")
                 previous_direction_names = get_previous_direction_names(cached_market, focus)
+                previous_buy_names = get_previous_direction_names(cached_market, "buy")
+                previous_sell_names = get_previous_direction_names(cached_market, "sell")
                 new_entry_names = {
                     item["name"]
                     for item in focus_items
                     if item["name"] not in previous_direction_names
                 }
+                entry_styles = {}
+                mixed_from_buy_names = set()
+                mixed_from_sell_names = set()
+                other_new_names = set()
+                if focus == "mixed":
+                    mixed_transition_styles = get_mixed_transition_highlight_styles()
+                    for name in new_entry_names:
+                        if name in previous_buy_names:
+                            entry_styles[name] = mixed_transition_styles["from_buy"]
+                            mixed_from_buy_names.add(name)
+                        elif name in previous_sell_names:
+                            entry_styles[name] = mixed_transition_styles["from_sell"]
+                            mixed_from_sell_names.add(name)
+                        else:
+                            entry_styles[name] = mixed_transition_styles["new"]
+                            other_new_names.add(name)
+                else:
+                    default_style = get_new_entry_highlight_style()
+                    entry_styles = {name: default_style for name in new_entry_names}
                 with st.expander(f"{focus_title} 종목 {len(focus_items)}개", expanded=True):
                     if focus_items:
                         focus_df = pd.DataFrame(
@@ -591,10 +626,9 @@ if is_filtered and allow_scan:
                                 "합계": [item.get("total_5d", "-") for item in focus_items],
                             }
                         )
-                        highlight_style = get_new_entry_highlight_style()
                         styled_focus_df = focus_df.style.apply(
                             lambda col: [
-                                highlight_style if name in new_entry_names else ""
+                                entry_styles.get(name, "")
                                 for name in col
                             ],
                             subset=["종목"],
@@ -627,9 +661,17 @@ if is_filtered and allow_scan:
                             st.caption("현재 환경에서는 표 선택 이동을 지원하지 않습니다.")
                         if previous_target_date:
                             new_count = len(new_entry_names)
-                            st.caption(
-                                f"노란 배경 = {format_target_date(previous_target_date)} 대비 오늘 새 진입 {new_count}개"
-                            )
+                            if focus == "mixed":
+                                st.caption(
+                                    f"{format_target_date(previous_target_date)} 대비 오늘 새 진입 {new_count}개 | "
+                                    f"녹색 계열 = 매수→엇갈림 {len(mixed_from_buy_names)}개 | "
+                                    f"붉은 계열 = 매도→엇갈림 {len(mixed_from_sell_names)}개 | "
+                                    f"기본 강조 = 기타 신규 {len(other_new_names)}개"
+                                )
+                            else:
+                                st.caption(
+                                    f"노란 배경 = {format_target_date(previous_target_date)} 대비 오늘 새 진입 {new_count}개"
+                                )
                     else:
                         st.caption("현재 조건에 맞는 종목이 없습니다.")
                     if st.button("목록 닫기", key=f"{market_cache_key}_{focus}_close", width="stretch"):

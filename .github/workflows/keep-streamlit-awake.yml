@@ -66,28 +66,56 @@ jobs:
             }
 
             await page.waitForLoadState("networkidle", { timeout: 120000 }).catch(() => {});
-            await page.waitForTimeout(8000);
+            const maxAttempts = 36;
+            const pollDelayMs = 10000;
+            let lastHealth = null;
 
-            const finalUrl = page.url();
-            const health = await page.evaluate(async (rootUrl) => {
-              const healthUrl = new URL("/_stcore/health", rootUrl).toString();
-              const res = await fetch(healthUrl, {
-                method: "GET",
-                credentials: "include",
-                cache: "no-store",
-              });
-              return {
-                status: res.status,
-                body: await res.text(),
-              };
-            }, appUrl);
+            for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+              const finalUrl = page.url();
+              const health = await page.evaluate(async (rootUrl) => {
+                const healthUrl = new URL("/_stcore/health", rootUrl).toString();
+                const res = await fetch(healthUrl, {
+                  method: "GET",
+                  credentials: "include",
+                  cache: "no-store",
+                });
+                return {
+                  status: res.status,
+                  body: await res.text(),
+                };
+              }, appUrl);
 
-            console.log(`Final URL: ${finalUrl}`);
-            console.log(`Health status: ${health.status}`);
-            console.log(`Health body: ${health.body}`);
+              const trimmedBody = (health.body || "").trim();
+              const bodyPreview = trimmedBody.replace(/\s+/g, " ").slice(0, 160);
+              const isHtmlShell =
+                /^<!doctype html/i.test(trimmedBody) || /<html[\s>]/i.test(trimmedBody);
+              const isHealthy = health.status === 200 && trimmedBody.toLowerCase() === "ok";
 
-            if (health.status !== 200) {
-              throw new Error(`Health check failed with status ${health.status}.`);
+              lastHealth = { finalUrl, status: health.status, bodyPreview };
+
+              console.log(
+                `Attempt ${attempt}/${maxAttempts} finalUrl=${finalUrl} status=${health.status} bodyPreview=${bodyPreview || "<empty>"}`
+              );
+
+              if (isHealthy) {
+                console.log("Streamlit backend health responded with ok.");
+                break;
+              }
+
+              if (attempt === maxAttempts) {
+                const shellHint = isHtmlShell
+                  ? " Received Streamlit shell HTML instead of backend health."
+                  : "";
+                throw new Error(
+                  `Timed out waiting for Streamlit backend health.${shellHint} Last status=${health.status}, bodyPreview=${bodyPreview || "<empty>"}`
+                );
+              }
+
+              await page.waitForTimeout(pollDelayMs);
+            }
+
+            if (!lastHealth || lastHealth.bodyPreview.toLowerCase() !== "ok") {
+              throw new Error("Streamlit backend did not confirm healthy state.");
             }
           } finally {
             await browser.close();

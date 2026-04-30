@@ -32,7 +32,10 @@ jobs:
 
       - name: Install Playwright browser
         if: steps.resolve.outputs.skip == 'false'
-        run: npx -y playwright@1.54.2 install --with-deps chromium
+        run: |
+          npm init -y
+          npm install playwright@1.54.2
+          npx playwright install --with-deps chromium
 
       - name: Wake Streamlit app in headless browser
         if: steps.resolve.outputs.skip == 'false'

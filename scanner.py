@@ -1,6 +1,7 @@
 
 import json
 import hashlib
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Optional
@@ -11,7 +12,8 @@ import requests
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
-TOKEN_CACHE_FILE = Path(__file__).parent / "data" / "kis_token_cache.json"
+LEGACY_TOKEN_CACHE_FILE = Path(__file__).parent / "data" / "kis_token_cache.json"
+TOKEN_CACHE_FILE = Path(os.environ.get("KIS_TOKEN_CACHE_FILE", "/tmp/kis_token_cache.json"))
 AUTO_REFRESH_PRIMARY_HOUR = 16
 AUTO_REFRESH_PRIMARY_MINUTE = 30
 AUTO_REFRESH_BACKUP_HOUR = 17
@@ -111,17 +113,23 @@ def get_token_cache_key(app_key: str, app_secret: str) -> str:
 
 
 def load_token_cache(path: Path = TOKEN_CACHE_FILE) -> Dict:
-    if not path.exists():
-        return {}
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
+    for candidate in (path, LEGACY_TOKEN_CACHE_FILE):
+        if not candidate.exists():
+            continue
+        try:
+            return json.loads(candidate.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+    return {}
 
 
 def save_token_cache(payload: Dict, path: Path = TOKEN_CACHE_FILE):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        # Token cache 저장 실패가 차트 전체를 막지 않도록 조용히 무시합니다.
+        pass
 
 
 def get_cached_access_token(app_key: str, app_secret: str, path: Path = TOKEN_CACHE_FILE) -> Optional[str]:
@@ -150,10 +158,12 @@ def get_cached_access_token(app_key: str, app_secret: str, path: Path = TOKEN_CA
 
 
 def get_access_token(app_key: str, app_secret: str, force_refresh: bool = False) -> Optional[str]:
+    stale_token = None
     if not force_refresh:
         cached_token = get_cached_access_token(app_key, app_secret)
         if cached_token:
             return cached_token
+        stale_token = load_token_cache().get("access_token")
 
     headers = {"content-type": "application/json"}
     body = {"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret}
@@ -173,6 +183,8 @@ def get_access_token(app_key: str, app_secret: str, force_refresh: bool = False)
                 }
             )
             return access_token
+    if stale_token:
+        return stale_token
     return None
 
 

@@ -54,6 +54,7 @@ jobs:
           const page = await browser.newPage({
             userAgent: "github-actions-keep-awake-browser",
           });
+          let wakeClicked = false;
 
           try {
             const response = await page.goto(appUrl, {
@@ -71,6 +72,22 @@ jobs:
             let lastHealth = null;
 
             for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+              const wakeButton = page.getByRole("button", {
+                name: /get this app back up/i,
+              });
+              const wakeButtonVisible = await wakeButton
+                .first()
+                .isVisible({ timeout: 1000 })
+                .catch(() => false);
+
+              if (wakeButtonVisible) {
+                console.log(`Attempt ${attempt}/${maxAttempts} sleeping page detected.`);
+                await wakeButton.first().click();
+                wakeClicked = true;
+                await page.waitForLoadState("networkidle", { timeout: 120000 }).catch(() => {});
+                await page.waitForTimeout(3000);
+              }
+
               const finalUrl = page.url();
               const health = await page.evaluate(async (rootUrl) => {
                 const healthUrl = new URL("/_stcore/health", rootUrl).toString();
@@ -107,7 +124,7 @@ jobs:
                   ? " Received Streamlit shell HTML instead of backend health."
                   : "";
                 throw new Error(
-                  `Timed out waiting for Streamlit backend health.${shellHint} Last status=${health.status}, bodyPreview=${bodyPreview || "<empty>"}`
+                  `Timed out waiting for Streamlit backend health.${shellHint} wakeClicked=${wakeClicked} Last status=${health.status}, bodyPreview=${bodyPreview || "<empty>"}`
                 );
               }
 

@@ -123,7 +123,6 @@ components.html(
 def get_stock_lists():
     return fetch_stock_lists()
 
-@st.cache_data(ttl=86000)
 def get_access_token():
     return fetch_access_token(APP_KEY, APP_SECRET)
 

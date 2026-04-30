@@ -1,5 +1,6 @@
 
 import json
+import hashlib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Optional
@@ -10,10 +11,12 @@ import requests
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
+TOKEN_CACHE_FILE = Path(__file__).parent / "data" / "kis_token_cache.json"
 AUTO_REFRESH_PRIMARY_HOUR = 16
 AUTO_REFRESH_PRIMARY_MINUTE = 30
 AUTO_REFRESH_BACKUP_HOUR = 17
 AUTO_REFRESH_BACKUP_MINUTE = 5
+TOKEN_EXPIRY_BUFFER_SECONDS = 300
 
 
 def get_target_date(now: Optional[datetime] = None) -> str:
@@ -102,12 +105,74 @@ def get_stock_lists():
     return dict_k200, dict_kq150, dict_all
 
 
-def get_access_token(app_key: str, app_secret: str) -> Optional[str]:
+def get_token_cache_key(app_key: str, app_secret: str) -> str:
+    raw = f"{app_key}:{app_secret}".encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def load_token_cache(path: Path = TOKEN_CACHE_FILE) -> Dict:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_token_cache(payload: Dict, path: Path = TOKEN_CACHE_FILE):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def get_cached_access_token(app_key: str, app_secret: str, path: Path = TOKEN_CACHE_FILE) -> Optional[str]:
+    cache = load_token_cache(path)
+    if cache.get("cache_key") != get_token_cache_key(app_key, app_secret):
+        return None
+
+    access_token = cache.get("access_token")
+    expires_at_raw = cache.get("expires_at")
+    if not access_token or not expires_at_raw:
+        return None
+
+    try:
+        expires_at = datetime.fromisoformat(expires_at_raw)
+    except ValueError:
+        return None
+
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    now_utc = datetime.now(timezone.utc)
+    if expires_at <= now_utc + timedelta(seconds=TOKEN_EXPIRY_BUFFER_SECONDS):
+        return None
+
+    return access_token
+
+
+def get_access_token(app_key: str, app_secret: str, force_refresh: bool = False) -> Optional[str]:
+    if not force_refresh:
+        cached_token = get_cached_access_token(app_key, app_secret)
+        if cached_token:
+            return cached_token
+
     headers = {"content-type": "application/json"}
     body = {"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret}
     res = requests.post(f"{URL_BASE}/oauth2/tokenP", headers=headers, data=json.dumps(body), timeout=20)
     if res.status_code == 200:
-        return res.json().get("access_token")
+        payload = res.json()
+        access_token = payload.get("access_token")
+        expires_in = int(payload.get("expires_in", 86400))
+        if access_token:
+            issued_at = datetime.now(timezone.utc)
+            save_token_cache(
+                {
+                    "cache_key": get_token_cache_key(app_key, app_secret),
+                    "access_token": access_token,
+                    "issued_at": issued_at.isoformat(),
+                    "expires_at": (issued_at + timedelta(seconds=expires_in)).isoformat(),
+                }
+            )
+            return access_token
     return None
 
 

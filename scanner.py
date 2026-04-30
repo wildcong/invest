@@ -2,6 +2,7 @@
 import json
 import hashlib
 import os
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Optional
@@ -19,6 +20,9 @@ AUTO_REFRESH_PRIMARY_MINUTE = 30
 AUTO_REFRESH_BACKUP_HOUR = 17
 AUTO_REFRESH_BACKUP_MINUTE = 5
 TOKEN_EXPIRY_BUFFER_SECONDS = 300
+TOKEN_REQUEST_RETRIES = 3
+TOKEN_REQUEST_RETRY_DELAY_SECONDS = 1.5
+_TOKEN_MEMORY_CACHE: Dict[str, Dict[str, str]] = {}
 
 
 def get_target_date(now: Optional[datetime] = None) -> str:
@@ -133,8 +137,22 @@ def save_token_cache(payload: Dict, path: Path = TOKEN_CACHE_FILE):
 
 
 def get_cached_access_token(app_key: str, app_secret: str, path: Path = TOKEN_CACHE_FILE) -> Optional[str]:
+    cache_key = get_token_cache_key(app_key, app_secret)
+    memory_cache = _TOKEN_MEMORY_CACHE.get(cache_key, {})
+    memory_token = memory_cache.get("access_token")
+    memory_expires_at_raw = memory_cache.get("expires_at")
+    if memory_token and memory_expires_at_raw:
+        try:
+            memory_expires_at = datetime.fromisoformat(memory_expires_at_raw)
+            if memory_expires_at.tzinfo is None:
+                memory_expires_at = memory_expires_at.replace(tzinfo=timezone.utc)
+            if memory_expires_at > datetime.now(timezone.utc) + timedelta(seconds=TOKEN_EXPIRY_BUFFER_SECONDS):
+                return memory_token
+        except ValueError:
+            pass
+
     cache = load_token_cache(path)
-    if cache.get("cache_key") != get_token_cache_key(app_key, app_secret):
+    if cache.get("cache_key") != cache_key:
         return None
 
     access_token = cache.get("access_token")
@@ -159,6 +177,7 @@ def get_cached_access_token(app_key: str, app_secret: str, path: Path = TOKEN_CA
 
 def get_access_token(app_key: str, app_secret: str, force_refresh: bool = False) -> Optional[str]:
     stale_token = None
+    cache_key = get_token_cache_key(app_key, app_secret)
     if not force_refresh:
         cached_token = get_cached_access_token(app_key, app_secret)
         if cached_token:
@@ -167,22 +186,33 @@ def get_access_token(app_key: str, app_secret: str, force_refresh: bool = False)
 
     headers = {"content-type": "application/json"}
     body = {"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret}
-    res = requests.post(f"{URL_BASE}/oauth2/tokenP", headers=headers, data=json.dumps(body), timeout=20)
-    if res.status_code == 200:
-        payload = res.json()
-        access_token = payload.get("access_token")
-        expires_in = int(payload.get("expires_in", 86400))
-        if access_token:
-            issued_at = datetime.now(timezone.utc)
-            save_token_cache(
-                {
-                    "cache_key": get_token_cache_key(app_key, app_secret),
-                    "access_token": access_token,
-                    "issued_at": issued_at.isoformat(),
-                    "expires_at": (issued_at + timedelta(seconds=expires_in)).isoformat(),
-                }
-            )
-            return access_token
+    for attempt in range(1, TOKEN_REQUEST_RETRIES + 1):
+        try:
+            res = requests.post(f"{URL_BASE}/oauth2/tokenP", headers=headers, data=json.dumps(body), timeout=20)
+            if res.status_code == 200:
+                payload = res.json()
+                access_token = payload.get("access_token")
+                expires_in = int(payload.get("expires_in", 86400))
+                if access_token:
+                    issued_at = datetime.now(timezone.utc)
+                    token_payload = {
+                        "cache_key": cache_key,
+                        "access_token": access_token,
+                        "issued_at": issued_at.isoformat(),
+                        "expires_at": (issued_at + timedelta(seconds=expires_in)).isoformat(),
+                    }
+                    _TOKEN_MEMORY_CACHE[cache_key] = {
+                        "access_token": access_token,
+                        "expires_at": token_payload["expires_at"],
+                    }
+                    save_token_cache(token_payload)
+                    return access_token
+        except Exception:
+            pass
+
+        if attempt < TOKEN_REQUEST_RETRIES:
+            time.sleep(TOKEN_REQUEST_RETRY_DELAY_SECONDS)
+
     if stale_token:
         return stale_token
     return None

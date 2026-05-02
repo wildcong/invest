@@ -731,6 +731,86 @@ with c2:
                                  key="stock_selector", on_change=on_change, label_visibility="collapsed")
 with c3: st.button("다음 ➡️", on_click=go_next, width="stretch")
 
+components.html(
+    """
+    <script>
+    (() => {
+      const parentWindow = window.parent;
+      const parentDoc = parentWindow.document;
+
+      if (parentWindow.__stockMouseNavCleanup) {
+        parentWindow.__stockMouseNavCleanup();
+      }
+
+      const clickButtonByText = (needle) => {
+        const buttons = Array.from(parentDoc.querySelectorAll("button"));
+        const button = buttons.find((el) => (el.innerText || "").includes(needle));
+        if (button && !button.disabled) {
+          button.click();
+          return true;
+        }
+        return false;
+      };
+
+      const isChartTarget = (target) => {
+        return Boolean(target && target.closest && target.closest('div[data-testid="stPlotlyChart"]'));
+      };
+
+      const onMouseDown = (event) => {
+        if (event.button === 3) {
+          event.preventDefault();
+          event.stopPropagation();
+          clickButtonByText("이전");
+          return;
+        }
+
+        if (event.button === 4) {
+          event.preventDefault();
+          event.stopPropagation();
+          clickButtonByText("다음");
+          return;
+        }
+
+        if (!isChartTarget(event.target)) return;
+
+        if (event.button === 0) {
+          event.preventDefault();
+          event.stopPropagation();
+          clickButtonByText("이전");
+        } else if (event.button === 2) {
+          event.preventDefault();
+          event.stopPropagation();
+          clickButtonByText("다음");
+        }
+      };
+
+      const onMouseUp = (event) => {
+        if (event.button === 3 || event.button === 4) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      };
+
+      const onContextMenu = (event) => {
+        if (!isChartTarget(event.target)) return;
+        event.preventDefault();
+      };
+
+      parentDoc.addEventListener("mouseup", onMouseUp, true);
+      parentDoc.addEventListener("mousedown", onMouseDown, true);
+      parentDoc.addEventListener("contextmenu", onContextMenu, true);
+
+      parentWindow.__stockMouseNavCleanup = () => {
+        parentDoc.removeEventListener("mouseup", onMouseUp, true);
+        parentDoc.removeEventListener("mousedown", onMouseDown, true);
+        parentDoc.removeEventListener("contextmenu", onContextMenu, true);
+      };
+    })();
+    </script>
+    """,
+    height=0,
+)
+
 selected_real = name_lookup.get(selected_disp, selected_disp)
 selected_ticker = ticker_lookup.get(selected_disp) or target_dict.get(selected_real, "005930")
 

@@ -740,6 +740,11 @@ components.html(
 
       if (parentWindow.__stockMouseNavCleanup) {
         parentWindow.__stockMouseNavCleanup();
+        parentWindow.__stockMouseNavCleanup = null;
+      }
+
+      if (parentWindow.__stockKeyboardNavCleanup) {
+        parentWindow.__stockKeyboardNavCleanup();
       }
 
       const clickButtonByText = (needle) => {
@@ -752,58 +757,32 @@ components.html(
         return false;
       };
 
-      const isChartTarget = (target) => {
-        return Boolean(target && target.closest && target.closest('div[data-testid="stPlotlyChart"]'));
+      const isEditingTarget = (target) => {
+        if (!target || !target.closest) return false;
+        return Boolean(
+          target.closest("input, textarea, select, [contenteditable='true']") ||
+          target.closest("[role='combobox'], [role='listbox'], [role='option']")
+        );
       };
 
-      const onMouseDown = (event) => {
-        if (event.button === 3) {
+      const onKeyDown = (event) => {
+        if (isEditingTarget(event.target)) return;
+
+        if (event.key === "ArrowLeft") {
           event.preventDefault();
           event.stopPropagation();
           clickButtonByText("이전");
-          return;
-        }
-
-        if (event.button === 4) {
-          event.preventDefault();
-          event.stopPropagation();
-          clickButtonByText("다음");
-          return;
-        }
-
-        if (!isChartTarget(event.target)) return;
-
-        if (event.button === 0) {
-          event.preventDefault();
-          event.stopPropagation();
-          clickButtonByText("이전");
-        } else if (event.button === 2) {
+        } else if (event.key === "ArrowRight") {
           event.preventDefault();
           event.stopPropagation();
           clickButtonByText("다음");
         }
       };
 
-      const onMouseUp = (event) => {
-        if (event.button === 3 || event.button === 4) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-      };
+      parentDoc.addEventListener("keydown", onKeyDown, true);
 
-      const onContextMenu = (event) => {
-        if (!isChartTarget(event.target)) return;
-        event.preventDefault();
-      };
-
-      parentDoc.addEventListener("mouseup", onMouseUp, true);
-      parentDoc.addEventListener("mousedown", onMouseDown, true);
-      parentDoc.addEventListener("contextmenu", onContextMenu, true);
-
-      parentWindow.__stockMouseNavCleanup = () => {
-        parentDoc.removeEventListener("mouseup", onMouseUp, true);
-        parentDoc.removeEventListener("mousedown", onMouseDown, true);
-        parentDoc.removeEventListener("contextmenu", onContextMenu, true);
+      parentWindow.__stockKeyboardNavCleanup = () => {
+        parentDoc.removeEventListener("keydown", onKeyDown, true);
       };
     })();
     </script>

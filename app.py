@@ -27,6 +27,31 @@ DATAFRAME_SUPPORTS_SELECTION = "on_select" in inspect.signature(st.dataframe).pa
 THEME_BASE = st.get_option("theme.base") or "light"
 
 
+def get_query_param_value(name):
+    try:
+        value = st.query_params.get(name)
+    except Exception:
+        value = None
+
+    if isinstance(value, list):
+        return value[0] if value else None
+    return value
+
+
+def is_keepawake_request():
+    value = str(get_query_param_value("keepawake") or "").lower()
+    return value in ("1", "true", "yes")
+
+
+def should_pause_kis_token(now=None):
+    current = now.astimezone(KST) if now else datetime.now(KST)
+    if is_keepawake_request():
+        return True, "keepawake"
+    if current.weekday() > 4:
+        return True, "weekend"
+    return False, None
+
+
 def get_new_entry_highlight_style():
     if THEME_BASE == "dark":
         return "background-color: #0f3d5e; color: #f3f8fc; font-weight: 700;"
@@ -123,6 +148,7 @@ components.html(
 def get_stock_lists():
     return fetch_stock_lists()
 
+@st.cache_data(ttl=23 * 60 * 60, show_spinner=False)
 def get_access_token():
     return fetch_access_token(APP_KEY, APP_SECRET)
 
@@ -381,7 +407,8 @@ st.markdown("<h2 style='margin-bottom: 20px;'>📊 쌍끌이 수급 스캐너</h
 
 # 3개 리스트 다시 받아옴
 dict_k200, dict_kq150, dict_all = get_stock_lists() 
-token = get_access_token()
+token_paused, token_pause_reason = should_pause_kis_token()
+token = None if token_paused else get_access_token()
 
 # 🎯 3개 탭 유지
 market_mode = st.radio(
@@ -497,7 +524,12 @@ if is_filtered and allow_scan:
             cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
             cached_generated_at = scan_cache.get("generated_at_kst")
         else:
-            st.error("API 토큰 발급 실패")
+            if token_pause_reason == "weekend":
+                st.info("주말에는 KIS API 토큰을 새로 발급하지 않습니다. 저장된 자동 갱신 캐시가 있으면 캐시 기준으로 표시합니다.")
+            elif token_pause_reason == "keepawake":
+                st.info("앱 깨우기 확인 중에는 KIS API 토큰을 발급하지 않습니다.")
+            else:
+                st.error("API 토큰 발급 실패")
             st.stop()
     if market_mode in ("🔵 KOSPI 200", "🟢 KOSDAQ 150"):
         scan_summary = st.session_state.scan_summary
@@ -525,7 +557,14 @@ if is_filtered and allow_scan:
                 st.error(notice_message)
             st.caption(f"집계 {scan_summary['scanned']}/{len(target_dict)} | 기준일 {format_target_date(target_date)}")
             refresh_disabled = not bool(token)
-            refresh_help = "KIS 토큰이 없어서 지금은 새로 집계할 수 없습니다." if refresh_disabled else "실시간으로 다시 스캔해서 목록을 갱신합니다."
+            if token_pause_reason == "weekend":
+                refresh_help = "주말에는 불필요한 토큰 발급을 막기 위해 새로 집계를 비활성화합니다."
+            elif token_pause_reason == "keepawake":
+                refresh_help = "앱 깨우기 확인 중에는 KIS 토큰을 발급하지 않습니다."
+            elif refresh_disabled:
+                refresh_help = "KIS 토큰이 없어서 지금은 새로 집계할 수 없습니다."
+            else:
+                refresh_help = "실시간으로 다시 스캔해서 목록을 갱신합니다."
             controls_col = st.columns([1])[0]
             with controls_col:
                 if st.button(
@@ -887,7 +926,12 @@ if token:
     else:
         st.error("데이터를 불러올 수 없습니다. 아래 API 로그를 확인해 주세요.")
 else:
-    st.error("KIS API 토큰을 가져오지 못해 차트를 표시할 수 없습니다. 잠시 후 새로고침해 주세요.")
+    if token_pause_reason == "weekend":
+        st.info("주말에는 불필요한 토큰 발급을 막기 위해 차트용 KIS API 호출을 쉬고 있습니다. 평일에는 다시 자동으로 표시됩니다.")
+    elif token_pause_reason == "keepawake":
+        st.caption("Keep-awake 확인 모드라 KIS API 토큰과 차트 호출은 건너뜁니다.")
+    else:
+        st.error("KIS API 토큰을 가져오지 못해 차트를 표시할 수 없습니다. 잠시 후 새로고침해 주세요.")
 
 # ==========================================
 # 🚨 API 디버그 로그
@@ -918,3 +962,7 @@ with st.expander("🛠️ 시스템 로그 보기 (에러 원인 파악용)"):
                 st.text(raw_res.text)
         except Exception as e:
             st.error(f"서버 연결 실패: {str(e)}")
+    elif token_pause_reason == "weekend":
+        st.info("주말 보호 모드: KIS 토큰 발급과 API 디버그 호출을 건너뜁니다.")
+    elif token_pause_reason == "keepawake":
+        st.info("Keep-awake 모드: 앱 생존 확인만 하고 KIS 토큰 발급은 건너뜁니다.")

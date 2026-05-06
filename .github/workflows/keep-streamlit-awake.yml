@@ -50,7 +50,9 @@ jobs:
             throw new Error("APP_URL is missing.");
           }
 
-          const appUrl = rawAppUrl.replace(/\/$/, "") + "/";
+          const appUrlWithParams = new URL(rawAppUrl);
+          appUrlWithParams.searchParams.set("keepawake", "1");
+          const appUrl = appUrlWithParams.toString();
 
           const browser = await chromium.launch({ headless: true });
           const page = await browser.newPage({

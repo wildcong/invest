@@ -1,7 +1,9 @@
 import os
+from datetime import datetime
 
 from scanner import (
     CACHE_FILE,
+    KST,
     attach_previous_market_snapshots,
     build_scan_cache,
     cache_has_target_date,
@@ -12,6 +14,11 @@ from scanner import (
 
 
 def main():
+    now_kst = datetime.now(KST)
+    if now_kst.weekday() > 4:
+        print(f"weekend in KST ({now_kst:%Y-%m-%d %H:%M}); skipping KIS token/API calls")
+        return
+
     app_key = os.environ.get("KIS_APP_KEY")
     app_secret = os.environ.get("KIS_APP_SECRET")
 

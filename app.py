@@ -43,12 +43,14 @@ def is_keepawake_request():
     return value in ("1", "true", "yes")
 
 
-def should_pause_kis_token(now=None):
+def is_weekend_kst(now=None):
     current = now.astimezone(KST) if now else datetime.now(KST)
+    return current.weekday() > 4
+
+
+def should_pause_kis_token(now=None):
     if is_keepawake_request():
         return True, "keepawake"
-    if current.weekday() > 4:
-        return True, "weekend"
     return False, None
 
 
@@ -408,6 +410,7 @@ st.markdown("<h2 style='margin-bottom: 20px;'>📊 쌍끌이 수급 스캐너</h
 # 3개 리스트 다시 받아옴
 dict_k200, dict_kq150, dict_all = get_stock_lists() 
 token_paused, token_pause_reason = should_pause_kis_token()
+weekend_mode = is_weekend_kst()
 token = None if token_paused else get_access_token()
 
 # 🎯 3개 탭 유지
@@ -488,6 +491,10 @@ with h_col1:
 with h_col2:
     period = st.select_slider("분석 기간", options=[5, 10, 15, 20, 25, 30], value=30, label_visibility="collapsed")
 
+if is_filtered and allow_scan and weekend_mode and not cached_market.get("summary"):
+    summary_placeholder.info("주말에는 대량 새로 집계를 실행하지 않습니다. 금요일 기준 개별 차트는 아래에서 계속 볼 수 있습니다.")
+    is_filtered = False
+
 if is_filtered and allow_scan:
     if (
         'filtered_map' not in st.session_state
@@ -524,9 +531,7 @@ if is_filtered and allow_scan:
             cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
             cached_generated_at = scan_cache.get("generated_at_kst")
         else:
-            if token_pause_reason == "weekend":
-                st.info("주말에는 KIS API 토큰을 새로 발급하지 않습니다. 저장된 자동 갱신 캐시가 있으면 캐시 기준으로 표시합니다.")
-            elif token_pause_reason == "keepawake":
+            if token_pause_reason == "keepawake":
                 st.info("앱 깨우기 확인 중에는 KIS API 토큰을 발급하지 않습니다.")
             else:
                 st.error("API 토큰 발급 실패")
@@ -556,9 +561,9 @@ if is_filtered and allow_scan:
             else:
                 st.error(notice_message)
             st.caption(f"집계 {scan_summary['scanned']}/{len(target_dict)} | 기준일 {format_target_date(target_date)}")
-            refresh_disabled = not bool(token)
-            if token_pause_reason == "weekend":
-                refresh_help = "주말에는 불필요한 토큰 발급을 막기 위해 새로 집계를 비활성화합니다."
+            refresh_disabled = weekend_mode or not bool(token)
+            if weekend_mode:
+                refresh_help = "주말에는 대량 API 호출을 막기 위해 새로 집계를 비활성화합니다. 차트는 금요일 기준으로 볼 수 있습니다."
             elif token_pause_reason == "keepawake":
                 refresh_help = "앱 깨우기 확인 중에는 KIS 토큰을 발급하지 않습니다."
             elif refresh_disabled:
@@ -926,9 +931,7 @@ if token:
     else:
         st.error("데이터를 불러올 수 없습니다. 아래 API 로그를 확인해 주세요.")
 else:
-    if token_pause_reason == "weekend":
-        st.info("주말에는 불필요한 토큰 발급을 막기 위해 차트용 KIS API 호출을 쉬고 있습니다. 평일에는 다시 자동으로 표시됩니다.")
-    elif token_pause_reason == "keepawake":
+    if token_pause_reason == "keepawake":
         st.caption("Keep-awake 확인 모드라 KIS API 토큰과 차트 호출은 건너뜁니다.")
     else:
         st.error("KIS API 토큰을 가져오지 못해 차트를 표시할 수 없습니다. 잠시 후 새로고침해 주세요.")
@@ -941,28 +944,28 @@ with st.expander("🛠️ 시스템 로그 보기 (에러 원인 파악용)"):
     if token:
         st.write(f"현재 선택된 종목: **{selected_real}** (코드: {selected_ticker})")
         st.write(f"수급 요청 기준일자(KST): **{get_target_date()}**")
-        headers = {
-            "content-type": "application/json; charset=utf-8", 
-            "authorization": f"Bearer {token}",
-            "appkey": APP_KEY, "appsecret": APP_SECRET, 
-            "tr_id": "FHPTJ04160001", "custtype": "P"
-        }
-        params = {
-            "FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": selected_ticker,
-            "FID_INPUT_DATE_1": get_target_date(), "FID_ORG_ADJ_PRC": "", "FID_ETC_CLS_CODE": "1"
-        }
-        url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
-        try:
-            raw_res = requests.get(url, headers=headers, params=params)
-            st.write(f"**HTTP 상태 코드:** {raw_res.status_code}")
+        st.caption("디버그 API 호출은 필요할 때만 아래 버튼으로 실행합니다.")
+        if st.button("디버그 API 호출", width="stretch"):
+            headers = {
+                "content-type": "application/json; charset=utf-8",
+                "authorization": f"Bearer {token}",
+                "appkey": APP_KEY, "appsecret": APP_SECRET,
+                "tr_id": "FHPTJ04160001", "custtype": "P"
+            }
+            params = {
+                "FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": selected_ticker,
+                "FID_INPUT_DATE_1": get_target_date(), "FID_ORG_ADJ_PRC": "", "FID_ETC_CLS_CODE": "1"
+            }
+            url = f"{URL_BASE}/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
             try:
-                st.json(raw_res.json())
-            except:
-                st.text("JSON 변환 실패. 원본 텍스트:")
-                st.text(raw_res.text)
-        except Exception as e:
-            st.error(f"서버 연결 실패: {str(e)}")
-    elif token_pause_reason == "weekend":
-        st.info("주말 보호 모드: KIS 토큰 발급과 API 디버그 호출을 건너뜁니다.")
+                raw_res = requests.get(url, headers=headers, params=params)
+                st.write(f"**HTTP 상태 코드:** {raw_res.status_code}")
+                try:
+                    st.json(raw_res.json())
+                except:
+                    st.text("JSON 변환 실패. 원본 텍스트:")
+                    st.text(raw_res.text)
+            except Exception as e:
+                st.error(f"서버 연결 실패: {str(e)}")
     elif token_pause_reason == "keepawake":
         st.info("Keep-awake 모드: 앱 생존 확인만 하고 KIS 토큰 발급은 건너뜁니다.")

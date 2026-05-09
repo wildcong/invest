@@ -923,7 +923,7 @@ if token:
 
         info_parts = [
             f"수급 기준일 {format_target_date(cached_market.get('target_date') if is_filtered and allow_scan else get_target_date())}",
-            "당일 수급 데이터는 보통 16:30 이후 반영",
+            "당일 수급 데이터는 15:40 이후 가집계 순차 반영",
         ]
         if is_filtered and allow_scan:
             info_parts.append(f"자동 갱신 {format_cache_timestamp(cached_generated_at)}")

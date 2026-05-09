@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime
 
 from scanner import (
@@ -11,6 +12,9 @@ from scanner import (
     load_scan_cache,
     save_scan_cache,
 )
+
+PREFETCH_MAX_ATTEMPTS = int(os.environ.get("PREFETCH_MAX_ATTEMPTS", "4"))
+PREFETCH_RETRY_DELAY_SECONDS = int(os.environ.get("PREFETCH_RETRY_DELAY_SECONDS", "300"))
 
 
 def main():
@@ -31,7 +35,27 @@ def main():
         print(f"scan cache already up to date for {target_date}; skipping rebuild")
         return
 
-    cache = build_scan_cache(app_key, app_secret)
+    cache = None
+    for attempt in range(1, PREFETCH_MAX_ATTEMPTS + 1):
+        print(f"building scan cache attempt {attempt}/{PREFETCH_MAX_ATTEMPTS} for {target_date}")
+        cache = build_scan_cache(app_key, app_secret)
+        if cache_has_target_date(cache, target_date):
+            break
+
+        for market_key, market in cache.get("markets", {}).items():
+            summary = market.get("summary", {})
+            print(
+                f"incomplete {market_key}: scanned={summary.get('scanned', 0)} "
+                f"market_size={market.get('market_size')}"
+            )
+
+        if attempt < PREFETCH_MAX_ATTEMPTS:
+            print(f"cache incomplete; retrying in {PREFETCH_RETRY_DELAY_SECONDS} seconds")
+            time.sleep(PREFETCH_RETRY_DELAY_SECONDS)
+    else:
+        print("scan cache was not complete enough to save; leaving previous cache unchanged")
+        return
+
     cache = attach_previous_market_snapshots(existing_cache, cache)
     save_scan_cache(cache)
 

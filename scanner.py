@@ -15,10 +15,10 @@ KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
 LEGACY_TOKEN_CACHE_FILE = Path(__file__).parent / "data" / "kis_token_cache.json"
 TOKEN_CACHE_FILE = Path(os.environ.get("KIS_TOKEN_CACHE_FILE", "/tmp/kis_token_cache.json"))
-AUTO_REFRESH_PRIMARY_HOUR = 16
-AUTO_REFRESH_PRIMARY_MINUTE = 30
-AUTO_REFRESH_BACKUP_HOUR = 17
-AUTO_REFRESH_BACKUP_MINUTE = 5
+AUTO_REFRESH_PRIMARY_HOUR = 15
+AUTO_REFRESH_PRIMARY_MINUTE = 45
+AUTO_REFRESH_BACKUP_HOUR = 16
+AUTO_REFRESH_BACKUP_MINUTE = 15
 TOKEN_EXPIRY_BUFFER_SECONDS = 300
 TOKEN_REQUEST_RETRIES = 3
 TOKEN_REQUEST_RETRY_DELAY_SECONDS = 1.5
@@ -63,10 +63,16 @@ def cache_has_target_date(cache: Dict, target_date: str) -> bool:
         market = markets.get(market_key, {})
         if market.get("target_date") != target_date:
             return False
-        if not market.get("summary"):
+        summary = market.get("summary", {})
+        if not summary:
             return False
         if not market.get("direction_groups"):
             return False
+        market_size = market.get("market_size", 0)
+        scanned = summary.get("scanned", 0)
+        if isinstance(market_size, int) and market_size > 20:
+            if scanned < int(market_size * 0.8):
+                return False
     return True
 
 

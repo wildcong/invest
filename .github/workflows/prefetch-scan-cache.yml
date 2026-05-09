@@ -3,8 +3,9 @@ name: Prefetch Scan Cache
 
 on:
   schedule:
-    - cron: "30,35,40,45,50,55 7 * * 1-5"
-    - cron: "0,5 8 * * 1-5"
+    # KST 15:45 primary run, then KST 16:15 backup if the first run could not build a complete cache.
+    - cron: "45 6 * * 1-5"
+    - cron: "15 7 * * 1-5"
   workflow_dispatch:
 
 permissions:

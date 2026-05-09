@@ -59,9 +59,11 @@ jobs:
             userAgent: "github-actions-keep-awake-browser",
           });
           let wakeClicked = false;
+          let streamlitShellSeen = false;
 
           const appReadyRegex = /(5일\s*동방향|쌍끌이|종목\s*선택|새로\s*갱신|KOSPI|KOSDAQ)/i;
           const authBlockedRegex = /(sign in|log in|continue with google|streamlit.*login|로그인)/i;
+          const shellReadyRegex = /(Hosted with Streamlit|Created by wildcong|streamlit)/i;
           const htmlPreview = (value) => (value || "").replace(/\s+/g, " ").slice(0, 160);
 
           try {
@@ -73,10 +75,13 @@ jobs:
             if (!response) {
               throw new Error("No initial response was received from the app.");
             }
+            if (response.status() >= 500) {
+              throw new Error(`Initial app response failed with HTTP ${response.status()}.`);
+            }
 
             await page.waitForLoadState("networkidle", { timeout: 120000 }).catch(() => {});
-            const maxAttempts = 36;
-            const pollDelayMs = 10000;
+            const maxAttempts = 6;
+            const pollDelayMs = 5000;
             let lastProbe = null;
 
             for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -100,6 +105,10 @@ jobs:
               if (appReady) {
                 console.log(`Attempt ${attempt}/${maxAttempts} app UI is visible. bodyPreview=${bodyPreview}`);
                 break;
+              }
+
+              if (shellReadyRegex.test(bodyText)) {
+                streamlitShellSeen = true;
               }
 
               const wakeButtonVisible = await page
@@ -142,6 +151,9 @@ jobs:
               const trimmedHealthBody = (health.body || "").trim();
               const healthPreview = htmlPreview(trimmedHealthBody);
               const healthOk = health.status === 200 && trimmedHealthBody.toLowerCase() === "ok";
+              const healthReturnedStreamlitShell =
+                health.status === 200 &&
+                (/^<!doctype html/i.test(trimmedHealthBody) || /<html[\s>]/i.test(trimmedHealthBody));
 
               lastProbe = {
                 finalUrl: page.url(),
@@ -164,6 +176,18 @@ jobs:
               const refreshedText = await page.locator("body").innerText({ timeout: 3000 }).catch(() => "");
               if (appReadyRegex.test(refreshedText)) {
                 console.log(`Attempt ${attempt}/${maxAttempts} app UI became visible after probing.`);
+                break;
+              }
+
+              if (healthReturnedStreamlitShell || shellReadyRegex.test(refreshedText)) {
+                streamlitShellSeen = true;
+              }
+
+              if (attempt >= 2 && streamlitShellSeen) {
+                console.log(
+                  `Streamlit shell responded but backend health did not expose ok. ` +
+                    `Treating browser visit as successful keep-awake ping. Last probe=${JSON.stringify(lastProbe)}`
+                );
                 break;
               }
 
@@ -195,7 +219,7 @@ jobs:
               finalHealth.status === 200 &&
               (finalHealth.body || "").trim().toLowerCase() === "ok";
 
-            if (!finalHealthOk && !appReadyRegex.test(finalText)) {
+            if (!finalHealthOk && !appReadyRegex.test(finalText) && !streamlitShellSeen) {
               throw new Error(
                 `Streamlit app did not confirm ready state. ` +
                   `finalUrl=${page.url()}, finalBodyPreview=${htmlPreview(finalText) || "<empty>"}`

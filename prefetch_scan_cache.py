@@ -15,6 +15,8 @@ from scanner import (
 
 PREFETCH_MAX_ATTEMPTS = int(os.environ.get("PREFETCH_MAX_ATTEMPTS", "4"))
 PREFETCH_RETRY_DELAY_SECONDS = int(os.environ.get("PREFETCH_RETRY_DELAY_SECONDS", "300"))
+MARKET_DATA_READY_HOUR = 15
+MARKET_DATA_READY_MINUTE = 40
 
 
 def main():
@@ -22,6 +24,17 @@ def main():
     if now_kst.weekday() > 4:
         print(f"weekend in KST ({now_kst:%Y-%m-%d %H:%M}); skipping KIS token/API calls")
         return
+
+    ready_at = now_kst.replace(
+        hour=MARKET_DATA_READY_HOUR,
+        minute=MARKET_DATA_READY_MINUTE,
+        second=0,
+        microsecond=0,
+    )
+    if now_kst < ready_at:
+        wait_seconds = int((ready_at - now_kst).total_seconds())
+        print(f"waiting {wait_seconds} seconds until KST {ready_at:%H:%M} market data window")
+        time.sleep(wait_seconds)
 
     app_key = os.environ.get("KIS_APP_KEY")
     app_secret = os.environ.get("KIS_APP_SECRET")

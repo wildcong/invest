@@ -3,10 +3,9 @@ name: Prefetch Scan Cache
 
 on:
   schedule:
-    # KST 15:45 primary run plus backups. GitHub schedule can be delayed or dropped, so keep several chances.
-    - cron: "45,55 6 * * 1-5"
-    - cron: "5,15,30 7 * * 1-5"
-    - cron: "0 8 * * 1-5"
+    # Use the same hourly cadence that has been reliable for the Streamlit awake job.
+    # The job below gates actual KIS/API work to the weekday KST market-data window.
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -21,24 +20,44 @@ jobs:
     environment: KIS_APP_KEY
 
     steps:
+      - name: Check KST prefetch window
+        id: window
+        run: |
+          KST_DAY="$(TZ=Asia/Seoul date +%u)"
+          KST_HM="$(TZ=Asia/Seoul date +%H%M)"
+          echo "event=$GITHUB_EVENT_NAME kst_day=$KST_DAY kst_hm=$KST_HM"
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
+          elif [ "$KST_DAY" -le 5 ] && [ "$KST_HM" -ge 1500 ] && [ "$KST_HM" -le 2000 ]; then
+            echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_prefetch=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout repository
+        if: steps.window.outputs.run_prefetch == 'true'
         uses: actions/checkout@v6
 
       - name: Set up Python
+        if: steps.window.outputs.run_prefetch == 'true'
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
       - name: Install dependencies
+        if: steps.window.outputs.run_prefetch == 'true'
         run: pip install -r requirements.txt
 
       - name: Build scan cache
+        if: steps.window.outputs.run_prefetch == 'true'
         env:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
         run: python prefetch_scan_cache.py
 
       - name: Commit updated cache
+        if: steps.window.outputs.run_prefetch == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

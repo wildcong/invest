@@ -3,6 +3,9 @@ name: Keep Streamlit Awake
 on:
   schedule:
     - cron: "0 * * * *"
+    # Extra weekday chances around the KST market-data window. GitHub schedules are best-effort.
+    - cron: "30,45 6 * * 1-5"
+    - cron: "0,15,30 7 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -250,7 +253,7 @@ jobs:
           KST_DAY="$(TZ=Asia/Seoul date +%u)"
           KST_HM="$(TZ=Asia/Seoul date +%H%M)"
           echo "kst_day=$KST_DAY kst_hm=$KST_HM"
-          if [ "$KST_DAY" -le 5 ] && [ "$KST_HM" -ge 1530 ] && [ "$KST_HM" -le 2000 ]; then
+          if [ "$KST_DAY" -le 5 ] && [ "$KST_HM" -ge 1500 ] && [ "$KST_HM" -le 2000 ]; then
             echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
           else
             echo "run_prefetch=false" >> "$GITHUB_OUTPUT"

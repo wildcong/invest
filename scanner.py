@@ -349,6 +349,7 @@ def build_scan_cache(app_key: str, app_secret: str):
                 "summary": kospi_summary,
                 "direction_groups": kospi_groups,
                 "target_date": target_date,
+                "generated_at_kst": generated_at.isoformat(),
             },
             "kosdaq150": {
                 "label": "KOSDAQ 150",
@@ -358,6 +359,7 @@ def build_scan_cache(app_key: str, app_secret: str):
                 "summary": kosdaq_summary,
                 "direction_groups": kosdaq_groups,
                 "target_date": target_date,
+                "generated_at_kst": generated_at.isoformat(),
             },
         },
     }

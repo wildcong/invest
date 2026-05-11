@@ -203,6 +203,7 @@ def persist_market_scan_cache(market_key, market_label, market_size, market_symb
         "summary": scan_summary,
         "direction_groups": direction_groups,
         "target_date": target_date,
+        "generated_at_kst": generated_at,
     }
 
     payload = {
@@ -463,7 +464,7 @@ else:
 
 scan_cache = get_scan_cache()
 cached_market = scan_cache.get("markets", {}).get(market_cache_key, {}) if market_cache_key else {}
-cached_generated_at = scan_cache.get("generated_at_kst")
+cached_generated_at = cached_market.get("generated_at_kst") or scan_cache.get("generated_at_kst")
 current_target_date = get_target_date()
 
 if allow_scan:
@@ -529,7 +530,7 @@ if is_filtered and allow_scan:
             )
             scan_cache = get_scan_cache()
             cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
-            cached_generated_at = scan_cache.get("generated_at_kst")
+            cached_generated_at = cached_market.get("generated_at_kst") or scan_cache.get("generated_at_kst")
         else:
             if token_pause_reason == "keepawake":
                 st.info("앱 깨우기 확인 중에는 KIS API 토큰을 발급하지 않습니다.")
@@ -598,7 +599,7 @@ if is_filtered and allow_scan:
                     )
                     scan_cache = get_scan_cache()
                     cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
-                    cached_generated_at = scan_cache.get("generated_at_kst")
+                    cached_generated_at = cached_market.get("generated_at_kst") or scan_cache.get("generated_at_kst")
                     target_date = current_target_date
                     direction_groups = st.session_state.scan_direction_groups
 

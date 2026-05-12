@@ -91,6 +91,9 @@ st.markdown(
     div[data-testid="stPlotlyChart"] .modebar {
         z-index: 1 !important;
     }
+    div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button {
+        white-space: nowrap;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -480,17 +483,15 @@ h_col1, h_col2, h_col3 = st.columns([1, 1.5, 1.2])
 with h_col1:
     # 코스피/코스닥일 때만 스캐너 필터 활성화
     if allow_scan:
-        filter_col, summary_col = st.columns([1.05, 1.95])
-        with filter_col:
-            is_filtered = st.checkbox("🔥 5일 동방향 필터")
-        with summary_col:
-            summary_placeholder = st.empty()
+        is_filtered = st.checkbox("🔥 5일 동방향 필터")
     else:
         is_filtered = False
         st.caption("✅ 전체 종목은 스캔이 제한되며 개별 검색만 가능합니다.")
 
 with h_col2:
     period = st.select_slider("분석 기간", options=[5, 10, 15, 20, 25, 30], value=30, label_visibility="collapsed")
+
+summary_placeholder = st.empty() if allow_scan else None
 
 if is_filtered and allow_scan and weekend_mode and not cached_market.get("summary"):
     summary_placeholder.info("주말에는 대량 새로 집계를 실행하지 않습니다. 금요일 기준 개별 차트는 아래에서 계속 볼 수 있습니다.")
@@ -553,15 +554,6 @@ if is_filtered and allow_scan:
             "sell": ("쌍끌이매도", "secondary"),
         }
         with summary_placeholder.container():
-            if notice_level == "success":
-                st.caption(notice_message)
-            elif notice_level == "info":
-                st.info(notice_message)
-            elif notice_level == "warning":
-                st.warning(notice_message)
-            else:
-                st.error(notice_message)
-            st.caption(f"집계 {scan_summary['scanned']}/{len(target_dict)} | 기준일 {format_target_date(target_date)}")
             refresh_disabled = weekend_mode or not bool(token)
             if weekend_mode:
                 refresh_help = "주말에는 대량 API 호출을 막기 위해 새로 집계를 비활성화합니다. 차트는 금요일 기준으로 볼 수 있습니다."
@@ -571,8 +563,18 @@ if is_filtered and allow_scan:
                 refresh_help = "KIS 토큰이 없어서 지금은 새로 집계할 수 없습니다."
             else:
                 refresh_help = "실시간으로 다시 스캔해서 목록을 갱신합니다."
-            controls_col = st.columns([1])[0]
-            with controls_col:
+            toolbar_cols = st.columns([2.5, 0.95, 0.85, 0.95, 0.85])
+            with toolbar_cols[0]:
+                if notice_level == "success":
+                    st.caption(notice_message)
+                elif notice_level == "info":
+                    st.caption(f"ℹ️ {notice_message}")
+                elif notice_level == "warning":
+                    st.caption(f"⚠️ {notice_message}")
+                else:
+                    st.error(notice_message)
+                st.caption(f"집계 {scan_summary['scanned']}/{len(target_dict)} | 기준일 {format_target_date(target_date)}")
+            with toolbar_cols[1]:
                 if st.button(
                     "새로 집계",
                     key=f"{market_cache_key}_refresh_scan",
@@ -603,10 +605,9 @@ if is_filtered and allow_scan:
                     target_date = current_target_date
                     direction_groups = st.session_state.scan_direction_groups
 
-            buy_col, mixed_col, sell_col = st.columns(3)
             for direction, column in zip(
                 ["buy", "mixed", "sell"],
-                [buy_col, mixed_col, sell_col],
+                toolbar_cols[2:],
             ):
                 count = scan_summary[direction]
                 label, default_type = focus_meta[direction]

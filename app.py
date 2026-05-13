@@ -25,6 +25,7 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 DATAFRAME_SUPPORTS_SELECTION = "on_select" in inspect.signature(st.dataframe).parameters
 THEME_BASE = st.get_option("theme.base") or "light"
+INVESTOR_DATA_SCHEMA_VERSION = "personal-flow-v2"
 
 
 def get_query_param_value(name):
@@ -183,7 +184,7 @@ def get_realtime_price(ticker, access_token):
     return None
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def get_investor_data(ticker, access_token):
+def get_investor_data(ticker, access_token, schema_version=INVESTOR_DATA_SCHEMA_VERSION):
     return fetch_investor_data(ticker, access_token, APP_KEY, APP_SECRET)
 
 

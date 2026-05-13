@@ -249,8 +249,19 @@ def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: 
             df = pd.DataFrame(res_json["output2"])
             if df.empty:
                 return pd.DataFrame()
-            if "prsn_ntby_tr_pbmn" not in df.columns:
-                df["prsn_ntby_tr_pbmn"] = 0
+            column_aliases = {
+                "stck_bsop_date": ["stck_bsop_date", "STCK_BSOP_DATE"],
+                "stck_clpr": ["stck_clpr", "STCK_CLPR"],
+                "frgn_ntby_tr_pbmn": ["frgn_ntby_tr_pbmn", "FRGN_NTBY_TR_PBMN"],
+                "orgn_ntby_tr_pbmn": ["orgn_ntby_tr_pbmn", "ORGN_NTBY_TR_PBMN"],
+                "prsn_ntby_tr_pbmn": ["prsn_ntby_tr_pbmn", "PRSN_NTBY_TR_PBMN"],
+            }
+            for normalized, candidates in column_aliases.items():
+                source_col = next((candidate for candidate in candidates if candidate in df.columns), None)
+                if source_col and source_col != normalized:
+                    df[normalized] = df[source_col]
+                elif not source_col:
+                    df[normalized] = 0
             df = df[
                 [
                     "stck_bsop_date",

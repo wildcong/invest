@@ -14,7 +14,7 @@ URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
 LEGACY_TOKEN_CACHE_FILE = Path(__file__).parent / "data" / "kis_token_cache.json"
-TOKEN_CACHE_FILE = Path(os.environ.get("KIS_TOKEN_CACHE_FILE", "/tmp/kis_token_cache.json"))
+TOKEN_CACHE_FILE = Path(os.environ.get("KIS_TOKEN_CACHE_FILE", str(LEGACY_TOKEN_CACHE_FILE)))
 AUTO_REFRESH_PRIMARY_HOUR = 15
 AUTO_REFRESH_PRIMARY_MINUTE = 45
 AUTO_REFRESH_BACKUP_HOUR = 16

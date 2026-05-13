@@ -871,10 +871,14 @@ if token:
 
         df_disp['F_누적'] = df_disp['F_억'].cumsum()
         df_disp['I_누적'] = df_disp['I_억'].cumsum()
+        if 'P_억' not in df_disp.columns:
+            df_disp['P_억'] = 0
+        df_disp['P_누적'] = df_disp['P_억'].cumsum()
 
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig.add_trace(go.Scatter(x=df_disp.index, y=df_disp['F_누적'], name='외인누적(억)', line=dict(color='blue', width=3)), secondary_y=False)
         fig.add_trace(go.Scatter(x=df_disp.index, y=df_disp['I_누적'], name='기관누적(억)', line=dict(color='orange', width=3)), secondary_y=False)
+        fig.add_trace(go.Scatter(x=df_disp.index, y=df_disp['P_누적'], name='개인누적(억)', line=dict(color='#2ecc71', width=2.5)), secondary_y=False)
         fig.add_trace(go.Scatter(x=df_disp.index, y=df_disp['Price'], name='주가', line=dict(color='red', width=1.5, dash='dot')), secondary_y=True)
         fig.add_hline(y=0, line_dash="dash", line_color="gray")
         fig.update_layout(
@@ -903,8 +907,8 @@ if token:
         )
 
         st.write("##### 📋 상세 내역 (단위: 억원)")
-        res_df = df_disp[['Price','F_억','I_억','F_누적','I_누적']].iloc[::-1].copy()
-        res_df.columns = ['주가','외인_일일','기관_일일','외인_누적','기관_누적']
+        res_df = df_disp[['Price','F_억','I_억','P_억','F_누적','I_누적','P_누적']].iloc[::-1].copy()
+        res_df.columns = ['주가','외인_일일','기관_일일','개인_일일','외인_누적','기관_누적','개인_누적']
 
         res_df.index = res_df.index.strftime('%Y-%m-%d')
         
@@ -917,9 +921,9 @@ if token:
             return ''
             
         try:
-            styled_df = res_df.style.format("{:,.1f}").map(color_net_buy, subset=['외인_일일', '기관_일일', '외인_누적', '기관_누적'])
+            styled_df = res_df.style.format("{:,.1f}").map(color_net_buy, subset=['외인_일일', '기관_일일', '개인_일일', '외인_누적', '기관_누적', '개인_누적'])
         except AttributeError:
-            styled_df = res_df.style.format("{:,.1f}").applymap(color_net_buy, subset=['외인_일일', '기관_일일', '외인_누적', '기관_누적'])
+            styled_df = res_df.style.format("{:,.1f}").applymap(color_net_buy, subset=['외인_일일', '기관_일일', '개인_일일', '외인_누적', '기관_누적', '개인_누적'])
             
         st.dataframe(styled_df, width="stretch")
 

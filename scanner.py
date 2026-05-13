@@ -249,14 +249,25 @@ def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: 
             df = pd.DataFrame(res_json["output2"])
             if df.empty:
                 return pd.DataFrame()
-            df = df[["stck_bsop_date", "stck_clpr", "frgn_ntby_tr_pbmn", "orgn_ntby_tr_pbmn"]].copy()
-            df.columns = ["Date", "Price", "Foreign_Amt", "Inst_Amt"]
+            if "prsn_ntby_tr_pbmn" not in df.columns:
+                df["prsn_ntby_tr_pbmn"] = 0
+            df = df[
+                [
+                    "stck_bsop_date",
+                    "stck_clpr",
+                    "frgn_ntby_tr_pbmn",
+                    "orgn_ntby_tr_pbmn",
+                    "prsn_ntby_tr_pbmn",
+                ]
+            ].copy()
+            df.columns = ["Date", "Price", "Foreign_Amt", "Inst_Amt", "Personal_Amt"]
             df["Date"] = pd.to_datetime(df["Date"])
-            for col in ["Price", "Foreign_Amt", "Inst_Amt"]:
+            for col in ["Price", "Foreign_Amt", "Inst_Amt", "Personal_Amt"]:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
             df = df.dropna()
             df["F_억"] = df["Foreign_Amt"] / 100
             df["I_억"] = df["Inst_Amt"] / 100
+            df["P_억"] = df["Personal_Amt"] / 100
             return df.sort_values("Date").set_index("Date")
     except Exception:
         pass

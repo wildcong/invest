@@ -3,8 +3,10 @@ name: Prefetch Scan Cache
 
 on:
   schedule:
-    # KST 15:40~16:30 target window. GitHub may delay scheduled runs substantially.
+    # KST 15:10~16:30 target window. Start early so a delayed GitHub runner can
+    # pre-issue a 24h KIS token and wait until same-day data opens at 15:40.
     # The job below allows delayed runs until 20:00, but skips if today's cache already exists.
+    - cron: "10,20,30 6 * * 1-5"
     - cron: "40,45,50,55 6 * * 1-5"
     - cron: "0,5,10,15,20,25,30 7 * * 1-5"
   workflow_dispatch:
@@ -30,7 +32,7 @@ jobs:
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
-          elif [ "$KST_DAY" -le 5 ] && [ "$KST_HM" -ge 1540 ] && [ "$KST_HM" -le 2000 ]; then
+          elif [ "$KST_DAY" -le 5 ] && [ "$KST_HM" -ge 1510 ] && [ "$KST_HM" -le 2000 ]; then
             echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
           else
             echo "run_prefetch=false" >> "$GITHUB_OUTPUT"
@@ -57,7 +59,9 @@ jobs:
 
           KST = timezone(timedelta(hours=9))
           now = datetime.now(KST)
-          target = now if (now.hour > 15 or (now.hour == 15 and now.minute >= 40)) else now - timedelta(days=1)
+          # Prefetch is preparing today's same-day scan. Before 15:40, do not
+          # treat yesterday's cache as up to date or the early warm-up job will skip.
+          target = now
           while target.weekday() > 4:
               target -= timedelta(days=1)
           target_date = target.strftime("%Y%m%d")

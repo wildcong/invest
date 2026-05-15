@@ -8,6 +8,7 @@ from scanner import (
     attach_previous_market_snapshots,
     build_scan_cache,
     cache_has_target_date,
+    get_access_token,
     get_target_date,
     load_scan_cache,
     save_scan_cache,
@@ -25,6 +26,22 @@ def main():
         print(f"weekend in KST ({now_kst:%Y-%m-%d %H:%M}); skipping KIS token/API calls")
         return
 
+    app_key = os.environ.get("KIS_APP_KEY")
+    app_secret = os.environ.get("KIS_APP_SECRET")
+
+    if not app_key or not app_secret:
+        raise SystemExit("환경변수 KIS_APP_KEY / KIS_APP_SECRET 이 필요합니다.")
+
+    existing_cache = load_scan_cache()
+    warm_target_date = now_kst.strftime("%Y%m%d")
+    if cache_has_target_date(existing_cache, warm_target_date):
+        print(f"scan cache already up to date for {warm_target_date}; skipping rebuild")
+        return
+
+    print("pre-issuing KIS token for scheduled scan")
+    if not get_access_token(app_key, app_secret):
+        raise RuntimeError("KIS API access token 발급에 실패했습니다.")
+
     ready_at = now_kst.replace(
         hour=MARKET_DATA_READY_HOUR,
         minute=MARKET_DATA_READY_MINUTE,
@@ -35,12 +52,6 @@ def main():
         wait_seconds = int((ready_at - now_kst).total_seconds())
         print(f"waiting {wait_seconds} seconds until KST {ready_at:%H:%M} market data window")
         time.sleep(wait_seconds)
-
-    app_key = os.environ.get("KIS_APP_KEY")
-    app_secret = os.environ.get("KIS_APP_SECRET")
-
-    if not app_key or not app_secret:
-        raise SystemExit("환경변수 KIS_APP_KEY / KIS_APP_SECRET 이 필요합니다.")
 
     target_date = get_target_date()
     existing_cache = load_scan_cache()

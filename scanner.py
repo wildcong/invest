@@ -308,16 +308,42 @@ def summarize_5day_flow(df: pd.DataFrame) -> Dict[str, float]:
     }
 
 
+def serialize_chart_data(df: pd.DataFrame, max_rows: int = 60):
+    if df.empty:
+        return []
+
+    columns = ["Price", "F_억", "I_억", "P_억"]
+    chart_df = df.tail(max_rows).copy()
+    for column in columns:
+        if column not in chart_df.columns:
+            chart_df[column] = 0
+
+    rows = []
+    for index, row in chart_df[columns].iterrows():
+        rows.append(
+            {
+                "Date": index.strftime("%Y-%m-%d"),
+                "Price": float(row["Price"]),
+                "F_억": float(row["F_억"]),
+                "I_억": float(row["I_억"]),
+                "P_억": float(row["P_억"]),
+            }
+        )
+    return rows
+
+
 def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app_secret: str):
     filtered_map = {}
     summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
     direction_groups = {"buy": [], "mixed": [], "sell": []}
+    chart_data = {}
 
     for name, ticker in stock_dict.items():
         df = get_investor_data(ticker, access_token, app_key, app_secret)
         if df.empty or len(df) < 5:
             continue
 
+        chart_data[ticker] = serialize_chart_data(df)
         direction = classify_5day_direction(df)
         flow = summarize_5day_flow(df)
         summary["scanned"] += 1
@@ -344,7 +370,7 @@ def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app
     for direction in direction_groups:
         direction_groups[direction].sort(key=lambda item: item["strength"], reverse=True)
 
-    return filtered_map, summary, direction_groups
+    return filtered_map, summary, direction_groups, chart_data
 
 
 def build_scan_cache(app_key: str, app_secret: str):
@@ -356,8 +382,18 @@ def build_scan_cache(app_key: str, app_secret: str):
     generated_at = datetime.now(KST)
     target_date = get_target_date(generated_at)
 
-    kospi_filtered, kospi_summary, kospi_groups = scan_market(dict_k200, access_token, app_key, app_secret)
-    kosdaq_filtered, kosdaq_summary, kosdaq_groups = scan_market(dict_kq150, access_token, app_key, app_secret)
+    kospi_filtered, kospi_summary, kospi_groups, kospi_chart_data = scan_market(
+        dict_k200,
+        access_token,
+        app_key,
+        app_secret,
+    )
+    kosdaq_filtered, kosdaq_summary, kosdaq_groups, kosdaq_chart_data = scan_market(
+        dict_kq150,
+        access_token,
+        app_key,
+        app_secret,
+    )
 
     return {
         "generated_at_kst": generated_at.isoformat(),
@@ -370,6 +406,7 @@ def build_scan_cache(app_key: str, app_secret: str):
                 "filtered_map": kospi_filtered,
                 "summary": kospi_summary,
                 "direction_groups": kospi_groups,
+                "chart_data": kospi_chart_data,
                 "target_date": target_date,
                 "generated_at_kst": generated_at.isoformat(),
             },
@@ -380,6 +417,7 @@ def build_scan_cache(app_key: str, app_secret: str):
                 "filtered_map": kosdaq_filtered,
                 "summary": kosdaq_summary,
                 "direction_groups": kosdaq_groups,
+                "chart_data": kosdaq_chart_data,
                 "target_date": target_date,
                 "generated_at_kst": generated_at.isoformat(),
             },

@@ -14,7 +14,7 @@ from scanner import get_access_token as fetch_access_token
 from scanner import attach_previous_market_snapshots
 from scanner import get_auto_refresh_window
 from scanner import get_stock_lists as fetch_stock_lists
-from scanner import get_target_date, load_scan_cache, save_scan_cache, summarize_5day_flow
+from scanner import get_target_date, load_scan_cache, save_scan_cache, serialize_chart_data, summarize_5day_flow
 
 # ==========================================
 # 🔒 보안 설정 (Streamlit Secrets)
@@ -193,7 +193,16 @@ def get_scan_cache():
     return load_scan_cache()
 
 
-def persist_market_scan_cache(market_key, market_label, market_size, market_symbols, filtered_map, scan_summary, direction_groups):
+def persist_market_scan_cache(
+    market_key,
+    market_label,
+    market_size,
+    market_symbols,
+    filtered_map,
+    scan_summary,
+    direction_groups,
+    chart_data=None,
+):
     existing_cache = load_scan_cache()
     markets = dict(existing_cache.get("markets", {}))
     generated_at = datetime.now(KST).isoformat()
@@ -206,6 +215,7 @@ def persist_market_scan_cache(market_key, market_label, market_size, market_symb
         "filtered_map": filtered_map,
         "summary": scan_summary,
         "direction_groups": direction_groups,
+        "chart_data": chart_data or {},
         "target_date": target_date,
         "generated_at_kst": generated_at,
     }
@@ -364,10 +374,37 @@ def get_previous_direction_names(cached_market, direction):
         elif isinstance(item, dict) and item.get("name"):
             names.add(item["name"])
     return names
+
+
+def cached_chart_rows_to_dataframe(rows):
+    if not rows:
+        return pd.DataFrame()
+    try:
+        df = pd.DataFrame(rows)
+        df["Date"] = pd.to_datetime(df["Date"])
+        for column in ["Price", "F_억", "I_억", "P_억"]:
+            if column not in df.columns:
+                df[column] = 0
+            df[column] = pd.to_numeric(df[column], errors="coerce")
+        return df.dropna(subset=["Date", "Price"]).sort_values("Date").set_index("Date")
+    except Exception:
+        return pd.DataFrame()
+
+
+def get_cached_chart_df(cached_market, ticker):
+    if not isinstance(cached_market, dict) or not ticker:
+        return pd.DataFrame()
+    chart_data = cached_market.get("chart_data", {})
+    if not isinstance(chart_data, dict):
+        return pd.DataFrame()
+    return cached_chart_rows_to_dataframe(chart_data.get(ticker))
+
+
 def scan_all_stocks(stock_dict, token):
     valid_stocks = {}
     summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
     direction_groups = {"buy": [], "mixed": [], "sell": []}
+    chart_data = {}
     progress_bar = st.progress(0)
     status_text = st.empty()
     total = len(stock_dict)
@@ -376,6 +413,7 @@ def scan_all_stocks(stock_dict, token):
         status_text.text(f"🚀 스캔 중 ({i+1}/{total}): {name}")
         df = get_investor_data(ticker, token)
         if not df.empty and len(df) >= 5:
+            chart_data[ticker] = serialize_chart_data(df)
             direction = classify_5day_direction(df)
             flow = summarize_5day_flow(df)
             summary["scanned"] += 1
@@ -404,7 +442,7 @@ def scan_all_stocks(stock_dict, token):
     progress_bar.empty()
     for direction in direction_groups:
         direction_groups[direction].sort(key=lambda item: item.get("strength", 0), reverse=True)
-    return valid_stocks, summary, direction_groups
+    return valid_stocks, summary, direction_groups, chart_data
 
 # ==========================================
 # 3. 메인 화면: 탭 및 컨트롤러 구성
@@ -416,7 +454,7 @@ st.markdown("<h2 style='margin-bottom: 20px;'>📊 쌍끌이 수급 스캐너</h
 dict_k200, dict_kq150, dict_all = get_stock_lists() 
 token_paused, token_pause_reason = should_pause_kis_token()
 weekend_mode = is_weekend_kst()
-token = None if token_paused else get_access_token()
+token = None
 
 # 🎯 3개 탭 유지
 market_mode = st.radio(
@@ -512,8 +550,12 @@ if is_filtered and allow_scan:
                 st.session_state.filtered_map,
                 cached_market.get("direction_groups"),
             )
-        elif token:
-            filtered_map, scan_summary, direction_groups = scan_all_stocks(target_dict, token)
+        elif not token_paused:
+            token = get_access_token()
+            if not token:
+                st.error("API 토큰 발급 실패")
+                st.stop()
+            filtered_map, scan_summary, direction_groups, chart_data = scan_all_stocks(target_dict, token)
             st.session_state.filtered_map = filtered_map
             st.session_state.scan_summary = scan_summary
             st.session_state.scan_direction_groups = build_direction_groups(
@@ -529,6 +571,7 @@ if is_filtered and allow_scan:
                 filtered_map,
                 scan_summary,
                 direction_groups,
+                chart_data,
             )
             scan_cache = get_scan_cache()
             cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
@@ -555,13 +598,11 @@ if is_filtered and allow_scan:
             "sell": ("쌍끌이매도", "secondary"),
         }
         with summary_placeholder.container():
-            refresh_disabled = weekend_mode or not bool(token)
+            refresh_disabled = weekend_mode or token_paused
             if weekend_mode:
                 refresh_help = "주말에는 대량 API 호출을 막기 위해 새로 집계를 비활성화합니다. 차트는 금요일 기준으로 볼 수 있습니다."
             elif token_pause_reason == "keepawake":
                 refresh_help = "앱 깨우기 확인 중에는 KIS 토큰을 발급하지 않습니다."
-            elif refresh_disabled:
-                refresh_help = "KIS 토큰이 없어서 지금은 새로 집계할 수 없습니다."
             else:
                 refresh_help = "실시간으로 다시 스캔해서 목록을 갱신합니다."
             toolbar_cols = st.columns([2.5, 0.95, 0.85, 0.95, 0.85])
@@ -583,7 +624,11 @@ if is_filtered and allow_scan:
                     disabled=refresh_disabled,
                     help=refresh_help,
                 ):
-                    filtered_map, scan_summary, direction_groups = scan_all_stocks(target_dict, token)
+                    token = get_access_token()
+                    if not token:
+                        st.error("API 토큰 발급 실패")
+                        st.stop()
+                    filtered_map, scan_summary, direction_groups, chart_data = scan_all_stocks(target_dict, token)
                     st.session_state.filtered_map = filtered_map
                     st.session_state.scan_summary = scan_summary
                     st.session_state.scan_direction_groups = build_direction_groups(
@@ -599,6 +644,7 @@ if is_filtered and allow_scan:
                         filtered_map,
                         scan_summary,
                         direction_groups,
+                        chart_data,
                     )
                     scan_cache = get_scan_cache()
                     cached_market = scan_cache.get("markets", {}).get(market_cache_key, {})
@@ -843,11 +889,26 @@ selected_ticker = ticker_lookup.get(selected_disp) or target_dict.get(selected_r
 # ==========================================
 # 4. 차트 및 표 시각화
 # ==========================================
-if token:
-    df = get_investor_data(selected_ticker, token)
-    rt_data = get_realtime_price(selected_ticker, token)
-    
-    if not df.empty:
+cached_chart_df = get_cached_chart_df(cached_market, selected_ticker) if allow_scan else pd.DataFrame()
+chart_source = "cache" if not cached_chart_df.empty else "live"
+df = cached_chart_df
+rt_data = None
+
+if df.empty and token_pause_reason == "keepawake":
+    st.caption("Keep-awake 확인 모드라 KIS API 토큰과 차트 호출은 건너뜁니다.")
+elif df.empty:
+    live_key = f"live_chart_{selected_ticker}"
+    if st.session_state.get("live_chart_ticker") == selected_ticker:
+        token = get_access_token()
+    elif st.button("차트 API로 불러오기", key=live_key, width="stretch"):
+        st.session_state.live_chart_ticker = selected_ticker
+        token = get_access_token()
+
+    if token:
+        df = get_investor_data(selected_ticker, token)
+        rt_data = get_realtime_price(selected_ticker, token)
+
+if not df.empty:
         df_disp = df.tail(period).copy()
         
         if rt_data:
@@ -934,14 +995,11 @@ if token:
         ]
         if is_filtered and allow_scan:
             info_parts.append(f"자동 갱신 {format_cache_timestamp(cached_generated_at)}")
+        if chart_source == "cache":
+            info_parts.append("캐시 차트")
         st.caption(" | ".join(info_parts))
-    else:
-        st.error("데이터를 불러올 수 없습니다. 아래 API 로그를 확인해 주세요.")
 else:
-    if token_pause_reason == "keepawake":
-        st.caption("Keep-awake 확인 모드라 KIS API 토큰과 차트 호출은 건너뜁니다.")
-    else:
-        st.error("KIS API 토큰을 가져오지 못해 차트를 표시할 수 없습니다. 잠시 후 새로고침해 주세요.")
+    st.info("자동 토큰 발급을 막기 위해 차트 API 호출을 대기 중입니다. 필요할 때만 위 버튼으로 차트를 불러와 주세요.")
 
 # ==========================================
 # 🚨 API 디버그 로그

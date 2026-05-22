@@ -897,13 +897,7 @@ rt_data = None
 if df.empty and token_pause_reason == "keepawake":
     st.caption("Keep-awake 확인 모드라 KIS API 토큰과 차트 호출은 건너뜁니다.")
 elif df.empty:
-    live_key = f"live_chart_{selected_ticker}"
-    if st.session_state.get("live_chart_ticker") == selected_ticker:
-        token = get_access_token()
-    elif st.button("차트 API로 불러오기", key=live_key, width="stretch"):
-        st.session_state.live_chart_ticker = selected_ticker
-        token = get_access_token()
-
+    token = get_access_token()
     if token:
         df = get_investor_data(selected_ticker, token)
         rt_data = get_realtime_price(selected_ticker, token)
@@ -999,7 +993,7 @@ if not df.empty:
             info_parts.append("캐시 차트")
         st.caption(" | ".join(info_parts))
 else:
-    st.info("자동 토큰 발급을 막기 위해 차트 API 호출을 대기 중입니다. 필요할 때만 위 버튼으로 차트를 불러와 주세요.")
+    st.error("데이터를 불러올 수 없습니다. 아래 API 로그를 확인해 주세요.")
 
 # ==========================================
 # 🚨 API 디버그 로그

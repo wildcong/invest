@@ -68,10 +68,15 @@ def cache_has_target_date(cache: Dict, target_date: str) -> bool:
             return False
         if not market.get("direction_groups"):
             return False
+        chart_data = market.get("chart_data", {})
+        if not isinstance(chart_data, dict) or not chart_data:
+            return False
         market_size = market.get("market_size", 0)
         scanned = summary.get("scanned", 0)
         if isinstance(market_size, int) and market_size > 20:
             if scanned < int(market_size * 0.8):
+                return False
+            if len(chart_data) < int(scanned * 0.8):
                 return False
     return True
 

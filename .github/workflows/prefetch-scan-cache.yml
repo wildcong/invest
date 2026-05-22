@@ -2,6 +2,13 @@
 name: Prefetch Scan Cache
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/prefetch-scan-cache.yml"
+      - "prefetch_scan_cache.py"
+      - "scanner.py"
   schedule:
     # KST 11:03~17:47 safety net. GitHub scheduled workflows have recently
     # appeared 3+ hours late, so start around 11:00 and let the job wait until
@@ -35,7 +42,7 @@ jobs:
           KST_HM="$(TZ=Asia/Seoul date +%H%M)"
           echo "event=$GITHUB_EVENT_NAME kst_day=$KST_DAY kst_hm=$KST_HM"
 
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] || [ "$GITHUB_EVENT_NAME" = "push" ]; then
             echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
           elif [ "$KST_DAY" -le 5 ] && [ "$KST_HM" -ge 1100 ] && [ "$KST_HM" -le 2000 ]; then
             echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
@@ -82,9 +89,14 @@ jobs:
                   summary = market.get("summary", {})
                   if not summary or not market.get("direction_groups"):
                       return False
+                  chart_data = market.get("chart_data", {})
+                  if not isinstance(chart_data, dict) or not chart_data:
+                      return False
                   market_size = market.get("market_size", 0)
                   scanned = summary.get("scanned", 0)
                   if isinstance(market_size, int) and market_size > 20 and scanned < int(market_size * 0.8):
+                      return False
+                  if isinstance(market_size, int) and market_size > 20 and len(chart_data) < int(scanned * 0.8):
                       return False
               return True
 

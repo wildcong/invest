@@ -3,12 +3,15 @@ name: Prefetch Scan Cache
 
 on:
   schedule:
-    # KST 15:10~16:30 target window. Start early so a delayed GitHub runner can
-    # pre-issue a 24h KIS token and wait until same-day data opens at 15:40.
-    # The job below allows delayed runs until 20:00, but skips if today's cache already exists.
-    - cron: "10,20,30 6 * * 1-5"
-    - cron: "40,45,50,55 6 * * 1-5"
-    - cron: "0,5,10,15,20,25,30 7 * * 1-5"
+    # KST 12:17~17:57 safety net. GitHub scheduled workflows have recently
+    # appeared 3+ hours late, so start much earlier and let the job wait until
+    # KIS same-day investor data opens at 15:40 KST.
+    - cron: "17,43 3 * * 1-5"
+    - cron: "17,43 4 * * 1-5"
+    - cron: "17,43 5 * * 1-5"
+    - cron: "7,27,43,57 6 * * 1-5"
+    - cron: "17,37,57 7 * * 1-5"
+    - cron: "17,47 8 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -20,6 +23,7 @@ jobs:
       group: prefetch-scan-cache
       cancel-in-progress: false
     runs-on: ubuntu-latest
+    timeout-minutes: 330
     environment: KIS_APP_KEY
 
     steps:
@@ -32,7 +36,7 @@ jobs:
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
-          elif [ "$KST_DAY" -le 5 ] && [ "$KST_HM" -ge 1510 ] && [ "$KST_HM" -le 2000 ]; then
+          elif [ "$KST_DAY" -le 5 ] && [ "$KST_HM" -ge 1200 ] && [ "$KST_HM" -le 2000 ]; then
             echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
           else
             echo "run_prefetch=false" >> "$GITHUB_OUTPUT"

@@ -17,6 +17,49 @@ from scanner import (
 
 
 KST = timezone(timedelta(hours=9))
+STOCK_SELECTOR_KEY = "flow_stock_selector"
+STOCK_KEYBOARD_NAVIGATION = st.components.v2.component(
+    "flow_stock_keyboard_navigation",
+    css=":host { display: none; }",
+    js="""
+    export default function() {
+      const clickButtonByText = (needle) => {
+        const buttons = Array.from(document.querySelectorAll("button"));
+        const button = buttons.find((element) =>
+          (element.innerText || "").includes(needle)
+        );
+        if (button && !button.disabled) {
+          button.click();
+        }
+      };
+
+      const isEditingTarget = (target) => {
+        if (!target || !target.closest) return false;
+        return Boolean(
+          target.closest("input, textarea, select, [contenteditable='true']") ||
+          target.closest("[role='combobox'], [role='listbox'], [role='option']")
+        );
+      };
+
+      const onKeyDown = (event) => {
+        if (isEditingTarget(event.target)) return;
+
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          event.stopPropagation();
+          clickButtonByText("이전 종목");
+        } else if (event.key === "ArrowRight") {
+          event.preventDefault();
+          event.stopPropagation();
+          clickButtonByText("다음 종목");
+        }
+      };
+
+      document.addEventListener("keydown", onKeyDown, true);
+      return () => document.removeEventListener("keydown", onKeyDown, true);
+    }
+    """,
+)
 DIRECTION_META = {
     "buy": ("쌍끌이 매수", "↑↑", "#ef4444"),
     "mixed": ("엇갈림", "↕", "#64748b"),
@@ -71,6 +114,54 @@ def find_chart_frame(scan_cache: dict, ticker: str) -> pd.DataFrame:
         if chart_rows:
             return rows_to_frame(chart_rows)
     return pd.DataFrame()
+
+
+def select_relative_stock(options: list[str], step: int) -> None:
+    if not options:
+        return
+    current = st.session_state.get(STOCK_SELECTOR_KEY)
+    current_index = options.index(current) if current in options else 0
+    target_index = max(0, min(len(options) - 1, current_index + step))
+    st.session_state[STOCK_SELECTOR_KEY] = options[target_index]
+
+
+def render_stock_navigation(options: list[str]) -> str:
+    current = st.session_state.get(STOCK_SELECTOR_KEY)
+    if current not in options:
+        st.session_state[STOCK_SELECTOR_KEY] = options[0]
+        current = options[0]
+    current_index = options.index(current)
+
+    previous_column, selector_column, next_column = st.columns([1, 3, 1])
+    with previous_column:
+        st.button(
+            "⬅️ 이전 종목",
+            key="flow_previous_stock",
+            disabled=current_index == 0,
+            on_click=select_relative_stock,
+            args=(options, -1),
+            width="stretch",
+        )
+    with selector_column:
+        selected = st.selectbox(
+            "종목 선택",
+            options,
+            key=STOCK_SELECTOR_KEY,
+            label_visibility="collapsed",
+        )
+    with next_column:
+        st.button(
+            "다음 종목 ➡️",
+            key="flow_next_stock",
+            disabled=current_index == len(options) - 1,
+            on_click=select_relative_stock,
+            args=(options, 1),
+            width="stretch",
+        )
+
+    STOCK_KEYBOARD_NAVIGATION(key="flow_stock_keyboard_navigation")
+    st.caption("키보드 ← / → 키로 이전·다음 종목을 연속해서 볼 수 있습니다.")
+    return selected
 
 
 def normalized_groups(market: dict) -> dict[str, list[dict]]:
@@ -259,10 +350,11 @@ if market_key:
     if not labels:
         st.info("현재 선택 조건에 해당하는 종목이 없습니다.")
         st.stop()
-    selected_label = st.selectbox("종목 선택", labels)
-    selected = entry_by_label[selected_label]
-    selected_name = selected["name"]
-    selected_ticker = selected["ticker"]
+    selector_options = labels
+    stock_by_option = {
+        label: (item["name"], item["ticker"])
+        for label, item in entry_by_label.items()
+    }
 else:
     cached_symbols = {}
     for cached_market in markets.values():
@@ -280,8 +372,16 @@ else:
     if not candidates:
         st.info("검색 결과가 없습니다.")
         st.stop()
-    selected_name = st.selectbox("종목 선택", list(candidates))
-    selected_ticker = candidates[selected_name]
+    selector_options = list(candidates)
+    stock_by_option = {
+        name: (name, ticker)
+        for name, ticker in candidates.items()
+    }
+
+selected_option = render_stock_navigation(selector_options)
+selected_name, selected_ticker = stock_by_option[selected_option]
+
+if not market_key:
     if selected_ticker not in {
         ticker
         for cached_market in markets.values()

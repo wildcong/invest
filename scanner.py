@@ -1,11 +1,10 @@
 
 import json
-import hashlib
 import os
-import time
+import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 
 import pandas as pd
 import requests
@@ -13,16 +12,10 @@ import requests
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
-LEGACY_TOKEN_CACHE_FILE = Path(__file__).parent / "data" / "kis_token_cache.json"
-TOKEN_CACHE_FILE = Path(os.environ.get("KIS_TOKEN_CACHE_FILE", str(LEGACY_TOKEN_CACHE_FILE)))
 AUTO_REFRESH_PRIMARY_HOUR = 15
 AUTO_REFRESH_PRIMARY_MINUTE = 45
 AUTO_REFRESH_BACKUP_HOUR = 16
 AUTO_REFRESH_BACKUP_MINUTE = 15
-TOKEN_EXPIRY_BUFFER_SECONDS = 300
-TOKEN_REQUEST_RETRIES = 3
-TOKEN_REQUEST_RETRY_DELAY_SECONDS = 1.5
-_TOKEN_MEMORY_CACHE: Dict[str, Dict[str, str]] = {}
 
 
 def get_target_date(now: Optional[datetime] = None) -> str:
@@ -122,111 +115,31 @@ def get_stock_lists():
     return dict_k200, dict_kq150, dict_all
 
 
-def get_token_cache_key(app_key: str, app_secret: str) -> str:
-    raw = f"{app_key}:{app_secret}".encode("utf-8")
-    return hashlib.sha256(raw).hexdigest()
+def get_access_token(
+    app_key: str,
+    app_secret: str,
+    *,
+    request_post: Callable = requests.post,
+) -> Optional[str]:
+    """Issue one KIS access token for the daily batch.
 
-
-def load_token_cache(path: Path = TOKEN_CACHE_FILE) -> Dict:
-    for candidate in (path, LEGACY_TOKEN_CACHE_FILE):
-        if not candidate.exists():
-            continue
-        try:
-            return json.loads(candidate.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-    return {}
-
-
-def save_token_cache(payload: Dict, path: Path = TOKEN_CACHE_FILE):
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    except Exception:
-        # Token cache 저장 실패가 차트 전체를 막지 않도록 조용히 무시합니다.
-        pass
-
-
-def get_cached_access_token(app_key: str, app_secret: str, path: Path = TOKEN_CACHE_FILE) -> Optional[str]:
-    cache_key = get_token_cache_key(app_key, app_secret)
-    memory_cache = _TOKEN_MEMORY_CACHE.get(cache_key, {})
-    memory_token = memory_cache.get("access_token")
-    memory_expires_at_raw = memory_cache.get("expires_at")
-    if memory_token and memory_expires_at_raw:
-        try:
-            memory_expires_at = datetime.fromisoformat(memory_expires_at_raw)
-            if memory_expires_at.tzinfo is None:
-                memory_expires_at = memory_expires_at.replace(tzinfo=timezone.utc)
-            if memory_expires_at > datetime.now(timezone.utc) + timedelta(seconds=TOKEN_EXPIRY_BUFFER_SECONDS):
-                return memory_token
-        except ValueError:
-            pass
-
-    cache = load_token_cache(path)
-    if cache.get("cache_key") != cache_key:
-        return None
-
-    access_token = cache.get("access_token")
-    expires_at_raw = cache.get("expires_at")
-    if not access_token or not expires_at_raw:
-        return None
-
-    try:
-        expires_at = datetime.fromisoformat(expires_at_raw)
-    except ValueError:
-        return None
-
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-
-    now_utc = datetime.now(timezone.utc)
-    if expires_at <= now_utc + timedelta(seconds=TOKEN_EXPIRY_BUFFER_SECONDS):
-        return None
-
-    return access_token
-
-
-def get_access_token(app_key: str, app_secret: str, force_refresh: bool = False) -> Optional[str]:
-    stale_token = None
-    cache_key = get_token_cache_key(app_key, app_secret)
-    if not force_refresh:
-        cached_token = get_cached_access_token(app_key, app_secret)
-        if cached_token:
-            return cached_token
-        stale_token = load_token_cache().get("access_token")
-
+    There is intentionally no retry or local token cache here. The scheduled
+    batch is the sole caller, and all data requests in that run reuse the token.
+    This guarantees at most one token-issuance request per workflow execution.
+    """
     headers = {"content-type": "application/json"}
     body = {"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret}
-    for attempt in range(1, TOKEN_REQUEST_RETRIES + 1):
-        try:
-            res = requests.post(f"{URL_BASE}/oauth2/tokenP", headers=headers, data=json.dumps(body), timeout=20)
-            if res.status_code == 200:
-                payload = res.json()
-                access_token = payload.get("access_token")
-                expires_in = int(payload.get("expires_in", 86400))
-                if access_token:
-                    issued_at = datetime.now(timezone.utc)
-                    token_payload = {
-                        "cache_key": cache_key,
-                        "access_token": access_token,
-                        "issued_at": issued_at.isoformat(),
-                        "expires_at": (issued_at + timedelta(seconds=expires_in)).isoformat(),
-                    }
-                    _TOKEN_MEMORY_CACHE[cache_key] = {
-                        "access_token": access_token,
-                        "expires_at": token_payload["expires_at"],
-                    }
-                    save_token_cache(token_payload)
-                    return access_token
-        except Exception:
-            pass
-
-        if attempt < TOKEN_REQUEST_RETRIES:
-            time.sleep(TOKEN_REQUEST_RETRY_DELAY_SECONDS)
-
-    if stale_token:
-        return stale_token
-    return None
+    try:
+        response = request_post(
+            f"{URL_BASE}/oauth2/tokenP",
+            headers=headers,
+            data=json.dumps(body),
+            timeout=20,
+        )
+        response.raise_for_status()
+        return response.json().get("access_token")
+    except (requests.RequestException, ValueError, AttributeError):
+        return None
 
 
 def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: str) -> pd.DataFrame:
@@ -378,11 +291,9 @@ def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app
     return filtered_map, summary, direction_groups, chart_data
 
 
-def build_scan_cache(app_key: str, app_secret: str):
-    access_token = get_access_token(app_key, app_secret)
+def build_scan_cache(app_key: str, app_secret: str, access_token: str):
     if not access_token:
-        raise RuntimeError("KIS API access token 발급에 실패했습니다.")
-
+        raise ValueError("일일 배치에서 발급한 KIS access token이 필요합니다.")
     dict_k200, dict_kq150, _ = get_stock_lists()
     generated_at = datetime.now(KST)
     target_date = get_target_date(generated_at)
@@ -460,4 +371,11 @@ def load_scan_cache(path: Path = CACHE_FILE):
 
 def save_scan_cache(payload, path: Path = CACHE_FILE):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    descriptor, temporary_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as temporary_file:
+            json.dump(payload, temporary_file, ensure_ascii=False, separators=(",", ":"))
+        os.replace(temporary_path, path)
+    finally:
+        if os.path.exists(temporary_path):
+            os.unlink(temporary_path)

@@ -1,136 +1,56 @@
-
-name: Prefetch Scan Cache
+name: Update Daily Market Cache
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/prefetch-scan-cache.yml"
-      - "prefetch_scan_cache.py"
-      - "scanner.py"
   schedule:
-    # KST 11:03~17:47 safety net. GitHub scheduled workflows have recently
-    # appeared 3+ hours late, so start around 11:00 and let the job wait until
-    # KIS same-day investor data is comfortably available at 15:45 KST.
-    - cron: "3,17,31,47 2 * * 1-5"
-    - cron: "17,47 3 * * 1-5"
-    - cron: "17,47 4 * * 1-5"
-    - cron: "17,47 5 * * 1-5"
-    - cron: "17,45 6 * * 1-5"
-    - cron: "17,47 7 * * 1-5"
-    - cron: "17,47 8 * * 1-5"
+    # 16:00 KST, Monday-Friday. This is the only automatic KIS token issuer.
+    - cron: "0 7 * * 1-5"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  prefetch:
+  update-cache:
     concurrency:
-      group: prefetch-scan-cache
+      group: daily-kis-market-cache
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    timeout-minutes: 330
+    timeout-minutes: 60
     environment: KIS_APP_KEY
 
     steps:
-      - name: Check KST prefetch window
-        id: window
-        run: |
-          KST_DAY="$(TZ=Asia/Seoul date +%u)"
-          KST_HM="$(TZ=Asia/Seoul date +%H%M)"
-          echo "event=$GITHUB_EVENT_NAME kst_day=$KST_DAY kst_hm=$KST_HM"
-
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] || [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
-          elif [ "$KST_DAY" -le 5 ] && [ "$KST_HM" -ge 1100 ] && [ "$KST_HM" -le 2000 ]; then
-            echo "run_prefetch=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run_prefetch=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Checkout repository
-        if: steps.window.outputs.run_prefetch == 'true'
+      - name: Checkout main
         uses: actions/checkout@v6
         with:
           ref: main
 
-      - name: Refresh latest main
-        if: steps.window.outputs.run_prefetch == 'true'
-        run: git pull --ff-only origin main
-
-      - name: Check existing scan cache
-        id: cache
-        if: steps.window.outputs.run_prefetch == 'true'
-        run: |
-          python - <<'PY' >> "$GITHUB_OUTPUT"
-          import json
-          from datetime import datetime, timedelta, timezone
-          from pathlib import Path
-
-          KST = timezone(timedelta(hours=9))
-          now = datetime.now(KST)
-          # Prefetch is preparing today's same-day scan. Before 15:40, do not
-          # treat yesterday's cache as up to date or the early warm-up job will skip.
-          target = now
-          while target.weekday() > 4:
-              target -= timedelta(days=1)
-          target_date = target.strftime("%Y%m%d")
-
-          def cache_has_target_date(cache, target_date):
-              if cache.get("target_date") != target_date:
-                  return False
-              markets = cache.get("markets", {})
-              for key in ("kospi200", "kosdaq150"):
-                  market = markets.get(key, {})
-                  if market.get("target_date") != target_date:
-                      return False
-                  summary = market.get("summary", {})
-                  if not summary or not market.get("direction_groups"):
-                      return False
-                  chart_data = market.get("chart_data", {})
-                  if not isinstance(chart_data, dict) or not chart_data:
-                      return False
-                  market_size = market.get("market_size", 0)
-                  scanned = summary.get("scanned", 0)
-                  if isinstance(market_size, int) and market_size > 20 and scanned < int(market_size * 0.8):
-                      return False
-                  if isinstance(market_size, int) and market_size > 20 and len(chart_data) < int(scanned * 0.8):
-                      return False
-              return True
-
-          path = Path("data/scan_cache.json")
-          cache = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-          up_to_date = cache_has_target_date(cache, target_date)
-          print(f"target_date={target_date}")
-          print(f"up_to_date={'true' if up_to_date else 'false'}")
-          PY
-
       - name: Set up Python
-        if: steps.window.outputs.run_prefetch == 'true' && steps.cache.outputs.up_to_date != 'true'
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
       - name: Install dependencies
-        if: steps.window.outputs.run_prefetch == 'true' && steps.cache.outputs.up_to_date != 'true'
         run: pip install -r requirements.txt
 
-      - name: Build scan cache
-        if: steps.window.outputs.run_prefetch == 'true' && steps.cache.outputs.up_to_date != 'true'
+      - name: Update caches with one KIS token request at most
+        id: update
+        continue-on-error: true
         env:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
         run: python prefetch_scan_cache.py
 
-      - name: Commit updated cache
-        if: steps.window.outputs.run_prefetch == 'true' && steps.cache.outputs.up_to_date != 'true'
+      - name: Commit cache and daily token-request guard
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/scan_cache.json
+          git add data/scan_cache.json data/program_trade_cache.json data/us_liquidity_cache.json data/kis_batch_state.json
           git diff --cached --quiet && exit 0
-          git commit -m "Update daily scan cache"
+          git commit -m "Update daily market caches"
           git pull --rebase origin main
           git push origin HEAD:main
+
+      - name: Report collection failure
+        if: steps.update.outcome == 'failure'
+        run: exit 1

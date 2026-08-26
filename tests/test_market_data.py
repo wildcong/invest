@@ -6,6 +6,7 @@ from market_data import (
     KST,
     build_program_trade_cache,
     build_us_liquidity_cache,
+    classify_liquidity_effect,
     normalize_program_trade_rows,
     program_cache_has_target_date,
 )
@@ -69,6 +70,20 @@ class ProgramTradeTests(unittest.TestCase):
 
 
 class FredTests(unittest.TestCase):
+    def test_liquidity_direction_labels(self):
+        self.assertEqual(
+            classify_liquidity_effect(10, "direct"),
+            "유동성 확대 방향",
+        )
+        self.assertEqual(
+            classify_liquidity_effect(10, "inverse"),
+            "유동성 축소 방향",
+        )
+        self.assertEqual(
+            classify_liquidity_effect(-10, "inverse"),
+            "유동성 확대 방향",
+        )
+
     def test_fred_series_are_scaled_to_billions(self):
         values = {
             "WDTGAL": "DATE,WDTGAL\n2026-08-19,936406\n",
@@ -92,6 +107,8 @@ class FredTests(unittest.TestCase):
             cache["series"]["reserve_balances"]["rows"][0]["value_십억달러"],
             2935.287,
         )
+        self.assertEqual(cache["series"]["tga"]["liquidity_relation"], "inverse")
+        self.assertEqual(cache["series"]["m2"]["liquidity_relation"], "direct")
 
 
 if __name__ == "__main__":

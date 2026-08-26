@@ -25,6 +25,10 @@ FRED_SERIES = {
         "frequency": "주간 · 수요일",
         "source_unit": "백만 달러",
         "scale_to_billions": 0.001,
+        "liquidity_relation": "inverse",
+        "relation_label": "역방향",
+        "relation_summary": "상승 → 유동성 흡수 · 하락 → 유동성 공급",
+        "interpretation": "재무부 현금이 TGA에 쌓이면 은행 준비금을 줄이는 압력이 생깁니다.",
     },
     "m2": {
         "series_id": "M2SL",
@@ -32,6 +36,10 @@ FRED_SERIES = {
         "frequency": "월간",
         "source_unit": "십억 달러",
         "scale_to_billions": 1.0,
+        "liquidity_relation": "direct",
+        "relation_label": "정방향",
+        "relation_summary": "상승 → 통화 유동성 확대 · 하락 → 축소",
+        "interpretation": "M2는 현금·예금·소액 정기예금·소매 MMF를 포괄하는 월간 광의통화입니다.",
     },
     "reverse_repo": {
         "series_id": "RRPONTSYD",
@@ -39,6 +47,10 @@ FRED_SERIES = {
         "frequency": "일간",
         "source_unit": "십억 달러",
         "scale_to_billions": 1.0,
+        "liquidity_relation": "inverse",
+        "relation_label": "역방향",
+        "relation_summary": "상승 → 연준으로 자금 흡수 · 하락 → 시장 이동 여지",
+        "interpretation": "역레포 감소분이 위험자산으로 곧바로 유입된다는 뜻은 아닙니다.",
     },
     "reserve_balances": {
         "series_id": "WRESBAL",
@@ -46,8 +58,19 @@ FRED_SERIES = {
         "frequency": "주간 · 수요일",
         "source_unit": "백만 달러",
         "scale_to_billions": 0.001,
+        "liquidity_relation": "direct",
+        "relation_label": "정방향",
+        "relation_summary": "상승 → 은행권 유동성 확대 · 하락 → 축소",
+        "interpretation": "지급준비금은 금융시스템의 즉시 사용 가능한 유동성이지만 주가와 일대일 신호는 아닙니다.",
     },
 }
+
+
+def classify_liquidity_effect(change: float, relation: str) -> str:
+    if change == 0:
+        return "변화 없음"
+    multiplier = -1 if relation == "inverse" else 1
+    return "유동성 확대 방향" if change * multiplier > 0 else "유동성 축소 방향"
 
 
 def _load_json(path: Path) -> dict:
@@ -262,6 +285,10 @@ def build_us_liquidity_cache(
             "label": metadata["label"],
             "frequency": metadata["frequency"],
             "unit": "십억 달러",
+            "liquidity_relation": metadata["liquidity_relation"],
+            "relation_label": metadata["relation_label"],
+            "relation_summary": metadata["relation_summary"],
+            "interpretation": metadata["interpretation"],
             "source_url": (
                 "https://fred.stlouisfed.org/series/"
                 f"{metadata['series_id']}"

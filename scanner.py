@@ -12,6 +12,7 @@ import requests
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
+INVESTOR_CHART_MAX_ROWS = 30
 AUTO_REFRESH_PRIMARY_HOUR = 15
 AUTO_REFRESH_PRIMARY_MINUTE = 45
 AUTO_REFRESH_BACKUP_HOUR = 16
@@ -226,7 +227,7 @@ def summarize_5day_flow(df: pd.DataFrame) -> Dict[str, float]:
     }
 
 
-def serialize_chart_data(df: pd.DataFrame, max_rows: int = 60):
+def serialize_chart_data(df: pd.DataFrame, max_rows: int = INVESTOR_CHART_MAX_ROWS):
     if df.empty:
         return []
 

@@ -75,6 +75,25 @@ class ScanCacheTests(unittest.TestCase):
         frame = pd.DataFrame({"F_억": [1] * 5, "I_억": [2] * 5}, index=index)
         self.assertEqual(scanner.classify_5day_direction(frame), "buy")
 
+    def test_chart_cache_is_limited_to_single_query_window(self):
+        index = pd.date_range("2026-06-01", periods=60)
+        frame = pd.DataFrame(
+            {
+                "Price": range(60),
+                "F_억": range(60),
+                "I_억": range(60),
+                "P_억": range(60),
+            },
+            index=index,
+        )
+
+        rows = scanner.serialize_chart_data(frame)
+
+        self.assertEqual(scanner.INVESTOR_CHART_MAX_ROWS, 30)
+        self.assertEqual(len(rows), 30)
+        self.assertEqual(rows[0]["Date"], index[-30].strftime("%Y-%m-%d"))
+        self.assertEqual(rows[-1]["Date"], index[-1].strftime("%Y-%m-%d"))
+
 
 if __name__ == "__main__":
     unittest.main()

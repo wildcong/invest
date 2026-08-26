@@ -5,7 +5,13 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from scanner import classify_5day_direction, get_stock_lists, get_target_date, load_scan_cache
+from scanner import (
+    INVESTOR_CHART_MAX_ROWS,
+    classify_5day_direction,
+    get_stock_lists,
+    get_target_date,
+    load_scan_cache,
+)
 
 
 KST = timezone(timedelta(hours=9))
@@ -284,7 +290,12 @@ else:
         )
         st.stop()
 
-period = st.select_slider("차트 기간", options=[5, 10, 15, 20, 25, 30, 60], value=30)
+period = st.select_slider(
+    "차트 기간",
+    options=[5, 10, 15, 20, 25, INVESTOR_CHART_MAX_ROWS],
+    value=INVESTOR_CHART_MAX_ROWS,
+)
+st.caption("KIS 단일 조회 캐시 기준 · 최근 최대 30거래일")
 chart_frame = find_chart_frame(scan_cache, selected_ticker)
 if chart_frame.empty:
     st.warning("선택 종목의 차트 캐시가 없습니다. 다음 장 마감 배치에서 다시 확인해 주세요.")

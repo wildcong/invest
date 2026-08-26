@@ -2,8 +2,12 @@ name: Update Daily Market Cache
 
 on:
   schedule:
-    # 16:00 KST, Monday-Friday. This is the only automatic KIS token issuer.
-    - cron: "0 7 * * 1-5"
+    # Avoid the top of the hour, when GitHub says scheduled jobs are most
+    # likely to be delayed or dropped. The second slot is a no-token backup:
+    # concurrency plus kis_batch_state.json makes it exit after a successful
+    # primary run without requesting another KIS token.
+    - cron: "47 6 * * 1-5" # 15:47 KST, Monday-Friday
+    - cron: "17 7 * * 1-5" # 16:17 KST backup, Monday-Friday
   workflow_dispatch:
 
 permissions:

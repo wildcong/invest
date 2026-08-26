@@ -208,7 +208,7 @@ def render_stock_chart(name: str, ticker: str, frame: pd.DataFrame, period: int)
 
 st.title("📊 국내 수급 스캐너")
 st.caption(
-    "Streamlit은 저장된 장 마감 캐시만 읽습니다. KIS 토큰 발급과 대량 수집은 평일 16:00 GitHub 배치 한 곳에서만 실행됩니다."
+    "Streamlit은 저장된 장 마감 캐시만 읽습니다. KIS 토큰 발급과 대량 수집은 평일 장 마감 후 GitHub 배치 한 곳에서만 실행됩니다."
 )
 
 scan_cache = get_scan_cache()

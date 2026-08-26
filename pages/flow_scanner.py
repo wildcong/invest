@@ -98,7 +98,7 @@ def render_status(scan_cache: dict, market: dict) -> None:
     else:
         st.warning(
             f"{message} · 현재 예상 기준일 {format_target_date(expected_date)}. "
-            "다음 평일 16:00 배치에서 갱신됩니다."
+            "다음 장 마감 배치에서 갱신됩니다."
         )
 
 

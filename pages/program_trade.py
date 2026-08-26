@@ -38,7 +38,7 @@ st.caption(
 cache = get_program_cache()
 if not cache.get("markets"):
     st.warning(
-        "아직 프로그램매매 캐시가 없습니다. 배포 후 첫 평일 16:00 일일 배치가 "
+        "아직 프로그램매매 캐시가 없습니다. 배포 후 첫 평일 장 마감 일일 배치가 "
         "완료되면 이 화면에 표시됩니다."
     )
     st.stop()

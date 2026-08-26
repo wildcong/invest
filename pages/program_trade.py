@@ -3,11 +3,16 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-from market_data import load_program_trade_cache
+from market_data import (
+    PROGRAM_TRADE_CACHE_FILE,
+    cache_file_version,
+    load_program_trade_cache,
+)
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def get_program_cache() -> dict:
+@st.cache_data(max_entries=2, show_spinner=False)
+def get_program_cache(cache_version: tuple[int, int]) -> dict:
+    del cache_version
     return load_program_trade_cache()
 
 
@@ -35,7 +40,7 @@ st.caption(
     "양수는 순매수, 음수는 순매도입니다."
 )
 
-cache = get_program_cache()
+cache = get_program_cache(cache_file_version(PROGRAM_TRADE_CACHE_FILE))
 if not cache.get("markets"):
     st.warning(
         "아직 프로그램매매 캐시가 없습니다. 배포 후 첫 평일 장 마감 일일 배치가 "

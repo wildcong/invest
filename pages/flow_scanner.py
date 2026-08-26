@@ -5,7 +5,9 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
+from market_data import cache_file_version
 from scanner import (
+    CACHE_FILE,
     INVESTOR_CHART_MAX_ROWS,
     classify_5day_direction,
     get_stock_lists,
@@ -22,8 +24,9 @@ DIRECTION_META = {
 }
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def get_scan_cache() -> dict:
+@st.cache_data(max_entries=2, show_spinner=False)
+def get_scan_cache(cache_version: tuple[int, int]) -> dict:
+    del cache_version
     return load_scan_cache()
 
 
@@ -211,7 +214,7 @@ st.caption(
     "Streamlit은 저장된 장 마감 캐시만 읽습니다. KIS 토큰 발급과 대량 수집은 평일 장 마감 후 GitHub 배치 한 곳에서만 실행됩니다."
 )
 
-scan_cache = get_scan_cache()
+scan_cache = get_scan_cache(cache_file_version(CACHE_FILE))
 markets = scan_cache.get("markets", {})
 if not markets:
     st.error("수급 캐시가 없습니다. GitHub의 일일 배치 실행 상태를 확인해 주세요.")

@@ -1,15 +1,31 @@
 import unittest
 from datetime import datetime
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import Mock
 
 from market_data import (
     KST,
     build_program_trade_cache,
     build_us_liquidity_cache,
+    cache_file_version,
     classify_liquidity_effect,
     normalize_program_trade_rows,
     program_cache_has_target_date,
 )
+
+
+class CacheFileVersionTests(unittest.TestCase):
+    def test_cache_key_changes_when_deployed_file_changes(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "cache.json"
+            self.assertEqual(cache_file_version(path), (0, 0))
+
+            path.write_text("{}", encoding="utf-8")
+            first_version = cache_file_version(path)
+            path.write_text('{"updated":true}', encoding="utf-8")
+
+            self.assertNotEqual(cache_file_version(path), first_version)
 
 
 class FakeResponse:

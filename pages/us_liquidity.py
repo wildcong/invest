@@ -4,11 +4,18 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from market_data import FRED_SERIES, classify_liquidity_effect, load_us_liquidity_cache
+from market_data import (
+    FRED_SERIES,
+    US_LIQUIDITY_CACHE_FILE,
+    cache_file_version,
+    classify_liquidity_effect,
+    load_us_liquidity_cache,
+)
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def get_liquidity_cache() -> dict:
+@st.cache_data(max_entries=2, show_spinner=False)
+def get_liquidity_cache(cache_version: tuple[int, int]) -> dict:
+    del cache_version
     return load_us_liquidity_cache()
 
 
@@ -103,7 +110,7 @@ direct_column, inverse_column = st.columns(2)
 direct_column.success("**정방향** · M2 · 지급준비금")
 inverse_column.warning("**역방향** · TGA · Overnight Reverse Repo")
 
-cache = get_liquidity_cache()
+cache = get_liquidity_cache(cache_file_version(US_LIQUIDITY_CACHE_FILE))
 series_map = cache.get("series", {})
 if not series_map:
     st.warning("미국 유동성 캐시가 없습니다. 다음 일일 배치에서 FRED 데이터를 갱신합니다.")

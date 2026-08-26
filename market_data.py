@@ -18,6 +18,15 @@ DATA_DIR = Path(__file__).parent / "data"
 PROGRAM_TRADE_CACHE_FILE = DATA_DIR / "program_trade_cache.json"
 US_LIQUIDITY_CACHE_FILE = DATA_DIR / "us_liquidity_cache.json"
 
+
+def cache_file_version(path: Path) -> tuple[int, int]:
+    """Return a cache key that changes whenever a deployed JSON file changes."""
+    try:
+        stat = path.stat()
+        return stat.st_mtime_ns, stat.st_size
+    except OSError:
+        return 0, 0
+
 FRED_SERIES = {
     "tga": {
         "series_id": "WDTGAL",

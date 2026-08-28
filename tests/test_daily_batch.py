@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import requests
+
 import prefetch_scan_cache
 from kis_token_store import decrypt_access_token, encrypt_access_token
 from market_data import KST
@@ -163,6 +165,57 @@ class TokenPersistenceTests(unittest.TestCase):
 
             self.assertEqual((token, source), ("later-token", "issued"))
             retry.assert_called_once()
+
+    def test_connect_timeout_is_retried_without_cooldown(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_path = Path(directory) / "state.json"
+            response = {"access_token": "connected-token", "expires_in": 86400}
+            with (
+                patch.object(prefetch_scan_cache, "BATCH_STATE_FILE", state_path),
+                patch.object(
+                    prefetch_scan_cache,
+                    "issue_access_token",
+                    side_effect=[requests.ConnectTimeout("blocked route"), response],
+                ) as issue,
+                patch.object(prefetch_scan_cache.time, "sleep") as sleep,
+            ):
+                token, source = prefetch_scan_cache.get_or_issue_access_token(
+                    {},
+                    "app-key",
+                    APP_SECRET,
+                    NOW,
+                )
+
+            self.assertEqual((token, source), ("connected-token", "issued"))
+            self.assertEqual(issue.call_count, 2)
+            sleep.assert_called_once_with(
+                prefetch_scan_cache.TOKEN_CONNECT_RETRY_DELAY_SECONDS
+            )
+
+    def test_exhausted_connect_timeouts_allow_a_new_workflow_retry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_path = Path(directory) / "state.json"
+            with (
+                patch.object(prefetch_scan_cache, "BATCH_STATE_FILE", state_path),
+                patch.object(
+                    prefetch_scan_cache,
+                    "issue_access_token",
+                    side_effect=requests.ConnectTimeout("blocked route"),
+                ) as issue,
+                patch.object(prefetch_scan_cache.time, "sleep"),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "토큰 요청 실패"):
+                    prefetch_scan_cache.get_or_issue_access_token(
+                        {},
+                        "app-key",
+                        APP_SECRET,
+                        NOW,
+                    )
+
+            self.assertEqual(issue.call_count, 3)
+            saved = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertTrue(saved["token_request"]["safe_to_retry"])
+            self.assertFalse(prefetch_scan_cache._request_is_cooling_down(saved, NOW))
 
 
 class RetryTests(unittest.TestCase):

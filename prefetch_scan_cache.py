@@ -10,6 +10,8 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import requests
+
 from kis_token_store import decrypt_access_token, encrypt_access_token
 from market_data import (
     KST,
@@ -41,6 +43,8 @@ TOKEN_REQUEST_COOLDOWN_SECONDS = max(
     int(os.environ.get("TOKEN_REQUEST_COOLDOWN_SECONDS", "1800")),
 )
 TOKEN_EXPIRY_SAFETY_SECONDS = 30
+TOKEN_CONNECT_MAX_ATTEMPTS = 3
+TOKEN_CONNECT_RETRY_DELAY_SECONDS = 5
 MARKET_DATA_READY_HOUR = 15
 MARKET_DATA_READY_MINUTE = 45
 BATCH_STATE_FILE = Path(__file__).parent / "data" / "kis_batch_state.json"
@@ -221,6 +225,8 @@ def _request_is_cooling_down(state: dict, now_kst: datetime) -> bool:
         return False
     if request_state.get("status") not in {"running", "failed"}:
         return False
+    if request_state.get("safe_to_retry") is True:
+        return False
     attempted_at = _parse_datetime(request_state.get("attempted_at_kst"))
     if not attempted_at:
         return False
@@ -248,7 +254,23 @@ def get_or_issue_access_token(
     }
     save_batch_state(state)
     try:
-        response = issue_access_token(app_key, app_secret)
+        response = None
+        for attempt in range(1, TOKEN_CONNECT_MAX_ATTEMPTS + 1):
+            try:
+                response = issue_access_token(app_key, app_secret)
+                break
+            except requests.ConnectTimeout:
+                if attempt == TOKEN_CONNECT_MAX_ATTEMPTS:
+                    raise
+                delay = TOKEN_CONNECT_RETRY_DELAY_SECONDS * (2 ** (attempt - 1))
+                print(
+                    "KIS token endpoint connect timeout; no request was sent. "
+                    f"Retrying in {delay} seconds ({attempt}/"
+                    f"{TOKEN_CONNECT_MAX_ATTEMPTS})."
+                )
+                time.sleep(delay)
+        if response is None:
+            raise RuntimeError("KIS 토큰 응답을 받지 못했습니다.")
         token = str(response["access_token"])
         expires_at = _resolve_token_expiry(response, now_kst)
         state["token"] = {
@@ -268,10 +290,12 @@ def get_or_issue_access_token(
         save_batch_state(state)
         return token, "issued"
     except Exception as exc:
+        safe_to_retry = isinstance(exc, requests.ConnectTimeout)
         state["token_request"] = {
             "status": "failed",
             "attempted_at_kst": now_kst.isoformat(),
             "message": _safe_message(exc),
+            "safe_to_retry": safe_to_retry,
         }
         save_batch_state(state)
         raise RuntimeError(f"KIS 토큰 요청 실패: {_safe_message(exc)}") from exc

@@ -9,6 +9,13 @@ class FlowNavigationTests(unittest.TestCase):
         page = Path(__file__).resolve().parents[1] / "pages" / "flow_scanner.py"
         app = AppTest.from_file(str(page), default_timeout=20).run()
         self.assertFalse(app.exception)
+        manual_buttons = [item for item in app.button if "수동 갱신" in item.label]
+        manual_buttons.extend(
+            item
+            for item in app.get("link_button")
+            if "수동 갱신" in item.proto.label
+        )
+        self.assertEqual(len(manual_buttons), 1)
 
         selector = next(item for item in app.selectbox if item.label == "종목 선택")
         first_selection = selector.value

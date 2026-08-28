@@ -255,6 +255,51 @@ class RunWindowTests(unittest.TestCase):
 
 
 class PhaseIsolationTests(unittest.TestCase):
+    def test_completed_target_does_not_collect_again(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_path = Path(directory) / "state.json"
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "version": 2,
+                        "batch": {
+                            "target_date": TARGET_DATE,
+                            "status": "success",
+                            "stages": {
+                                "us_liquidity": {"status": "success"},
+                                "program_trade": {"status": "success"},
+                                "scanner": {"status": "success"},
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with (
+                patch.object(prefetch_scan_cache, "BATCH_STATE_FILE", state_path),
+                patch.object(
+                    prefetch_scan_cache,
+                    "load_scan_cache",
+                    return_value=scan_cache(),
+                ),
+                patch.object(
+                    prefetch_scan_cache,
+                    "load_program_trade_cache",
+                    return_value=program_cache(),
+                ),
+                patch.object(prefetch_scan_cache, "build_us_liquidity_cache") as us,
+                patch.object(prefetch_scan_cache, "build_program_trade_cache") as program,
+                patch.object(prefetch_scan_cache, "build_scan_cache") as scanner,
+                patch.object(prefetch_scan_cache, "issue_access_token") as issue,
+            ):
+                prefetch_scan_cache.run_priority_phase(NOW)
+                prefetch_scan_cache.run_scanner_phase(NOW)
+
+            us.assert_not_called()
+            program.assert_not_called()
+            scanner.assert_not_called()
+            issue.assert_not_called()
+
     def test_priority_phase_persists_program_cache_before_scanner(self):
         with tempfile.TemporaryDirectory() as directory:
             state_path = Path(directory) / "state.json"

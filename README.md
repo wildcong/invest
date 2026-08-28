@@ -43,6 +43,15 @@ GitHub 저장소의 Actions secret에 다음 두 값이 필요합니다.
 - `KIS_APP_SECRET`
 
 Streamlit Secrets에는 KIS 키가 필요하지 않습니다. 앱은 캐시 읽기 전용입니다.
+페이지의 `수동 갱신` 버튼으로 GitHub Actions를 직접 실행하려면 다음 값을
+Streamlit Secrets에 추가합니다.
+
+- `GITHUB_ACTIONS_TOKEN`: `wildcong/invest` 저장소에만 접근할 수 있고
+  **Actions: write** 권한만 부여한 fine-grained personal access token
+
+토큰이 없으면 버튼은 GitHub Actions 수동 실행 화면을 안내합니다. 같은 거래일의
+배치가 이미 성공했거나 방금 실행을 요청한 세션에서는 버튼을 비활성화하며,
+GitHub 워크플로도 동시성 잠금과 캐시 기준일 검증으로 중복 수집을 건너뜁니다.
 
 ## 로컬 실행과 테스트
 

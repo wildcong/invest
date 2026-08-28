@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta, timezone
+import json
+import os
+from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -9,15 +12,24 @@ from market_data import cache_file_version
 from scanner import (
     CACHE_FILE,
     INVESTOR_CHART_MAX_ROWS,
+    cache_has_target_date,
     classify_5day_direction,
     get_stock_lists,
     get_target_date,
     load_scan_cache,
 )
+from github_actions import (
+    WORKFLOW_URL,
+    WorkflowDispatchError,
+    dispatch_market_cache_workflow,
+)
 
 
 KST = timezone(timedelta(hours=9))
 STOCK_SELECTOR_KEY = "flow_stock_selector"
+MANUAL_REFRESH_REQUEST_KEY = "manual_market_refresh_request"
+MANUAL_REFRESH_COOLDOWN = timedelta(minutes=65)
+BATCH_STATE_FILE = Path(__file__).resolve().parents[1] / "data" / "kis_batch_state.json"
 STOCK_KEYBOARD_NAVIGATION = st.components.v2.component(
     "flow_stock_keyboard_navigation",
     css=":host { display: none; }",
@@ -73,6 +85,16 @@ def get_scan_cache(cache_version: tuple[int, int]) -> dict:
     return load_scan_cache()
 
 
+@st.cache_data(max_entries=2, show_spinner=False)
+def get_batch_state(cache_version: tuple[int, int]) -> dict:
+    del cache_version
+    try:
+        payload = json.loads(BATCH_STATE_FILE.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
 @st.cache_data(ttl=86400, show_spinner=False)
 def get_all_symbols() -> dict[str, str]:
     _, _, symbols = get_stock_lists()
@@ -92,6 +114,103 @@ def format_generated_at(value: str | None) -> str:
         return parsed.astimezone(KST).strftime("%Y-%m-%d %H:%M KST")
     except ValueError:
         return (value or "-").replace("T", " ")[:16]
+
+
+def get_actions_token() -> str:
+    token = os.environ.get("GITHUB_ACTIONS_TOKEN", "").strip()
+    if token:
+        return token
+    try:
+        return str(st.secrets.get("GITHUB_ACTIONS_TOKEN", "")).strip()
+    except Exception:
+        return ""
+
+
+def batch_is_complete_for_target(
+    scan_cache: dict,
+    batch_state: dict,
+    target_date: str,
+) -> bool:
+    batch = batch_state.get("batch", {})
+    return (
+        batch.get("target_date") == target_date
+        and batch.get("status") == "success"
+        and cache_has_target_date(scan_cache, target_date)
+    )
+
+
+def get_pending_manual_request(target_date: str) -> dict | None:
+    request = st.session_state.get(MANUAL_REFRESH_REQUEST_KEY)
+    if not isinstance(request, dict) or request.get("target_date") != target_date:
+        return None
+    try:
+        requested_at = datetime.fromisoformat(str(request["requested_at_kst"]))
+    except (KeyError, TypeError, ValueError):
+        return None
+    if datetime.now(KST) - requested_at.astimezone(KST) >= MANUAL_REFRESH_COOLDOWN:
+        return None
+    return request
+
+
+def render_manual_refresh(scan_cache: dict, batch_state: dict) -> None:
+    target_date = get_target_date()
+    completed = batch_is_complete_for_target(scan_cache, batch_state, target_date)
+    pending_request = get_pending_manual_request(target_date)
+    actions_token = get_actions_token()
+
+    status_column, button_column = st.columns([4, 1])
+    with status_column:
+        if completed:
+            st.caption(
+                f"{format_target_date(target_date)} 배치 완료 · 같은 거래일은 중복 실행하지 않습니다."
+            )
+        elif pending_request:
+            st.info("수동 갱신을 요청했습니다. 완료까지 최대 60분 정도 걸릴 수 있습니다.")
+        else:
+            st.caption(
+                f"갱신 대상 {format_target_date(target_date)} · 자동 배치가 누락됐을 때 수동으로 실행합니다."
+            )
+
+    with button_column:
+        if not completed and pending_request is None and not actions_token:
+            st.link_button(
+                "🔄 수동 갱신",
+                WORKFLOW_URL,
+                width="stretch",
+                type="primary",
+                help="GitHub 로그인 후 Run workflow를 눌러 실행합니다.",
+            )
+        elif st.button(
+            "🔄 수동 갱신",
+            key="manual_market_refresh",
+            width="stretch",
+            type="primary",
+            disabled=completed or pending_request is not None,
+            help=(
+                "이미 완료된 거래일이라 중복 실행하지 않습니다."
+                if completed
+                else "GitHub Actions 장 마감 배치를 요청합니다."
+            ),
+        ):
+            try:
+                result = dispatch_market_cache_workflow(actions_token)
+            except WorkflowDispatchError as exc:
+                st.error(str(exc))
+                st.link_button("GitHub Actions 확인", WORKFLOW_URL, width="stretch")
+                return
+            st.session_state[MANUAL_REFRESH_REQUEST_KEY] = {
+                "target_date": target_date,
+                "requested_at_kst": datetime.now(KST).isoformat(),
+                "run_url": result.run_url,
+            }
+            st.rerun()
+
+    if pending_request and pending_request.get("run_url"):
+        st.link_button(
+            "수동 갱신 진행상황 보기",
+            str(pending_request["run_url"]),
+            width="stretch",
+        )
 
 
 def rows_to_frame(rows: list[dict]) -> pd.DataFrame:
@@ -306,6 +425,8 @@ st.caption(
 )
 
 scan_cache = get_scan_cache(cache_file_version(CACHE_FILE))
+batch_state = get_batch_state(cache_file_version(BATCH_STATE_FILE))
+render_manual_refresh(scan_cache, batch_state)
 markets = scan_cache.get("markets", {})
 if not markets:
     st.error("수급 캐시가 없습니다. GitHub의 일일 배치 실행 상태를 확인해 주세요.")

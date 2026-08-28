@@ -182,6 +182,15 @@ class RetryTests(unittest.TestCase):
         self.assertEqual([call.args[0] for call in sleep.call_args_list], [2, 4])
 
 
+class RunWindowTests(unittest.TestCase):
+    def test_manual_recovery_can_run_before_market_close(self):
+        before_close = NOW.replace(hour=14)
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(prefetch_scan_cache._validate_run_time(before_close))
+        with patch.dict(os.environ, {"ALLOW_OFF_HOURS": "true"}, clear=True):
+            self.assertTrue(prefetch_scan_cache._validate_run_time(before_close))
+
+
 class PhaseIsolationTests(unittest.TestCase):
     def test_priority_phase_persists_program_cache_before_scanner(self):
         with tempfile.TemporaryDirectory() as directory:

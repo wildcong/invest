@@ -303,7 +303,12 @@ def run_with_retries(
 
 
 def _validate_run_time(now_kst: datetime) -> bool:
-    if now_kst.weekday() > 4:
+    allow_off_hours = os.environ.get("ALLOW_OFF_HOURS", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if now_kst.weekday() > 4 and not allow_off_hours:
         print(f"weekend in KST ({now_kst:%Y-%m-%d %H:%M}); skipping batch")
         return False
     ready_at = now_kst.replace(
@@ -312,9 +317,11 @@ def _validate_run_time(now_kst: datetime) -> bool:
         second=0,
         microsecond=0,
     )
-    if now_kst < ready_at:
+    if now_kst < ready_at and not allow_off_hours:
         print(f"before KST {ready_at:%H:%M}; skipping without requesting a KIS token")
         return False
+    if allow_off_hours and (now_kst.weekday() > 4 or now_kst < ready_at):
+        print("manual recovery run: collecting the latest completed trading day")
     return True
 
 

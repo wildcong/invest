@@ -21,6 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: KIS_APP_KEY
+    env:
+      # A manual recovery run may safely collect the latest completed trading
+      # day before today's close or on a weekend.
+      ALLOW_OFF_HOURS: ${{ github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout main

@@ -227,6 +227,14 @@ def _request_is_cooling_down(state: dict, now_kst: datetime) -> bool:
         return False
     if request_state.get("safe_to_retry") is True:
         return False
+    # Backward compatibility for a timeout state written before the explicit
+    # safe_to_retry field was introduced.
+    previous_message = str(request_state.get("message", ""))
+    if (
+        "ConnectTimeout" in previous_message
+        or "connect timeout" in previous_message.lower()
+    ):
+        return False
     attempted_at = _parse_datetime(request_state.get("attempted_at_kst"))
     if not attempted_at:
         return False

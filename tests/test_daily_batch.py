@@ -54,6 +54,16 @@ class TokenEncryptionTests(unittest.TestCase):
 
 
 class TokenPersistenceTests(unittest.TestCase):
+    def test_legacy_connect_timeout_state_does_not_start_cooldown(self):
+        state = {
+            "token_request": {
+                "status": "failed",
+                "attempted_at_kst": NOW.isoformat(),
+                "message": "ConnectTimeout while opening KIS token endpoint",
+            }
+        }
+        self.assertFalse(prefetch_scan_cache._request_is_cooling_down(state, NOW))
+
     def test_valid_encrypted_token_is_reused_without_issuance(self):
         with tempfile.TemporaryDirectory() as directory:
             state_path = Path(directory) / "state.json"

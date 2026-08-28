@@ -2,12 +2,12 @@ name: Update Daily Market Cache
 
 on:
   schedule:
-    # Avoid the top of the hour, when GitHub says scheduled jobs are most
-    # likely to be delayed or dropped. The second slot is a no-token backup:
-    # concurrency plus kis_batch_state.json makes it exit after a successful
-    # primary run without requesting another KIS token.
+    # The later retries cover a token that was issued after the prior day's
+    # primary slot. Encrypted token reuse and job concurrency make completed
+    # retries no-ops without issuing another token.
     - cron: "47 6 * * 1-5" # 15:47 KST, Monday-Friday
-    - cron: "17 7 * * 1-5" # 16:17 KST backup, Monday-Friday
+    - cron: "47 7 * * 1-5" # 16:47 KST backup, Monday-Friday
+    - cron: "47 8 * * 1-5" # 17:47 KST final backup, Monday-Friday
   workflow_dispatch:
 
 permissions:
@@ -24,6 +24,7 @@ jobs:
 
     steps:
       - name: Checkout main
+        id: checkout
         uses: actions/checkout@v6
         with:
           ref: main
@@ -36,25 +37,55 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Update caches with one KIS token request at most
-        id: update
+      - name: Update priority caches and persist encrypted token
+        id: priority
         continue-on-error: true
+        timeout-minutes: 15
         env:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
-        run: python prefetch_scan_cache.py
+        run: python prefetch_scan_cache.py --phase priority
 
-      - name: Commit cache and daily token-request guard
+      - name: Record interrupted priority stage
+        if: steps.priority.outcome == 'failure'
+        run: python prefetch_scan_cache.py --mark-workflow-failure priority
+
+      - name: Commit priority caches and encrypted token
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/scan_cache.json data/program_trade_cache.json data/us_liquidity_cache.json data/kis_batch_state.json
+          git add data/program_trade_cache.json data/us_liquidity_cache.json data/kis_batch_state.json
           git diff --cached --quiet && exit 0
-          git commit -m "Update daily market caches"
+          git commit -m "Update priority market caches"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Update flow scanner with the persisted token
+        id: scanner
+        if: always() && steps.checkout.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 38
+        env:
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+        run: python prefetch_scan_cache.py --phase scanner
+
+      - name: Record interrupted scanner stage
+        if: steps.scanner.outcome == 'failure'
+        run: python prefetch_scan_cache.py --mark-workflow-failure scanner
+
+      - name: Commit scanner cache and final batch status
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/scan_cache.json data/kis_batch_state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update daily flow scanner cache"
           git pull --rebase origin main
           git push origin HEAD:main
 
       - name: Report collection failure
-        if: steps.update.outcome == 'failure'
+        if: steps.priority.outcome == 'failure' || steps.scanner.outcome == 'failure'
         run: exit 1

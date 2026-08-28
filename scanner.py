@@ -128,19 +128,53 @@ def get_access_token(
     batch is the sole caller, and all data requests in that run reuse the token.
     This guarantees at most one token-issuance request per workflow execution.
     """
-    headers = {"content-type": "application/json"}
-    body = {"grant_type": "client_credentials", "appkey": app_key, "appsecret": app_secret}
     try:
-        response = request_post(
-            f"{URL_BASE}/oauth2/tokenP",
-            headers=headers,
-            data=json.dumps(body),
-            timeout=20,
-        )
-        response.raise_for_status()
-        return response.json().get("access_token")
-    except (requests.RequestException, ValueError, AttributeError):
+        return issue_access_token(
+            app_key,
+            app_secret,
+            request_post=request_post,
+        )["access_token"]
+    except (
+        requests.RequestException,
+        RuntimeError,
+        ValueError,
+        AttributeError,
+        KeyError,
+    ):
         return None
+
+
+def issue_access_token(
+    app_key: str,
+    app_secret: str,
+    *,
+    request_post: Callable = requests.post,
+) -> dict:
+    """Issue a KIS token and retain the official expiry metadata.
+
+    The batch persists ``access_token_token_expired`` so later scheduled runs
+    can reuse the token until its real expiry instead of guessing from a
+    calendar-day guard.
+    """
+
+    headers = {"content-type": "application/json"}
+    body = {
+        "grant_type": "client_credentials",
+        "appkey": app_key,
+        "appsecret": app_secret,
+    }
+    response = request_post(
+        f"{URL_BASE}/oauth2/tokenP",
+        headers=headers,
+        data=json.dumps(body),
+        timeout=20,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict) or not payload.get("access_token"):
+        message = payload.get("msg1") if isinstance(payload, dict) else None
+        raise RuntimeError(message or "KIS 토큰 응답에 access_token이 없습니다.")
+    return payload
 
 
 def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: str) -> pd.DataFrame:

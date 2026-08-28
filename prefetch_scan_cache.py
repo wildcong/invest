@@ -497,6 +497,7 @@ def run_priority_phase(now: datetime | None = None) -> None:
                         app_key,
                         app_secret,
                         now=now_kst,
+                        target_date=target_date,
                     ),
                     lambda payload: program_cache_has_target_date(
                         payload,

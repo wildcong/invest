@@ -75,13 +75,17 @@ class ProgramTradeTests(unittest.TestCase):
             "one-token",
             "key",
             "secret",
-            now=datetime(2026, 8, 26, 16, tzinfo=KST),
+            now=datetime(2026, 8, 28, 14, tzinfo=KST),
+            target_date="20260826",
             request_get=request_get,
         )
 
         self.assertEqual(request_get.call_count, 2)
         for call in request_get.call_args_list:
-            self.assertEqual(call.kwargs["headers"]["authorization"], "Bearer one-token")
+            self.assertEqual(
+                call.kwargs["headers"]["authorization"], "Bearer one-token"
+            )
+            self.assertEqual(call.kwargs["params"]["FID_INPUT_DATE_2"], "20260826")
         self.assertTrue(program_cache_has_target_date(cache, "20260826"))
 
 
@@ -117,7 +121,9 @@ class FredTests(unittest.TestCase):
             request_get=fake_get,
         )
 
-        self.assertAlmostEqual(cache["series"]["tga"]["rows"][0]["value_십억달러"], 936.406)
+        self.assertAlmostEqual(
+            cache["series"]["tga"]["rows"][0]["value_십억달러"], 936.406
+        )
         self.assertEqual(cache["series"]["m2"]["rows"][0]["value_십억달러"], 23218)
         self.assertAlmostEqual(
             cache["series"]["reserve_balances"]["rows"][0]["value_십억달러"],

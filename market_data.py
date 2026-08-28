@@ -11,7 +11,6 @@ from typing import Callable
 import pandas as pd
 import requests
 
-
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 DATA_DIR = Path(__file__).parent / "data"
@@ -26,6 +25,7 @@ def cache_file_version(path: Path) -> tuple[int, int]:
         return stat.st_mtime_ns, stat.st_size
     except OSError:
         return 0, 0
+
 
 FRED_SERIES = {
     "tga": {
@@ -208,11 +208,16 @@ def build_program_trade_cache(
     app_secret: str,
     *,
     now: datetime | None = None,
+    target_date: str | None = None,
     request_get: Callable = requests.get,
 ) -> dict:
     current = now.astimezone(KST) if now else datetime.now(KST)
-    end_date = current.strftime("%Y%m%d")
-    start_date = (current - timedelta(days=400)).strftime("%Y%m%d")
+    if target_date:
+        target = datetime.strptime(target_date, "%Y%m%d").replace(tzinfo=KST)
+    else:
+        target = current
+    end_date = target.strftime("%Y%m%d")
+    start_date = (target - timedelta(days=400)).strftime("%Y%m%d")
     markets = {}
     for market_key, market_code, label in (
         ("kospi", "K", "KOSPI"),
@@ -299,8 +304,7 @@ def build_us_liquidity_cache(
             "relation_summary": metadata["relation_summary"],
             "interpretation": metadata["interpretation"],
             "source_url": (
-                "https://fred.stlouisfed.org/series/"
-                f"{metadata['series_id']}"
+                f"https://fred.stlouisfed.org/series/{metadata['series_id']}"
             ),
             "rows": rows,
         }

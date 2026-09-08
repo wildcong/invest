@@ -25,6 +25,9 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Test rendered-app monitoring
+        run: node --test tests/test_streamlit_probe.mjs
+
       - name: Resolve app URL
         id: resolve
         env:
@@ -55,154 +58,22 @@ jobs:
         run: |
           cat > wake-streamlit.mjs <<'EOF'
           import { chromium } from "playwright-core";
-          import { readiness } from "./streamlit_probe.mjs";
+          import { waitForApp } from "./streamlit_probe.mjs";
 
           const rawAppUrl = (process.env.APP_URL || "").trim();
-          if (!rawAppUrl) {
-            throw new Error("APP_URL is missing.");
-          }
-
-          const appUrlWithParams = new URL(rawAppUrl);
-          appUrlWithParams.searchParams.set("keepawake", "1");
-          const appUrl = appUrlWithParams.toString();
-
-          const browser = await chromium.launch({
-            channel: "chrome",
-            headless: true,
-          });
-          const page = await browser.newPage({
-            userAgent: "github-actions-keep-awake-browser",
-          });
-          let wakeClicked = false;
-
-          const probeUI = async () => readiness({
-            url: page.url(),
-            titleVisible: await page.getByRole("heading", { name: "📊 국내 수급 스캐너", exact: true }).isVisible().catch(() => false),
-            exceptionVisible: await page.locator('[data-testid="stException"]').count() > 0,
-            platformLoginVisible: await page.getByRole("button", { name: /continue with google|sign in with google/i }).isVisible().catch(() => false),
-          });
-          const htmlPreview = (value) => (value || "").replace(/\s+/g, " ").slice(0, 160);
-
+          if (!rawAppUrl) throw new Error("APP_URL is missing.");
+          const target = new URL(rawAppUrl);
+          target.searchParams.set("keepawake", "1");
+          const browser = await chromium.launch({ channel: "chrome", headless: true });
+          const page = await browser.newPage();
           try {
-            const response = await page.goto(appUrl, {
-              waitUntil: "domcontentloaded",
-              timeout: 120000,
+            const response = await page.goto(target.toString(), {
+              waitUntil: "domcontentloaded", timeout: 120000,
             });
-
-            if (!response) {
-              throw new Error("No initial response was received from the app.");
+            if (!response || response.status() >= 500) {
+              throw new Error("The Streamlit navigation failed.");
             }
-            if (response.status() >= 500) {
-              throw new Error(`Initial app response failed with HTTP ${response.status()}.`);
-            }
-
-            await page.waitForLoadState("networkidle", { timeout: 120000 }).catch(() => {});
-            const maxAttempts = 6;
-            const pollDelayMs = 5000;
-            let lastProbe = null;
-
-            for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-              const finalUrl = page.url();
-              const bodyText = await page.locator("body").innerText({ timeout: 3000 }).catch(() => "");
-              const bodyPreview = htmlPreview(bodyText);
-              const uiState = await probeUI();
-              const appReady = uiState === "ready";
-              const authBlocked = uiState === "platform-login";
-              if (uiState === "app-error") throw new Error("Streamlit dashboard raised an exception.");
-
-              if (authBlocked) {
-                throw new Error(
-                  `Streamlit app requires login in this GitHub Actions browser. ` +
-                    `Make the Streamlit app publicly accessible, not only the GitHub repo. ` +
-                    `finalUrl=${finalUrl}, bodyPreview=${bodyPreview || "<empty>"}`
-                );
-              }
-
-              if (appReady) {
-                console.log(`Attempt ${attempt}/${maxAttempts} app UI is visible. bodyPreview=${bodyPreview}`);
-                break;
-              }
-
-              const wakeButtonVisible = await page
-                .getByRole("button", {
-                  name: /get this app back up|yes, get this app back up|wake|reboot/i,
-                })
-                .first()
-                .isVisible({ timeout: 1000 })
-                .catch(() => false);
-
-              if (wakeButtonVisible) {
-                console.log(`Attempt ${attempt}/${maxAttempts} sleeping page detected.`);
-                await page
-                  .getByRole("button", {
-                    name: /get this app back up|yes, get this app back up|wake|reboot/i,
-                  })
-                  .first()
-                  .click();
-                wakeClicked = true;
-                await page.waitForLoadState("networkidle", { timeout: 120000 }).catch(() => {});
-                await page.waitForTimeout(3000);
-              }
-
-              const health = await page.request
-                .get(new URL("/_stcore/health", appUrl).toString(), {
-                  headers: { "cache-control": "no-store" },
-                  timeout: 30000,
-                })
-                .then(async (res) => {
-                  return {
-                    status: res.status(),
-                    body: await res.text(),
-                  };
-                })
-                .catch((error) => ({
-                  status: 0,
-                  body: String(error),
-                }));
-
-              const trimmedHealthBody = (health.body || "").trim();
-              const healthPreview = htmlPreview(trimmedHealthBody);
-              const healthOk = health.status === 200 && trimmedHealthBody.toLowerCase() === "ok";
-
-              lastProbe = {
-                finalUrl: page.url(),
-                healthStatus: health.status,
-                healthPreview,
-                bodyPreview,
-              };
-
-              console.log(
-                `Attempt ${attempt}/${maxAttempts} finalUrl=${lastProbe.finalUrl} ` +
-                  `healthStatus=${health.status} healthPreview=${healthPreview || "<empty>"} ` +
-                  `bodyPreview=${bodyPreview || "<empty>"}`
-              );
-
-              if (healthOk) {
-                console.log("Streamlit backend health responded with ok.");
-              }
-
-              if (await probeUI() === "ready") {
-                console.log(`Attempt ${attempt}/${maxAttempts} app UI became visible after probing.`);
-                break;
-              }
-
-              if (attempt === maxAttempts) {
-                throw new Error(
-                  `Timed out waiting for the rendered Streamlit dashboard. ` +
-                    `wakeClicked=${wakeClicked} Last probe=${JSON.stringify(lastProbe)}`
-                );
-              }
-
-              await page.waitForTimeout(pollDelayMs);
-            }
-
-            const finalText = await page.locator("body").innerText({ timeout: 5000 }).catch(() => "");
-            if (await probeUI() !== "ready") {
-              throw new Error(
-                `Streamlit app did not confirm ready state. ` +
-                  `finalUrl=${page.url()}, finalBodyPreview=${htmlPreview(finalText) || "<empty>"}`
-              );
-            }
+            await waitForApp(page, "📊 국내 수급 스캐너");
           } finally {
             await browser.close();
           }

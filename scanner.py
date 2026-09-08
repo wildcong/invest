@@ -303,14 +303,23 @@ def serialize_chart_data(df: pd.DataFrame, max_rows: int = INVESTOR_CHART_MAX_RO
     return rows
 
 
-def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app_secret: str, target_date: str | None = None):
+def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app_secret: str, target_date: str | None = None, *, reuse_chart_data: Dict | None = None):
     filtered_map = {}
     summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
     direction_groups = {"buy": [], "mixed": [], "sell": []}
     chart_data = {}
+    target_date = target_date or get_target_date()
+    expected_date = f"{target_date[:4]}-{target_date[4:6]}-{target_date[6:]}"
 
     for name, ticker in stock_dict.items():
-        df = get_investor_data(ticker, access_token, app_key, app_secret, target_date)
+        cached = (reuse_chart_data or {}).get(ticker, [])
+        if (isinstance(cached, list) and valid_chart_rows(cached, target_date)
+                and cached[-1]["Date"] == expected_date):
+            df = pd.DataFrame(cached).set_index("Date")
+            df.index = pd.to_datetime(df.index)
+            df = df[["Price", "F_억", "I_억", "P_억"]].apply(pd.to_numeric)
+        else:
+            df = get_investor_data(ticker, access_token, app_key, app_secret, target_date)
         if df.empty or len(df) < 5:
             continue
 
@@ -348,13 +357,20 @@ def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app
     return filtered_map, summary, direction_groups, chart_data
 
 
-def build_scan_cache(app_key: str, app_secret: str, access_token: str, *, target_date: str | None = None):
+def build_scan_cache(app_key: str, app_secret: str, access_token: str, *, target_date: str | None = None, reuse_cache: Dict | None = None):
     if not access_token:
         raise ValueError("일일 배치에서 발급한 KIS access token이 필요합니다.")
     generated_at = datetime.now(KST)
     target_date = target_date or get_target_date(generated_at)
     universe = get_stock_universe(target_date)
     dict_k200, dict_kq150 = universe.kospi, universe.kosdaq
+    reusable_charts = {}
+    if isinstance(reuse_cache, dict) and reuse_cache.get("target_date") == target_date:
+        for market in reuse_cache.get("markets", {}).values():
+            if isinstance(market, dict) and market.get("target_date") == target_date:
+                charts = market.get("chart_data", {})
+                if isinstance(charts, dict):
+                    reusable_charts.update(charts)
 
     kospi_filtered, kospi_summary, kospi_groups, kospi_chart_data = scan_market(
         dict_k200,
@@ -362,6 +378,7 @@ def build_scan_cache(app_key: str, app_secret: str, access_token: str, *, target
         app_key,
         app_secret,
         target_date,
+        reuse_chart_data=reusable_charts,
     )
     kosdaq_filtered, kosdaq_summary, kosdaq_groups, kosdaq_chart_data = scan_market(
         dict_kq150,
@@ -369,6 +386,7 @@ def build_scan_cache(app_key: str, app_secret: str, access_token: str, *, target
         app_key,
         app_secret,
         target_date,
+        reuse_chart_data=reusable_charts,
     )
 
     return {

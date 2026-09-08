@@ -567,12 +567,14 @@ def run_scanner_phase(now: datetime | None = None) -> None:
         )
         best_partial = None
         best_score = ("", -1)
+        reuse_scan = existing_scan
 
         def collect_scan():
-            nonlocal best_partial, best_score
+            nonlocal best_partial, best_score, reuse_scan
             result = build_scan_cache(
-                app_key, app_secret, access_token, target_date=target_date
+                app_key, app_secret, access_token, target_date=target_date, reuse_cache=reuse_scan
             )
+            reuse_scan = result
             if cache_has_target_date(result, target_date, allow_partial=True):
                 count = sum(
                     scan_coverage(result["markets"][key], target_date, size)["current"]
@@ -583,10 +585,20 @@ def run_scanner_phase(now: datetime | None = None) -> None:
                     best_partial, best_score = result, score
             return result
 
+        def collection_finished(payload):
+            if cache_has_target_date(payload, target_date):
+                return True
+            # A stale universe is refreshed next scheduled run. Repeating all
+            # 350 already-current charts cannot make the listing date advance.
+            return cache_has_target_date(payload, target_date, allow_partial=True) and all(
+                scan_coverage(payload["markets"][key], target_date, size)["current"] == size
+                for key, size in (("kospi200", 200), ("kosdaq150", 150))
+            )
+
         try:
             completed_scan, attempts = run_with_retries(
                 "scan cache", collect_scan,
-                lambda payload: cache_has_target_date(payload, target_date),
+                collection_finished,
             )
         except RuntimeError:
             if best_partial is None:

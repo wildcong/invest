@@ -62,6 +62,39 @@ class TokenEncryptionTests(unittest.TestCase):
         self.assertIsNone(decrypt_access_token(ciphertext, "wrong-secret"))
 
 
+class IncrementalScannerTests(unittest.TestCase):
+    def run_phase(self, existing, results):
+        with (
+            patch.object(prefetch_scan_cache, "load_batch_state", return_value={}),
+            patch.object(prefetch_scan_cache, "save_batch_state"),
+            patch.object(prefetch_scan_cache, "load_scan_cache", return_value=existing),
+            patch.object(prefetch_scan_cache, "get_or_issue_access_token", return_value=("token", "reused")),
+            patch.object(prefetch_scan_cache, "_credentials", return_value=("key", "secret")),
+            patch.object(prefetch_scan_cache, "build_scan_cache", side_effect=results) as build,
+            patch.object(prefetch_scan_cache, "save_scan_cache") as save,
+            patch.object(prefetch_scan_cache.time, "sleep"),
+        ):
+            prefetch_scan_cache.run_scanner_phase(NOW)
+        return build, save
+
+    def test_complete_flows_with_old_listing_stop_after_one_collection(self):
+        current = scan_cache()
+        current["universe"] = {"as_of": "20260827"}
+        build, save = self.run_phase({}, [current])
+        self.assertEqual(build.call_count, 1)
+        self.assertEqual(save.call_args.args[0]["quality"], "degraded")
+
+    def test_retry_reuses_previous_collection_after_loading_existing(self):
+        existing = scan_cache("20260827")
+        partial = scan_cache()
+        partial["markets"]["kospi200"]["chart_data"].pop("000000")
+        completed = scan_cache()
+        build, save = self.run_phase(existing, [partial, completed])
+        self.assertIs(build.call_args_list[0].kwargs["reuse_cache"], existing)
+        self.assertIs(build.call_args_list[1].kwargs["reuse_cache"], partial)
+        self.assertEqual(save.call_args.args[0]["quality"], "complete")
+
+
 class TokenPersistenceTests(unittest.TestCase):
     def test_legacy_connect_timeout_state_does_not_start_cooldown(self):
         state = {

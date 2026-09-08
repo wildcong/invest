@@ -42,6 +42,35 @@ class AccessTokenTests(unittest.TestCase):
 
 
 class ScanCacheTests(unittest.TestCase):
+    def test_refreshed_universe_reuses_today_rows_and_fetches_added_symbol(self):
+        frame = pd.DataFrame({"Price": [100.] * 5, "F_억": [1.] * 5,
+                              "I_억": [2.] * 5, "P_억": [-3.] * 5},
+                             index=pd.bdate_range(end="2026-08-28", periods=5))
+        reuse = {"target_date": "20260828", "markets": {"kospi200": {
+            "target_date": "20260828", "chart_data": {"A": scanner.serialize_chart_data(frame)}}}}
+        universe = StockUniverse({"Old": "A", "Added": "B"}, {}, {"Old": "A", "Added": "B"}, {"as_of": "20260828"})
+        with patch("scanner.get_stock_universe", return_value=universe), patch("scanner.get_investor_data", return_value=frame) as fetch:
+            result = scanner.build_scan_cache("key", "secret", "token", target_date="20260828", reuse_cache=reuse)
+        self.assertEqual([call.args[0] for call in fetch.call_args_list], ["B"])
+        self.assertEqual(result["markets"]["kospi200"]["summary"]["scanned"], 2)
+
+    def test_scan_reuses_only_valid_current_charts_and_fetches_new_symbols(self):
+        frame = pd.DataFrame({"Price": [100.] * 5, "F_억": [1.] * 5,
+                              "I_억": [2.] * 5, "P_억": [-3.] * 5},
+                             index=pd.bdate_range(end="2026-08-28", periods=5))
+        rows = scanner.serialize_chart_data(frame)
+        invalid = [dict(row) for row in rows]
+        invalid[-1]["Price"] = float("nan")
+        stale_frame = frame.copy()
+        stale_frame.index = pd.bdate_range(end="2026-08-27", periods=5)
+        with patch("scanner.get_investor_data", return_value=frame) as fetch:
+            result = scanner.scan_market({"Current": "A", "Stale": "B", "Invalid": "C", "New": "D"},
+                "token", "key", "secret", "20260828", reuse_chart_data={
+                    "A": rows, "B": scanner.serialize_chart_data(stale_frame), "C": invalid})
+        self.assertEqual([call.args[0] for call in fetch.call_args_list], ["B", "C", "D"])
+        self.assertEqual(result[1]["scanned"], 4)
+        self.assertEqual(result[3]["A"], rows)
+
     @patch("scanner.scan_market")
     @patch("scanner.get_stock_universe")
     def test_build_scan_cache_reuses_supplied_token(self, stock_lists, scan_market):

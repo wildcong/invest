@@ -566,10 +566,10 @@ def run_scanner_phase(now: datetime | None = None) -> None:
             ),
         )
         best_partial = None
-        best_count = -1
+        best_score = ("", -1)
 
         def collect_scan():
-            nonlocal best_partial, best_count
+            nonlocal best_partial, best_score
             result = build_scan_cache(
                 app_key, app_secret, access_token, target_date=target_date
             )
@@ -578,8 +578,9 @@ def run_scanner_phase(now: datetime | None = None) -> None:
                     scan_coverage(result["markets"][key], target_date, size)["current"]
                     for key, size in (("kospi200", 200), ("kosdaq150", 150))
                 )
-                if count > best_count:
-                    best_partial, best_count = result, count
+                score = (result.get("universe", {}).get("as_of", ""), count)
+                if score > best_score:
+                    best_partial, best_score = result, score
             return result
 
         try:
@@ -598,7 +599,8 @@ def run_scanner_phase(now: datetime | None = None) -> None:
                 scan_coverage(existing_scan["markets"][key], target_date, size)["current"]
                 for key, size in (("kospi200", 200), ("kosdaq150", 150))
             )
-            if existing_count > best_count:
+            existing_score = (existing_scan.get("universe", {}).get("as_of", ""), existing_count)
+            if existing_score > best_score:
                 completed_scan = existing_scan
         complete = cache_has_target_date(completed_scan, target_date)
         completed_scan["quality"] = "complete" if complete else "degraded"
@@ -617,7 +619,7 @@ def run_scanner_phase(now: datetime | None = None) -> None:
             now_kst,
             message=(f"수급 캐시 기준일 {target_date} "
                      + ("전체 갱신 완료" if complete else
-                        "일부 미갱신: 종목별 실제 기준일을 표시하며 다음 배치에서 재시도합니다.")),
+                        "수급 또는 종목 목록 일부 미갱신: 각각의 실제 기준일을 표시하며 다음 배치에서 재시도합니다.")),
             attempts=attempts,
         )
     except Exception as exc:

@@ -163,15 +163,15 @@ class FreshnessTests(unittest.TestCase):
         self.assertFalse(scanner.cache_has_target_date(payload, TARGET_DATE, allow_partial=True))
 
     def test_listing_failure_has_no_fake_success_fallback(self):
-        with patch("FinanceDataReader.StockListing", side_effect=RuntimeError("offline")):
+        with patch("scanner.get_stock_universe", side_effect=RuntimeError("offline")):
             with self.assertRaisesRegex(RuntimeError, "offline"):
                 scanner.get_stock_lists()
 
     def test_wrong_sized_listing_is_rejected(self):
-        frame = pd.DataFrame({"Name": ["A"], "Code": ["000001"], "Marcap": [10]})
-        with patch("FinanceDataReader.StockListing", return_value=frame):
-            with self.assertRaisesRegex(RuntimeError, "불완전"):
-                scanner.get_stock_lists()
+        from stock_universe import parse_listing
+        frame = pd.DataFrame({"Name": ["A"], "Code": ["000001"], "Marcap": [10], "MarketId": ["STK"]})
+        with self.assertRaisesRegex(ValueError, "불완전"):
+            parse_listing(frame.to_csv(index=False))
 
     def test_partial_retries_then_publishes_degraded_without_issuing(self):
         payload = scan_cache()

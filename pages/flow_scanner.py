@@ -249,6 +249,11 @@ def render_status(scan_cache: dict, market: dict) -> None:
     )
     size = 200 if market is scan_cache.get("markets", {}).get("kospi200") else 150
     coverage = scan_coverage(market, expected_date, size)
+    universe = scan_cache.get("universe", {})
+    if universe.get("as_of"):
+        st.caption(f"종목 선정 목록 기준일: {format_target_date(universe['as_of'])} · FinanceData 제공")
+        if universe["as_of"] != expected_date:
+            st.warning("당일 종목 목록이 아직 게시되지 않아 최근 검증된 목록을 사용합니다. 수급 관측일과 목록 기준일은 다르며 다음 배치에서 최신 목록을 다시 확인합니다.")
     if cached_date == expected_date and coverage["current"] == size:
         st.success(message)
     else:

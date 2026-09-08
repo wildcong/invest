@@ -8,6 +8,7 @@ import pandas as pd
 import requests
 
 import scanner
+from stock_universe import StockUniverse
 
 
 class AccessTokenTests(unittest.TestCase):
@@ -42,12 +43,13 @@ class AccessTokenTests(unittest.TestCase):
 
 class ScanCacheTests(unittest.TestCase):
     @patch("scanner.scan_market")
-    @patch("scanner.get_stock_lists")
+    @patch("scanner.get_stock_universe")
     def test_build_scan_cache_reuses_supplied_token(self, stock_lists, scan_market):
-        stock_lists.return_value = (
+        stock_lists.return_value = StockUniverse(
             {"삼성전자": "005930"},
             {"에코프로": "086520"},
             {"삼성전자": "005930", "에코프로": "086520"},
+            {"as_of": "20260828"},
         )
         scan_market.return_value = (
             {},

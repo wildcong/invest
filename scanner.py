@@ -11,6 +11,7 @@ import pandas as pd
 import requests
 
 from trading_calendar import completed_session, is_session_date
+from stock_universe import get_stock_universe
 
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
@@ -97,6 +98,9 @@ def cache_has_target_date(cache: Dict, target_date: str, *, allow_partial: bool 
         return False
     if cache.get("target_date") != target_date:
         return False
+    universe = cache.get("universe", {})
+    if universe and not allow_partial and universe.get("as_of") != target_date:
+        return False
 
     markets = cache.get("markets", {})
     for market_key, expected_size in (("kospi200", 200), ("kosdaq150", 150)):
@@ -119,31 +123,9 @@ def cache_has_target_date(cache: Dict, target_date: str, *, allow_partial: bool 
 
 
 def get_stock_lists():
-    import FinanceDataReader as fdr
-
-    def to_symbol_map(df: pd.DataFrame, limit: Optional[int] = None) -> Dict[str, str]:
-        if df.empty:
-            return {}
-        mcap_col = "Marcap" if "Marcap" in df.columns else "MarCap" if "MarCap" in df.columns else None
-        if limit and not mcap_col:
-            raise RuntimeError("종목 목록에 시가총액이 없어 대상 종목을 검증할 수 없습니다.")
-        ranked = df.sort_values(mcap_col, ascending=False) if mcap_col else df
-        if limit:
-            ranked = ranked.head(limit)
-        result = dict(zip(ranked["Name"], ranked["Code"]))
-        if limit and (len(result) != limit or len(set(result.values())) != limit):
-            raise RuntimeError(f"대상 종목 목록이 불완전합니다: {len(result)}/{limit}")
-        return result
-
-    dict_k200 = to_symbol_map(fdr.StockListing("KOSPI"), limit=200)
-    dict_kq150 = to_symbol_map(fdr.StockListing("KOSDAQ"), limit=150)
-
-    try:
-        dict_all = to_symbol_map(fdr.StockListing("KRX")) or {**dict_k200, **dict_kq150}
-    except Exception:
-        dict_all = {**dict_k200, **dict_kq150}
-
-    return dict_k200, dict_kq150, dict_all
+    """Preserve the public three-map interface for the search UI."""
+    universe = get_stock_universe()
+    return universe.kospi, universe.kosdaq, universe.all_symbols
 
 
 def get_access_token(
@@ -369,9 +351,10 @@ def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app
 def build_scan_cache(app_key: str, app_secret: str, access_token: str, *, target_date: str | None = None):
     if not access_token:
         raise ValueError("일일 배치에서 발급한 KIS access token이 필요합니다.")
-    dict_k200, dict_kq150, _ = get_stock_lists()
     generated_at = datetime.now(KST)
     target_date = target_date or get_target_date(generated_at)
+    universe = get_stock_universe(target_date)
+    dict_k200, dict_kq150 = universe.kospi, universe.kosdaq
 
     kospi_filtered, kospi_summary, kospi_groups, kospi_chart_data = scan_market(
         dict_k200,
@@ -391,6 +374,7 @@ def build_scan_cache(app_key: str, app_secret: str, access_token: str, *, target
     return {
         "generated_at_kst": generated_at.isoformat(),
         "target_date": target_date,
+        "universe": universe.metadata,
         "markets": {
             "kospi200": {
                 "label": "KOSPI 시가총액 상위 200",

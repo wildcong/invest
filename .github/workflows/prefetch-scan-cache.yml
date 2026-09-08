@@ -67,7 +67,7 @@ jobs:
 
       - name: Update flow scanner with the persisted token
         id: scanner
-        if: always() && steps.checkout.outcome == 'success'
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
         continue-on-error: true
         timeout-minutes: 38
         env:

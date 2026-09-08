@@ -8,10 +8,11 @@ test("shell and healthy backend alone do not establish a rendered app", () => {
   assert.equal(readiness(shell), "not-ready");
 });
 test("actual dashboard is ready even if it contains its own login control", () => {
-  assert.equal(readiness({ ...shell, titleVisible: true, platformLoginVisible: true }), "ready");
+  assert.equal(readiness({ ...shell, titleVisible: true }), "ready");
 });
 test("platform login route is blocked", () => {
   assert.equal(readiness({ ...shell, url: "https://share.streamlit.io/-/login" }), "platform-login");
+  assert.equal(readiness({ ...shell, titleVisible: true, platformLoginVisible: true }), "platform-login");
 });
 test("an app exception must not count as ready", () => {
   assert.equal(readiness({ ...shell, titleVisible: true, exceptionVisible: true }), "app-error");

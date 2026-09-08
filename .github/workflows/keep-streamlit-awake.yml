@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 12
 
     steps:
+      - uses: actions/checkout@v6
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
@@ -54,6 +55,7 @@ jobs:
         run: |
           cat > wake-streamlit.mjs <<'EOF'
           import { chromium } from "playwright-core";
+          import { readiness } from "./streamlit_probe.mjs";
 
           const rawAppUrl = (process.env.APP_URL || "").trim();
           if (!rawAppUrl) {
@@ -72,11 +74,13 @@ jobs:
             userAgent: "github-actions-keep-awake-browser",
           });
           let wakeClicked = false;
-          let streamlitShellSeen = false;
 
-          const appReadyRegex = /(5일\s*동방향|쌍끌이|종목\s*선택|새로\s*갱신|KOSPI|KOSDAQ)/i;
-          const authBlockedRegex = /(sign in|log in|continue with google|streamlit.*login|로그인)/i;
-          const shellReadyRegex = /(Hosted with Streamlit|Created by wildcong|streamlit)/i;
+          const probeUI = async () => readiness({
+            url: page.url(),
+            titleVisible: await page.getByRole("heading", { name: "📊 국내 수급 스캐너", exact: true }).isVisible().catch(() => false),
+            exceptionVisible: await page.locator('[data-testid="stException"]').count() > 0,
+            platformLoginVisible: await page.getByRole("button", { name: /continue with google|sign in with google/i }).isVisible().catch(() => false),
+          });
           const htmlPreview = (value) => (value || "").replace(/\s+/g, " ").slice(0, 160);
 
           try {
@@ -101,11 +105,10 @@ jobs:
               const finalUrl = page.url();
               const bodyText = await page.locator("body").innerText({ timeout: 3000 }).catch(() => "");
               const bodyPreview = htmlPreview(bodyText);
-              const appReady = appReadyRegex.test(bodyText);
-              const authBlocked =
-                /\/-\/login/i.test(finalUrl) ||
-                /share\.streamlit\.io\/-\/auth/i.test(finalUrl) ||
-                authBlockedRegex.test(bodyText);
+              const uiState = await probeUI();
+              const appReady = uiState === "ready";
+              const authBlocked = uiState === "platform-login";
+              if (uiState === "app-error") throw new Error("Streamlit dashboard raised an exception.");
 
               if (authBlocked) {
                 throw new Error(
@@ -118,10 +121,6 @@ jobs:
               if (appReady) {
                 console.log(`Attempt ${attempt}/${maxAttempts} app UI is visible. bodyPreview=${bodyPreview}`);
                 break;
-              }
-
-              if (shellReadyRegex.test(bodyText)) {
-                streamlitShellSeen = true;
               }
 
               const wakeButtonVisible = await page
@@ -164,9 +163,6 @@ jobs:
               const trimmedHealthBody = (health.body || "").trim();
               const healthPreview = htmlPreview(trimmedHealthBody);
               const healthOk = health.status === 200 && trimmedHealthBody.toLowerCase() === "ok";
-              const healthReturnedStreamlitShell =
-                health.status === 200 &&
-                (/^<!doctype html/i.test(trimmedHealthBody) || /<html[\s>]/i.test(trimmedHealthBody));
 
               lastProbe = {
                 finalUrl: page.url(),
@@ -183,30 +179,16 @@ jobs:
 
               if (healthOk) {
                 console.log("Streamlit backend health responded with ok.");
-                break;
               }
 
-              const refreshedText = await page.locator("body").innerText({ timeout: 3000 }).catch(() => "");
-              if (appReadyRegex.test(refreshedText)) {
+              if (await probeUI() === "ready") {
                 console.log(`Attempt ${attempt}/${maxAttempts} app UI became visible after probing.`);
-                break;
-              }
-
-              if (healthReturnedStreamlitShell || shellReadyRegex.test(refreshedText)) {
-                streamlitShellSeen = true;
-              }
-
-              if (attempt >= 2 && streamlitShellSeen) {
-                console.log(
-                  `Streamlit shell responded but backend health did not expose ok. ` +
-                    `Treating browser visit as successful keep-awake ping. Last probe=${JSON.stringify(lastProbe)}`
-                );
                 break;
               }
 
               if (attempt === maxAttempts) {
                 throw new Error(
-                  `Timed out waiting for Streamlit app UI or backend health. ` +
+                  `Timed out waiting for the rendered Streamlit dashboard. ` +
                     `wakeClicked=${wakeClicked} Last probe=${JSON.stringify(lastProbe)}`
                 );
               }
@@ -215,24 +197,7 @@ jobs:
             }
 
             const finalText = await page.locator("body").innerText({ timeout: 5000 }).catch(() => "");
-            const finalHealth = await page.request
-              .get(new URL("/_stcore/health", appUrl).toString(), {
-                headers: { "cache-control": "no-store" },
-                timeout: 30000,
-              })
-              .then(async (res) => {
-                return {
-                  status: res.status(),
-                  body: await res.text(),
-                };
-              })
-              .catch(() => null);
-            const finalHealthOk =
-              finalHealth &&
-              finalHealth.status === 200 &&
-              (finalHealth.body || "").trim().toLowerCase() === "ok";
-
-            if (!finalHealthOk && !appReadyRegex.test(finalText) && !streamlitShellSeen) {
+            if (await probeUI() !== "ready") {
               throw new Error(
                 `Streamlit app did not confirm ready state. ` +
                   `finalUrl=${page.url()}, finalBodyPreview=${htmlPreview(finalText) || "<empty>"}`

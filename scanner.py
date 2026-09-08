@@ -2,12 +2,15 @@
 import json
 import os
 import tempfile
+import math
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Dict, Optional
 
 import pandas as pd
 import requests
+
+from trading_calendar import completed_session, is_session_date
 
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
@@ -20,14 +23,7 @@ AUTO_REFRESH_BACKUP_MINUTE = 15
 
 
 def get_target_date(now: Optional[datetime] = None) -> str:
-    current = now.astimezone(KST) if now else datetime.now(KST)
-    if current.hour < 15 or (current.hour == 15 and current.minute < 40):
-        target = current - timedelta(days=1)
-    else:
-        target = current
-    while target.weekday() > 4:
-        target -= timedelta(days=1)
-    return target.strftime("%Y%m%d")
+    return completed_session(now)
 
 
 def get_auto_refresh_window(now: Optional[datetime] = None):
@@ -47,13 +43,63 @@ def get_auto_refresh_window(now: Optional[datetime] = None):
     return primary, backup
 
 
-def cache_has_target_date(cache: Dict, target_date: str) -> bool:
+def scan_coverage(market: Dict, target_date: str, expected_size: int) -> dict:
+    symbols = market.get("symbols", {})
+    charts = market.get("chart_data", {})
+    current = 0
+    stale = []
+    missing = []
+    invalid = []
+    expected = f"{target_date[:4]}-{target_date[4:6]}-{target_date[6:]}"
+    for name, ticker in symbols.items():
+        rows = charts.get(ticker, [])
+        if not isinstance(rows, list):
+            invalid.append(name)
+        elif len(rows) < 5:
+            missing.append(name)
+        elif not valid_chart_rows(rows, target_date):
+            invalid.append(name)
+        elif rows[-1].get("Date") != expected:
+            stale.append(name)
+        else:
+            current += 1
+    return {"expected": expected_size, "current": current, "stale": stale, "invalid": invalid,
+            "missing": missing, "universe_valid": len(symbols) == expected_size
+            and len(set(symbols.values())) == expected_size}
+
+
+def valid_chart_rows(rows: list[dict], target_date: str) -> bool:
+    """Only actual, ordered session observations can count as fresh data."""
+    if len(rows) < 5:
+        return False
+    previous_date = ""
+    for row in rows:
+        try:
+            date = datetime.strptime(row["Date"], "%Y-%m-%d")
+            date_key = date.strftime("%Y%m%d")
+            if (date.strftime("%Y-%m-%d") != row["Date"] or
+                    date_key <= previous_date or date_key > target_date or
+                    not is_session_date(date_key)):
+                return False
+            values = [row[key] for key in ("Price", "F_억", "I_억", "P_억")]
+            if any(isinstance(value, bool) or not math.isfinite(float(value)) for value in values):
+                return False
+            if float(row["Price"]) <= 0:
+                return False
+            previous_date = date_key
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return False
+    return True
+
+
+def cache_has_target_date(cache: Dict, target_date: str, *, allow_partial: bool = False) -> bool:
+    if not is_session_date(target_date):
+        return False
     if cache.get("target_date") != target_date:
         return False
 
     markets = cache.get("markets", {})
-    required_keys = ("kospi200", "kosdaq150")
-    for market_key in required_keys:
+    for market_key, expected_size in (("kospi200", 200), ("kosdaq150", 150)):
         market = markets.get(market_key, {})
         if market.get("target_date") != target_date:
             return False
@@ -65,48 +111,32 @@ def cache_has_target_date(cache: Dict, target_date: str) -> bool:
         chart_data = market.get("chart_data", {})
         if not isinstance(chart_data, dict) or not chart_data:
             return False
-        market_size = market.get("market_size", 0)
-        scanned = summary.get("scanned", 0)
-        if isinstance(market_size, int) and market_size > 20:
-            if scanned < int(market_size * 0.8):
-                return False
-            if len(chart_data) < int(scanned * 0.8):
-                return False
+        coverage = scan_coverage(market, target_date, expected_size)
+        minimum = int(expected_size * 0.8) if allow_partial else expected_size
+        if not coverage["universe_valid"] or coverage["current"] < minimum:
+            return False
     return True
 
 
 def get_stock_lists():
-    fallback_k200 = {"삼성전자": "005930"}
-    fallback_kq150 = {"에코프로": "086520"}
-    fallback_all = {**fallback_k200, **fallback_kq150}
-
-    try:
-        import FinanceDataReader as fdr
-    except Exception:
-        return fallback_k200, fallback_kq150, fallback_all
+    import FinanceDataReader as fdr
 
     def to_symbol_map(df: pd.DataFrame, limit: Optional[int] = None) -> Dict[str, str]:
         if df.empty:
             return {}
         mcap_col = "Marcap" if "Marcap" in df.columns else "MarCap" if "MarCap" in df.columns else None
+        if limit and not mcap_col:
+            raise RuntimeError("종목 목록에 시가총액이 없어 대상 종목을 검증할 수 없습니다.")
         ranked = df.sort_values(mcap_col, ascending=False) if mcap_col else df
         if limit:
             ranked = ranked.head(limit)
-        return dict(zip(ranked["Name"], ranked["Code"]))
+        result = dict(zip(ranked["Name"], ranked["Code"]))
+        if limit and (len(result) != limit or len(set(result.values())) != limit):
+            raise RuntimeError(f"대상 종목 목록이 불완전합니다: {len(result)}/{limit}")
+        return result
 
-    dict_k200 = fallback_k200
-    dict_kq150 = fallback_kq150
-    dict_all = fallback_all
-
-    try:
-        dict_k200 = to_symbol_map(fdr.StockListing("KOSPI"), limit=200) or fallback_k200
-    except Exception:
-        pass
-
-    try:
-        dict_kq150 = to_symbol_map(fdr.StockListing("KOSDAQ"), limit=150) or fallback_kq150
-    except Exception:
-        pass
+    dict_k200 = to_symbol_map(fdr.StockListing("KOSPI"), limit=200)
+    dict_kq150 = to_symbol_map(fdr.StockListing("KOSDAQ"), limit=150)
 
     try:
         dict_all = to_symbol_map(fdr.StockListing("KRX")) or {**dict_k200, **dict_kq150}
@@ -122,12 +152,7 @@ def get_access_token(
     *,
     request_post: Callable = requests.post,
 ) -> Optional[str]:
-    """Issue one KIS access token for the daily batch.
-
-    There is intentionally no retry or local token cache here. The scheduled
-    batch is the sole caller, and all data requests in that run reuse the token.
-    This guarantees at most one token-issuance request per workflow execution.
-    """
+    """Compatibility wrapper. Daily batches use the persisted token manager."""
     try:
         return issue_access_token(
             app_key,
@@ -177,7 +202,7 @@ def issue_access_token(
     return payload
 
 
-def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: str) -> pd.DataFrame:
+def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: str, target_date: str | None = None) -> pd.DataFrame:
     headers = {
         "content-type": "application/json; charset=utf-8",
         "authorization": f"Bearer {access_token}",
@@ -189,7 +214,7 @@ def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: 
     params = {
         "FID_COND_MRKT_DIV_CODE": "J",
         "FID_INPUT_ISCD": ticker,
-        "FID_INPUT_DATE_1": get_target_date(),
+        "FID_INPUT_DATE_1": target_date or get_target_date(),
         "FID_ORG_ADJ_PRC": "",
         "FID_ETC_CLS_CODE": "1",
     }
@@ -198,7 +223,7 @@ def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: 
     try:
         res = requests.get(url, headers=headers, params=params, timeout=20)
         res_json = res.json()
-        if res.status_code == 200 and "output2" in res_json:
+        if res.status_code == 200 and str(res_json.get("rt_cd")) == "0" and "output2" in res_json:
             df = pd.DataFrame(res_json["output2"])
             if df.empty:
                 return pd.DataFrame()
@@ -214,7 +239,7 @@ def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: 
                 if source_col and source_col != normalized:
                     df[normalized] = df[source_col]
                 elif not source_col:
-                    df[normalized] = 0
+                    return pd.DataFrame()
             df = df[
                 [
                     "stck_bsop_date",
@@ -225,13 +250,24 @@ def get_investor_data(ticker: str, access_token: str, app_key: str, app_secret: 
                 ]
             ].copy()
             df.columns = ["Date", "Price", "Foreign_Amt", "Inst_Amt", "Personal_Amt"]
-            df["Date"] = pd.to_datetime(df["Date"])
+            df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d", errors="coerce")
             for col in ["Price", "Foreign_Amt", "Inst_Amt", "Personal_Amt"]:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
-            df = df.dropna()
+            # Dropping a malformed observation would silently change the
+            # five-day signal window. Reject the entire response instead.
+            if df.isna().any().any():
+                return pd.DataFrame()
+            numeric_columns = ["Price", "Foreign_Amt", "Inst_Amt", "Personal_Amt"]
+            if (df["Price"] <= 0).any() or not all(
+                df[column].map(math.isfinite).all() for column in numeric_columns
+            ):
+                return pd.DataFrame()
             df["F_억"] = df["Foreign_Amt"] / 100
             df["I_억"] = df["Inst_Amt"] / 100
             df["P_억"] = df["Personal_Amt"] / 100
+            df = df[df["Date"] <= pd.Timestamp(target_date or get_target_date())]
+            if df["Date"].duplicated().any():
+                return pd.DataFrame()
             return df.sort_values("Date").set_index("Date")
     except Exception:
         pass
@@ -269,7 +305,7 @@ def serialize_chart_data(df: pd.DataFrame, max_rows: int = INVESTOR_CHART_MAX_RO
     chart_df = df.tail(max_rows).copy()
     for column in columns:
         if column not in chart_df.columns:
-            chart_df[column] = 0
+            raise ValueError(f"차트 원자료 필드 누락: {column}")
 
     rows = []
     for index, row in chart_df[columns].iterrows():
@@ -285,18 +321,21 @@ def serialize_chart_data(df: pd.DataFrame, max_rows: int = INVESTOR_CHART_MAX_RO
     return rows
 
 
-def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app_secret: str):
+def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app_secret: str, target_date: str | None = None):
     filtered_map = {}
     summary = {"buy": 0, "mixed": 0, "sell": 0, "scanned": 0}
     direction_groups = {"buy": [], "mixed": [], "sell": []}
     chart_data = {}
 
     for name, ticker in stock_dict.items():
-        df = get_investor_data(ticker, access_token, app_key, app_secret)
+        df = get_investor_data(ticker, access_token, app_key, app_secret, target_date)
         if df.empty or len(df) < 5:
             continue
 
-        chart_data[ticker] = serialize_chart_data(df)
+        rows = serialize_chart_data(df)
+        if not valid_chart_rows(rows, target_date or get_target_date()):
+            continue
+        chart_data[ticker] = rows
         direction = classify_5day_direction(df)
         flow = summarize_5day_flow(df)
         summary["scanned"] += 1
@@ -311,6 +350,7 @@ def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app
                 "name": name,
                 "ticker": ticker,
                 "label": label,
+                "as_of": df.index[-1].strftime("%Y-%m-%d"),
                 **flow,
             }
         )
@@ -326,24 +366,26 @@ def scan_market(stock_dict: Dict[str, str], access_token: str, app_key: str, app
     return filtered_map, summary, direction_groups, chart_data
 
 
-def build_scan_cache(app_key: str, app_secret: str, access_token: str):
+def build_scan_cache(app_key: str, app_secret: str, access_token: str, *, target_date: str | None = None):
     if not access_token:
         raise ValueError("일일 배치에서 발급한 KIS access token이 필요합니다.")
     dict_k200, dict_kq150, _ = get_stock_lists()
     generated_at = datetime.now(KST)
-    target_date = get_target_date(generated_at)
+    target_date = target_date or get_target_date(generated_at)
 
     kospi_filtered, kospi_summary, kospi_groups, kospi_chart_data = scan_market(
         dict_k200,
         access_token,
         app_key,
         app_secret,
+        target_date,
     )
     kosdaq_filtered, kosdaq_summary, kosdaq_groups, kosdaq_chart_data = scan_market(
         dict_kq150,
         access_token,
         app_key,
         app_secret,
+        target_date,
     )
 
     return {
@@ -351,7 +393,7 @@ def build_scan_cache(app_key: str, app_secret: str, access_token: str):
         "target_date": target_date,
         "markets": {
             "kospi200": {
-                "label": "KOSPI 200",
+                "label": "KOSPI 시가총액 상위 200",
                 "market_size": len(dict_k200),
                 "symbols": dict_k200,
                 "filtered_map": kospi_filtered,
@@ -362,7 +404,7 @@ def build_scan_cache(app_key: str, app_secret: str, access_token: str):
                 "generated_at_kst": generated_at.isoformat(),
             },
             "kosdaq150": {
-                "label": "KOSDAQ 150",
+                "label": "KOSDAQ 시가총액 상위 150",
                 "market_size": len(dict_kq150),
                 "symbols": dict_kq150,
                 "filtered_map": kosdaq_filtered,

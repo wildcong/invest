@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import requests
+import pandas as pd
 
 import prefetch_scan_cache
 from kis_token_store import decrypt_access_token, encrypt_access_token
@@ -15,6 +16,12 @@ from market_data import KST
 NOW = datetime(2026, 8, 28, 16, 0, tzinfo=KST)
 TARGET_DATE = "20260828"
 APP_SECRET = "high-entropy-test-app-secret"
+
+
+def chart_rows(target_date: str = TARGET_DATE) -> list[dict]:
+    return [{"Date": date.strftime("%Y-%m-%d"), "Price": 100.0,
+             "F_억": 1.0, "I_억": 2.0, "P_억": -3.0}
+            for date in pd.bdate_range(end=pd.Timestamp(target_date), periods=5)]
 
 
 def program_cache(target_date: str = TARGET_DATE) -> dict:
@@ -28,16 +35,18 @@ def program_cache(target_date: str = TARGET_DATE) -> dict:
 
 
 def scan_cache(target_date: str = TARGET_DATE) -> dict:
-    market = {
-        "target_date": target_date,
-        "market_size": 1,
-        "summary": {"scanned": 1},
-        "direction_groups": {"mixed": [{"ticker": "000000"}]},
-        "chart_data": {"000000": [{"Date": "2026-08-28"}]},
-    }
+    def market(size):
+        return {
+            "target_date": target_date,
+            "market_size": size,
+            "symbols": {f"Stock{i}": f"{i:06d}" for i in range(size)},
+            "summary": {"scanned": size},
+            "direction_groups": {"mixed": [{"ticker": "000000"}]},
+            "chart_data": {f"{i:06d}": chart_rows(target_date) for i in range(size)},
+        }
     return {
         "target_date": target_date,
-        "markets": {"kospi200": dict(market), "kosdaq150": dict(market)},
+        "markets": {"kospi200": market(200), "kosdaq150": market(150)},
     }
 
 

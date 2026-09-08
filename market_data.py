@@ -10,6 +10,7 @@ from typing import Callable
 
 import pandas as pd
 import requests
+from trading_calendar import is_session_date
 
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
@@ -244,6 +245,8 @@ def build_program_trade_cache(
 
 
 def program_cache_has_target_date(cache: dict, target_date: str) -> bool:
+    if not is_session_date(target_date):
+        return False
     expected = f"{target_date[:4]}-{target_date[4:6]}-{target_date[6:]}"
     markets = cache.get("markets", {}) if isinstance(cache, dict) else {}
     for market_key in ("kospi", "kosdaq"):

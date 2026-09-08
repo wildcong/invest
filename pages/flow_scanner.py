@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 import json
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -17,18 +16,15 @@ from scanner import (
     get_stock_lists,
     get_target_date,
     load_scan_cache,
+    scan_coverage,
+    valid_chart_rows,
 )
-from github_actions import (
-    WORKFLOW_URL,
-    WorkflowDispatchError,
-    dispatch_market_cache_workflow,
-)
+from github_actions import WORKFLOW_URL
+from trading_calendar import REVIEWED_THROUGH_YEAR
 
 
 KST = timezone(timedelta(hours=9))
 STOCK_SELECTOR_KEY = "flow_stock_selector"
-MANUAL_REFRESH_REQUEST_KEY = "manual_market_refresh_request"
-MANUAL_REFRESH_COOLDOWN = timedelta(minutes=65)
 BATCH_STATE_FILE = Path(__file__).resolve().parents[1] / "data" / "kis_batch_state.json"
 STOCK_KEYBOARD_NAVIGATION = st.components.v2.component(
     "flow_stock_keyboard_navigation",
@@ -116,16 +112,6 @@ def format_generated_at(value: str | None) -> str:
         return (value or "-").replace("T", " ")[:16]
 
 
-def get_actions_token() -> str:
-    token = os.environ.get("GITHUB_ACTIONS_TOKEN", "").strip()
-    if token:
-        return token
-    try:
-        return str(st.secrets.get("GITHUB_ACTIONS_TOKEN", "")).strip()
-    except Exception:
-        return ""
-
-
 def batch_is_complete_for_target(
     scan_cache: dict,
     batch_state: dict,
@@ -139,24 +125,9 @@ def batch_is_complete_for_target(
     )
 
 
-def get_pending_manual_request(target_date: str) -> dict | None:
-    request = st.session_state.get(MANUAL_REFRESH_REQUEST_KEY)
-    if not isinstance(request, dict) or request.get("target_date") != target_date:
-        return None
-    try:
-        requested_at = datetime.fromisoformat(str(request["requested_at_kst"]))
-    except (KeyError, TypeError, ValueError):
-        return None
-    if datetime.now(KST) - requested_at.astimezone(KST) >= MANUAL_REFRESH_COOLDOWN:
-        return None
-    return request
-
-
 def render_manual_refresh(scan_cache: dict, batch_state: dict) -> None:
     target_date = get_target_date()
     completed = batch_is_complete_for_target(scan_cache, batch_state, target_date)
-    pending_request = get_pending_manual_request(target_date)
-    actions_token = get_actions_token()
 
     status_column, button_column = st.columns([4, 1])
     with status_column:
@@ -164,54 +135,20 @@ def render_manual_refresh(scan_cache: dict, batch_state: dict) -> None:
             st.caption(
                 f"{format_target_date(target_date)} 배치 완료 · 같은 거래일은 중복 실행하지 않습니다."
             )
-        elif pending_request:
-            st.info("수동 갱신을 요청했습니다. 완료까지 최대 60분 정도 걸릴 수 있습니다.")
         else:
             st.caption(
                 f"갱신 대상 {format_target_date(target_date)} · 자동 배치가 누락됐을 때 수동으로 실행합니다."
             )
 
     with button_column:
-        if not completed and pending_request is None and not actions_token:
-            st.link_button(
-                "🔄 수동 갱신",
-                WORKFLOW_URL,
-                width="stretch",
-                type="primary",
-                help="GitHub 로그인 후 Run workflow를 눌러 실행합니다.",
-            )
-        elif st.button(
+        st.link_button(
             "🔄 수동 갱신",
-            key="manual_market_refresh",
+            WORKFLOW_URL,
             width="stretch",
             type="primary",
-            disabled=completed or pending_request is not None,
-            help=(
-                "이미 완료된 거래일이라 중복 실행하지 않습니다."
-                if completed
-                else "GitHub Actions 장 마감 배치를 요청합니다."
-            ),
-        ):
-            try:
-                result = dispatch_market_cache_workflow(actions_token)
-            except WorkflowDispatchError as exc:
-                st.error(str(exc))
-                st.link_button("GitHub Actions 확인", WORKFLOW_URL, width="stretch")
-                return
-            st.session_state[MANUAL_REFRESH_REQUEST_KEY] = {
-                "target_date": target_date,
-                "requested_at_kst": datetime.now(KST).isoformat(),
-                "run_url": result.run_url,
-            }
-            st.rerun()
-
-    if pending_request and pending_request.get("run_url"):
-        st.link_button(
-            "수동 갱신 진행상황 보기",
-            str(pending_request["run_url"]),
-            width="stretch",
+            disabled=completed,
+            help="GitHub에 본인 계정으로 로그인 후 실행 권한이 있는 사용자가 Run workflow를 누릅니다.",
         )
-
 
 def rows_to_frame(rows: list[dict]) -> pd.DataFrame:
     if not rows:
@@ -220,7 +157,7 @@ def rows_to_frame(rows: list[dict]) -> pd.DataFrame:
     required = ["Date", "Price", "F_억", "I_억", "P_억"]
     for column in required:
         if column not in frame:
-            frame[column] = 0
+            return pd.DataFrame()
     frame["Date"] = pd.to_datetime(frame["Date"], errors="coerce")
     for column in required[1:]:
         frame[column] = pd.to_numeric(frame[column], errors="coerce")
@@ -230,7 +167,7 @@ def rows_to_frame(rows: list[dict]) -> pd.DataFrame:
 def find_chart_frame(scan_cache: dict, ticker: str) -> pd.DataFrame:
     for market in scan_cache.get("markets", {}).values():
         chart_rows = market.get("chart_data", {}).get(ticker)
-        if chart_rows:
+        if chart_rows and valid_chart_rows(chart_rows, market.get("target_date") or get_target_date()):
             return rows_to_frame(chart_rows)
     return pd.DataFrame()
 
@@ -292,6 +229,10 @@ def normalized_groups(market: dict) -> dict[str, list[dict]]:
             if not item.get("name"):
                 continue
             item["ticker"] = item.get("ticker") or symbols.get(item["name"])
+            rows = market.get("chart_data", {}).get(item["ticker"], [])
+            if not valid_chart_rows(rows, market.get("target_date") or get_target_date()):
+                continue
+            item["as_of"] = rows[-1].get("Date") if rows else None
             item["direction"] = direction
             item["label"] = item.get("label") or item["name"]
             groups[direction].append(item)
@@ -304,15 +245,23 @@ def render_status(scan_cache: dict, market: dict) -> None:
     generated_at = market.get("generated_at_kst") or scan_cache.get("generated_at_kst")
     message = (
         f"배치 갱신 {format_generated_at(generated_at)} · "
-        f"수급 기준일 {format_target_date(cached_date)}"
+        f"수집 목표일 {format_target_date(cached_date)}"
     )
-    if cached_date == expected_date:
+    size = 200 if market is scan_cache.get("markets", {}).get("kospi200") else 150
+    coverage = scan_coverage(market, expected_date, size)
+    if cached_date == expected_date and coverage["current"] == size:
         st.success(message)
     else:
         st.warning(
-            f"{message} · 현재 예상 기준일 {format_target_date(expected_date)}. "
-            "다음 장 마감 배치에서 갱신됩니다."
+            f"{message} · 현재 목표일 {format_target_date(expected_date)} 데이터 확인 "
+            f"{coverage['current']}/{size}종목. 일부 미갱신·누락은 다음 배치에서 재시도합니다. "
+            "미갱신 사유는 확인되지 않았으며, 거래정지를 의미하지 않습니다."
         )
+    if coverage["stale"] or coverage["missing"] or coverage["invalid"]:
+        with st.expander("미갱신·누락 종목"):
+            st.write("이전 자료만 있음: " + (", ".join(coverage["stale"]) or "없음"))
+            st.write("자료 부족·누락: " + (", ".join(coverage["missing"]) or "없음"))
+            st.write("날짜·수치 검증 실패: " + (", ".join(coverage["invalid"]) or "없음"))
 
 
 def render_summary(summary: dict) -> None:
@@ -340,6 +289,7 @@ def render_flow_table(entries: list[dict], previous_groups: dict) -> None:
         rows.append(
             {
                 "종목": item["name"],
+                "실제 기준일": item.get("as_of") or "확인 필요",
                 "상태": DIRECTION_META[item["direction"]][0],
                 "외인 5일합": item.get("foreign_5d", 0),
                 "기관 5일합": item.get("inst_5d", 0),
@@ -365,6 +315,10 @@ def render_flow_table(entries: list[dict], previous_groups: dict) -> None:
 
 
 def render_stock_chart(name: str, ticker: str, frame: pd.DataFrame, period: int) -> None:
+    actual_date = frame.index[-1].strftime("%Y%m%d")
+    st.caption(f"이 종목의 실제 수급 기준일: {format_target_date(actual_date)}")
+    if actual_date != get_target_date():
+        st.warning("목표 거래일 자료가 아직 없습니다. 아래 수급·가격은 표시된 실제 기준일 자료입니다.")
     display = frame.tail(period).copy()
     display["외인 누적"] = display["F_억"].cumsum()
     display["기관 누적"] = display["I_억"].cumsum()
@@ -420,6 +374,8 @@ def render_stock_chart(name: str, ticker: str, frame: pd.DataFrame, period: int)
 
 
 st.title("📊 국내 수급 스캐너")
+if datetime.now(KST).year > REVIEWED_THROUGH_YEAR:
+    st.caption("올해 거래일 달력 검토가 필요합니다. 검토 전까지 16:45 이후 보수적으로 수집하고 원자료 날짜를 확인합니다.")
 st.caption(
     "Streamlit은 저장된 장 마감 캐시만 읽습니다. KIS 토큰 발급과 대량 수집은 평일 장 마감 후 GitHub 배치 한 곳에서만 실행됩니다."
 )
@@ -434,11 +390,11 @@ if not markets:
 
 mode = st.radio(
     "분석 시장",
-    ["KOSPI 200", "KOSDAQ 150", "전체 종목 검색"],
+    ["KOSPI 시가총액 상위 200", "KOSDAQ 시가총액 상위 150", "전체 종목 검색"],
     horizontal=True,
     label_visibility="collapsed",
 )
-market_key = {"KOSPI 200": "kospi200", "KOSDAQ 150": "kosdaq150"}.get(mode)
+market_key = {"KOSPI 시가총액 상위 200": "kospi200", "KOSDAQ 시가총액 상위 150": "kosdaq150"}.get(mode)
 market = markets.get(market_key, {}) if market_key else {}
 
 if market_key:
@@ -509,7 +465,7 @@ if not market_key:
         for ticker in cached_market.get("chart_data", {})
     }:
         st.info(
-            "이 종목은 일일 캐시 대상(KOSPI 200·KOSDAQ 150) 밖입니다. "
+            "이 종목은 일일 캐시 대상(KOSPI·KOSDAQ 시가총액 상위 200·150종목) 밖입니다. "
             "KIS 토큰 단일 발급 원칙에 따라 웹에서 실시간 호출하지 않습니다."
         )
         st.stop()

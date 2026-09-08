@@ -23,7 +23,6 @@ from market_data import (
     save_us_liquidity_cache,
 )
 from scanner import (
-    CACHE_FILE,
     attach_previous_market_snapshots,
     build_scan_cache,
     cache_has_target_date,
@@ -31,6 +30,7 @@ from scanner import (
     issue_access_token,
     load_scan_cache,
     save_scan_cache,
+    scan_coverage,
 )
 
 PREFETCH_MAX_ATTEMPTS = max(1, int(os.environ.get("PREFETCH_MAX_ATTEMPTS", "3")))
@@ -45,8 +45,6 @@ TOKEN_REQUEST_COOLDOWN_SECONDS = max(
 TOKEN_EXPIRY_SAFETY_SECONDS = 30
 TOKEN_CONNECT_MAX_ATTEMPTS = 3
 TOKEN_CONNECT_RETRY_DELAY_SECONDS = 5
-MARKET_DATA_READY_HOUR = 15
-MARKET_DATA_READY_MINUTE = 45
 BATCH_STATE_FILE = Path(__file__).parent / "data" / "kis_batch_state.json"
 
 
@@ -144,6 +142,8 @@ def _refresh_batch_status(state: dict, now_kst: datetime) -> None:
             status = "partial"
         elif "failed" in statuses:
             status = "failed"
+        elif "degraded" in statuses:
+            status = "partial"
         elif "running" in statuses:
             status = "running"
         else:
@@ -340,19 +340,11 @@ def _validate_run_time(now_kst: datetime) -> bool:
         "true",
         "yes",
     }
-    if now_kst.weekday() > 4 and not allow_off_hours:
-        print(f"weekend in KST ({now_kst:%Y-%m-%d %H:%M}); skipping batch")
+    latest_session = get_target_date(now_kst)
+    if latest_session != now_kst.strftime("%Y%m%d") and not allow_off_hours:
+        print("No newly completed KRX session; skipping without requesting a KIS token")
         return False
-    ready_at = now_kst.replace(
-        hour=MARKET_DATA_READY_HOUR,
-        minute=MARKET_DATA_READY_MINUTE,
-        second=0,
-        microsecond=0,
-    )
-    if now_kst < ready_at and not allow_off_hours:
-        print(f"before KST {ready_at:%H:%M}; skipping without requesting a KIS token")
-        return False
-    if allow_off_hours and (now_kst.weekday() > 4 or now_kst < ready_at):
+    if allow_off_hours and latest_session != now_kst.strftime("%Y%m%d"):
         print("manual recovery run: collecting the latest completed trading day")
     return True
 
@@ -573,11 +565,46 @@ def run_scanner_phase(now: datetime | None = None) -> None:
                 else "새 토큰 발급 후 암호화 저장"
             ),
         )
-        completed_scan, attempts = run_with_retries(
-            "scan cache",
-            lambda: build_scan_cache(app_key, app_secret, access_token),
-            lambda payload: cache_has_target_date(payload, target_date),
-        )
+        best_partial = None
+        best_count = -1
+
+        def collect_scan():
+            nonlocal best_partial, best_count
+            result = build_scan_cache(
+                app_key, app_secret, access_token, target_date=target_date
+            )
+            if cache_has_target_date(result, target_date, allow_partial=True):
+                count = sum(
+                    scan_coverage(result["markets"][key], target_date, size)["current"]
+                    for key, size in (("kospi200", 200), ("kosdaq150", 150))
+                )
+                if count > best_count:
+                    best_partial, best_count = result, count
+            return result
+
+        try:
+            completed_scan, attempts = run_with_retries(
+                "scan cache", collect_scan,
+                lambda payload: cache_has_target_date(payload, target_date),
+            )
+        except RuntimeError:
+            if best_partial is None:
+                raise
+            completed_scan, attempts = best_partial, PREFETCH_MAX_ATTEMPTS
+
+        # Keep a better partial snapshot already collected for this session.
+        if cache_has_target_date(existing_scan, target_date, allow_partial=True):
+            existing_count = sum(
+                scan_coverage(existing_scan["markets"][key], target_date, size)["current"]
+                for key, size in (("kospi200", 200), ("kosdaq150", 150))
+            )
+            if existing_count > best_count:
+                completed_scan = existing_scan
+        complete = cache_has_target_date(completed_scan, target_date)
+        completed_scan["quality"] = "complete" if complete else "degraded"
+        for key, size in (("kospi200", 200), ("kosdaq150", 150)):
+            market = completed_scan["markets"][key]
+            market["coverage"] = scan_coverage(market, target_date, size)
         completed_scan = attach_previous_market_snapshots(
             existing_scan,
             completed_scan,
@@ -586,9 +613,11 @@ def run_scanner_phase(now: datetime | None = None) -> None:
         record_stage(
             state,
             "scanner",
-            "success",
+            "success" if complete else "degraded",
             now_kst,
-            message=f"수급 캐시 기준일 {target_date} 갱신 완료: {CACHE_FILE.name}",
+            message=(f"수급 캐시 기준일 {target_date} "
+                     + ("전체 갱신 완료" if complete else
+                        "일부 미갱신: 종목별 실제 기준일을 표시하며 다음 배치에서 재시도합니다.")),
             attempts=attempts,
         )
     except Exception as exc:

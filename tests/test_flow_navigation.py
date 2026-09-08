@@ -1,10 +1,25 @@
 import unittest
+import os
 from pathlib import Path
+from unittest.mock import patch
 
 from streamlit.testing.v1 import AppTest
 
 
 class FlowNavigationTests(unittest.TestCase):
+    def test_public_page_never_uses_server_dispatch_token(self):
+        page = Path(__file__).resolve().parents[1] / "pages" / "flow_scanner.py"
+        with (
+            patch.dict(os.environ, {"GITHUB_ACTIONS_TOKEN": "must-not-be-used"}),
+            patch("github_actions.dispatch_market_cache_workflow") as dispatch,
+        ):
+            app = AppTest.from_file(str(page), default_timeout=20).run()
+            self.assertFalse(app.exception)
+            self.assertFalse([item for item in app.button if "수동 갱신" in item.label])
+            links = [item for item in app.get("link_button") if "수동 갱신" in item.proto.label]
+            self.assertEqual(len(links), 1)
+            dispatch.assert_not_called()
+
     def test_previous_and_next_buttons_move_stock_selection(self):
         page = Path(__file__).resolve().parents[1] / "pages" / "flow_scanner.py"
         app = AppTest.from_file(str(page), default_timeout=20).run()

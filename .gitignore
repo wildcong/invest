@@ -1,1 +1,3 @@
 __pycache__/
+data/manual_refresh.lock
+data/manual_refresh_state.json

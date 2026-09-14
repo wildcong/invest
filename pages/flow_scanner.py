@@ -1,6 +1,4 @@
 from datetime import datetime, timedelta, timezone
-import json
-from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -8,6 +6,12 @@ import streamlit as st
 from plotly.subplots import make_subplots
 
 from market_data import cache_file_version
+from manual_refresh import (
+    ManualRefreshError,
+    load_manual_refresh_state,
+    manual_refresh_availability,
+    run_direct_scan_refresh,
+)
 from scanner import (
     CACHE_FILE,
     INVESTOR_CHART_MAX_ROWS,
@@ -19,13 +23,11 @@ from scanner import (
     scan_coverage,
     valid_chart_rows,
 )
-from github_actions import WORKFLOW_URL
 from trading_calendar import REVIEWED_THROUGH_YEAR
 
 
 KST = timezone(timedelta(hours=9))
 STOCK_SELECTOR_KEY = "flow_stock_selector"
-BATCH_STATE_FILE = Path(__file__).resolve().parents[1] / "data" / "kis_batch_state.json"
 STOCK_KEYBOARD_NAVIGATION = st.components.v2.component(
     "flow_stock_keyboard_navigation",
     css=":host { display: none; }",
@@ -81,16 +83,6 @@ def get_scan_cache(cache_version: tuple[int, int]) -> dict:
     return load_scan_cache()
 
 
-@st.cache_data(max_entries=2, show_spinner=False)
-def get_batch_state(cache_version: tuple[int, int]) -> dict:
-    del cache_version
-    try:
-        payload = json.loads(BATCH_STATE_FILE.read_text(encoding="utf-8"))
-        return payload if isinstance(payload, dict) else {}
-    except (OSError, json.JSONDecodeError):
-        return {}
-
-
 @st.cache_data(ttl=86400, show_spinner=False)
 def get_all_symbols() -> dict[str, str]:
     _, _, symbols = get_stock_lists()
@@ -112,22 +104,26 @@ def format_generated_at(value: str | None) -> str:
         return (value or "-").replace("T", " ")[:16]
 
 
-def batch_is_complete_for_target(
-    scan_cache: dict,
-    batch_state: dict,
-    target_date: str,
-) -> bool:
-    batch = batch_state.get("batch", {})
-    return (
-        batch.get("target_date") == target_date
-        and batch.get("status") == "success"
-        and cache_has_target_date(scan_cache, target_date)
-    )
+def get_kis_credentials() -> tuple[str, str]:
+    def secret(name: str) -> str:
+        try:
+            return str(st.secrets.get(name, "")).strip()
+        except Exception:
+            return ""
+
+    manual_key = secret("KIS_MANUAL_APP_KEY")
+    manual_secret = secret("KIS_MANUAL_APP_SECRET")
+    if manual_key and manual_secret:
+        return manual_key, manual_secret
+    return secret("KIS_APP_KEY"), secret("KIS_APP_SECRET")
 
 
-def render_manual_refresh(scan_cache: dict, batch_state: dict) -> None:
+def render_manual_refresh(scan_cache: dict) -> None:
     target_date = get_target_date()
-    completed = batch_is_complete_for_target(scan_cache, batch_state, target_date)
+    completed = cache_has_target_date(scan_cache, target_date)
+    availability = manual_refresh_availability(target_date)
+    app_key, app_secret = get_kis_credentials()
+    credentials_ready = bool(app_key and app_secret)
 
     status_column, button_column = st.columns([4, 1])
     with status_column:
@@ -136,19 +132,47 @@ def render_manual_refresh(scan_cache: dict, batch_state: dict) -> None:
                 f"{format_target_date(target_date)} 배치 완료 · 같은 거래일은 중복 실행하지 않습니다."
             )
         else:
-            st.caption(
-                f"갱신 대상 {format_target_date(target_date)} · 자동 배치가 누락됐을 때 수동으로 실행합니다."
-            )
+            if availability.status == "running":
+                st.info("수동 갱신이 실행 중입니다. 다른 요청은 중복 실행되지 않습니다.")
+            elif availability.status == "cooldown" and availability.retry_at:
+                st.caption(
+                    f"직전 조회 후 대기 중 · {availability.retry_at:%H:%M KST}부터 재시도할 수 있습니다."
+                )
+            elif not credentials_ready:
+                st.warning("수동 직접조회를 사용하려면 Streamlit에 KIS API 키 설정이 필요합니다.")
+            else:
+                st.caption(
+                    f"갱신 대상 {format_target_date(target_date)} · 버튼을 누르면 KIS에서 직접 조회합니다."
+                )
 
     with button_column:
-        st.link_button(
+        if st.button(
             "🔄 수동 갱신",
-            WORKFLOW_URL,
+            key="manual_market_refresh",
             width="stretch",
             type="primary",
-            disabled=completed,
-            help="GitHub에 본인 계정으로 로그인 후 실행 권한이 있는 사용자가 Run workflow를 누릅니다.",
-        )
+            disabled=completed or not availability.can_run,
+            help="KIS 수급 데이터를 직접 조회해 이 페이지의 캐시를 갱신합니다.",
+        ):
+            if not credentials_ready:
+                st.error(
+                    "Streamlit Secrets에 KIS_APP_KEY와 KIS_APP_SECRET을 설정해야 합니다."
+                )
+                return
+            try:
+                with st.spinner("KIS 수급 데이터를 조회하는 중입니다. 창을 닫지 마세요.", show_time=True):
+                    result = run_direct_scan_refresh(app_key, app_secret)
+            except ManualRefreshError as exc:
+                st.error(str(exc))
+                return
+
+            get_scan_cache.clear()
+            st.session_state["manual_refresh_notice"] = {
+                "status": result.status,
+                "message": result.message,
+            }
+            st.rerun()
+
 
 def rows_to_frame(rows: list[dict]) -> pd.DataFrame:
     if not rows:
@@ -382,12 +406,17 @@ st.title("📊 국내 수급 스캐너")
 if datetime.now(KST).year > REVIEWED_THROUGH_YEAR:
     st.caption("올해 거래일 달력 검토가 필요합니다. 검토 전까지 16:45 이후 보수적으로 수집하고 원자료 날짜를 확인합니다.")
 st.caption(
-    "Streamlit은 저장된 장 마감 캐시만 읽습니다. KIS 토큰 발급과 대량 수집은 평일 장 마감 후 GitHub 배치 한 곳에서만 실행됩니다."
+    "평소에는 저장된 장 마감 캐시를 읽고, 수동 갱신 버튼을 누른 경우에만 KIS 수급 데이터를 직접 조회합니다."
 )
 
 scan_cache = get_scan_cache(cache_file_version(CACHE_FILE))
-batch_state = get_batch_state(cache_file_version(BATCH_STATE_FILE))
-render_manual_refresh(scan_cache, batch_state)
+manual_notice = st.session_state.pop("manual_refresh_notice", None)
+if manual_notice:
+    if manual_notice.get("status") in {"success", "already_current"}:
+        st.success(manual_notice.get("message", "수동 갱신이 완료됐습니다."))
+    else:
+        st.warning(manual_notice.get("message", "일부 데이터만 갱신됐습니다."))
+render_manual_refresh(scan_cache)
 markets = scan_cache.get("markets", {})
 if not markets:
     st.error("수급 캐시가 없습니다. GitHub의 일일 배치 실행 상태를 확인해 주세요.")
@@ -490,4 +519,10 @@ else:
 with st.expander("시스템 상태"):
     st.write(f"전체 캐시 기준일: **{format_target_date(scan_cache.get('target_date'))}**")
     st.write(f"캐시 생성: **{format_generated_at(scan_cache.get('generated_at_kst'))}**")
-    st.write("Streamlit KIS 토큰 요청: **비활성화(읽기 전용)**")
+    manual_state = load_manual_refresh_state()
+    st.write("Streamlit KIS 조회: **수동 갱신 버튼에서만 활성화**")
+    if manual_state.get("finished_at_kst"):
+        st.write(
+            f"마지막 수동 갱신: **{format_generated_at(manual_state.get('finished_at_kst'))}** "
+            f"({manual_state.get('status', '-')})"
+        )

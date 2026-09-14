@@ -1,11 +1,12 @@
 # 투자 시장 대시보드
 
 국내 투자자 수급, KOSPI·KOSDAQ 비차익 프로그램매매, 미국 유동성 지표를
-Streamlit에서 확인하는 읽기 전용 대시보드입니다.
+Streamlit에서 확인하는 대시보드입니다.
 
 ## 운영 구조
 
-- Streamlit은 저장된 JSON 캐시만 읽으며 KIS 토큰을 발급하지 않습니다.
+- Streamlit은 평소 저장된 JSON 캐시만 읽습니다. 국내 수급 화면에서 사용자가
+  `수동 갱신`을 누른 경우에만 KIS를 직접 조회해 실행 중인 앱의 캐시를 갱신합니다.
 - GitHub Actions가 평일 15:47 KST에 실행되며, 전날 토큰의 실제 만료시각이
   늦어진 경우를 위해 16:47·17:47 KST 보조 실행을 둡니다.
 - 모든 배치 실행은 같은 동시성 잠금을 사용하며 KIS가 응답한 실제 만료시각에
@@ -69,12 +70,15 @@ GitHub 저장소의 Actions secret에 다음 두 값이 필요합니다.
 - `KIS_APP_KEY`
 - `KIS_APP_SECRET`
 
-Streamlit Secrets에는 KIS 키나 GitHub 실행 토큰이 필요하지 않습니다.
-`수동 갱신` 버튼은 GitHub Actions 화면을 엽니다. 본인 GitHub 계정으로 로그인한
-실행 권한 보유자만 `Run workflow`를 누를 수 있습니다. 공개 방문자는 서버의
-권한으로 실행할 수 없습니다. 기존 `GITHUB_ACTIONS_TOKEN` 설정은 사용하지
-않으며 Streamlit Secrets에서 제거해도 됩니다. 완전히 완료된 거래일은 버튼을
-비활성화하고, 부분 완료는 재실행할 수 있습니다.
+수동 갱신을 사용하려면 Streamlit Secrets에도 `KIS_APP_KEY`와
+`KIS_APP_SECRET`을 설정합니다. 자동 배치와 키를 분리할 수 있다면
+`KIS_MANUAL_APP_KEY`와 `KIS_MANUAL_APP_SECRET`을 우선 사용합니다. 수동 조회로
+쓴 파일은 실행 중인 Streamlit 앱에 즉시 반영되며, 앱 재시작 후에는 GitHub
+자동 배치가 마지막으로 커밋한 캐시로 돌아갑니다.
+
+수동 실행은 프로세스·파일 잠금을 함께 사용합니다. 완전히 갱신된 거래일은 다시
+조회하지 않고, 실행 중인 요청은 중복 차단하며, 실패 또는 부분 완료 후에는
+30분 동안 재요청을 막습니다. `GITHUB_ACTIONS_TOKEN`은 사용하지 않습니다.
 
 Keep Streamlit Awake는 실제 대시보드 제목이 보이고 앱 예외가 없을 때만
 성공합니다. HTTP 200, Streamlit 기본 화면, health 응답만으로 성공 처리하지

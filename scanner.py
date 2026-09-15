@@ -11,37 +11,16 @@ import pandas as pd
 import requests
 
 from trading_calendar import completed_session, is_session_date
-from stock_universe import get_stock_universe
+from stock_universe import STOCK_UNIVERSE_SOURCE, get_stock_universe
 
 URL_BASE = "https://openapi.koreainvestment.com:9443"
 KST = timezone(timedelta(hours=9))
 CACHE_FILE = Path(__file__).parent / "data" / "scan_cache.json"
 INVESTOR_CHART_MAX_ROWS = 30
-AUTO_REFRESH_PRIMARY_HOUR = 15
-AUTO_REFRESH_PRIMARY_MINUTE = 45
-AUTO_REFRESH_BACKUP_HOUR = 16
-AUTO_REFRESH_BACKUP_MINUTE = 15
 
 
 def get_target_date(now: Optional[datetime] = None) -> str:
     return completed_session(now)
-
-
-def get_auto_refresh_window(now: Optional[datetime] = None):
-    current = now.astimezone(KST) if now else datetime.now(KST)
-    primary = current.replace(
-        hour=AUTO_REFRESH_PRIMARY_HOUR,
-        minute=AUTO_REFRESH_PRIMARY_MINUTE,
-        second=0,
-        microsecond=0,
-    )
-    backup = current.replace(
-        hour=AUTO_REFRESH_BACKUP_HOUR,
-        minute=AUTO_REFRESH_BACKUP_MINUTE,
-        second=0,
-        microsecond=0,
-    )
-    return primary, backup
 
 
 def scan_coverage(market: Dict, target_date: str, expected_size: int) -> dict:
@@ -99,7 +78,9 @@ def cache_has_target_date(cache: Dict, target_date: str, *, allow_partial: bool 
     if cache.get("target_date") != target_date:
         return False
     universe = cache.get("universe", {})
-    if universe and not allow_partial and universe.get("as_of") != target_date:
+    if universe.get("source") != STOCK_UNIVERSE_SOURCE:
+        return False
+    if not allow_partial and universe.get("as_of") != target_date:
         return False
 
     markets = cache.get("markets", {})
@@ -123,9 +104,11 @@ def cache_has_target_date(cache: Dict, target_date: str, *, allow_partial: bool 
 
 
 def get_stock_lists():
-    """Preserve the public three-map interface for the search UI."""
-    universe = get_stock_universe()
-    return universe.kospi, universe.kosdaq, universe.all_symbols
+    """Return the latest KIS-selected symbols already stored in the cache."""
+    markets = load_scan_cache().get("markets", {})
+    kospi = dict(markets.get("kospi200", {}).get("symbols", {}))
+    kosdaq = dict(markets.get("kosdaq150", {}).get("symbols", {}))
+    return kospi, kosdaq, {**kospi, **kosdaq}
 
 
 def get_access_token(
@@ -362,7 +345,12 @@ def build_scan_cache(app_key: str, app_secret: str, access_token: str, *, target
         raise ValueError("일일 배치에서 발급한 KIS access token이 필요합니다.")
     generated_at = datetime.now(KST)
     target_date = target_date or get_target_date(generated_at)
-    universe = get_stock_universe(target_date)
+    universe = get_stock_universe(
+        access_token,
+        app_key,
+        app_secret,
+        target_date,
+    )
     dict_k200, dict_kq150 = universe.kospi, universe.kosdaq
     reusable_charts = {}
     if isinstance(reuse_cache, dict) and reuse_cache.get("target_date") == target_date:

@@ -11,6 +11,7 @@ import pandas as pd
 
 KST = timezone(timedelta(hours=9))
 PUBLICATION_DELAY = timedelta(minutes=15)
+KIS_COLLECTION_DELAY = timedelta(minutes=30)
 REVIEWED_THROUGH_YEAR = 2026
 # The upstream holiday calendar extrapolates beyond reviewed years and its
 # CSAT offsets stop in 2020. Unreviewed years use a conservative 16:30 close
@@ -28,20 +29,35 @@ def calendar_for_year(year: int):
     )
 
 
+def _effective_session_close(calendar, session: pd.Timestamp) -> pd.Timestamp:
+    close = calendar.session_close(session)
+    if session.year > REVIEWED_THROUGH_YEAR or session.strftime("%Y-%m-%d") in DELAYED_CLOSE_DATES:
+        # Avoid collecting a delayed-close session before KIS can publish it.
+        close = max(close, pd.Timestamp(f"{session:%Y-%m-%d} 16:30", tz=KST))
+    return close
+
+
 def completed_session(now: datetime | None = None) -> str:
     current = now or datetime.now(KST)
     current = current.replace(tzinfo=KST) if current.tzinfo is None else current.astimezone(KST)
     calendar = calendar_for_year(current.year)
     session = calendar.date_to_session(pd.Timestamp(current.date()), direction="previous")
-    close = calendar.session_close(session)
-    if session.year > REVIEWED_THROUGH_YEAR or session.strftime("%Y-%m-%d") in DELAYED_CLOSE_DATES:
-        # Conservative until the exchange's annual notice: never collect the
-        # known CSAT session at the ordinary 15:30 close. Avoid double offsets
-        # if a newer upstream version includes the delayed close.
-        close = max(close, pd.Timestamp(f"{session:%Y-%m-%d} 16:30", tz=KST))
+    close = _effective_session_close(calendar, session)
     if pd.Timestamp(current) < close + PUBLICATION_DELAY:
         session = calendar.previous_session(session)
     return session.strftime("%Y%m%d")
+
+
+def kis_collection_ready_at(now: datetime | None = None) -> datetime | None:
+    """KST time when KIS same-session closing data is safe to collect."""
+    current = now or datetime.now(KST)
+    current = current.replace(tzinfo=KST) if current.tzinfo is None else current.astimezone(KST)
+    calendar = calendar_for_year(current.year)
+    session = pd.Timestamp(current.date())
+    if not calendar.is_session(session):
+        return None
+    close = _effective_session_close(calendar, session)
+    return (close + KIS_COLLECTION_DELAY).to_pydatetime().astimezone(KST)
 
 
 def is_session_date(value: str) -> bool:

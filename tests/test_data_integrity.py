@@ -12,7 +12,7 @@ import requests
 
 import prefetch_scan_cache as batch
 import scanner
-from trading_calendar import KST, completed_session, is_session_date
+from trading_calendar import KST, completed_session, is_session_date, kis_collection_ready_at
 from test_daily_batch import NOW, TARGET_DATE, scan_cache, chart_rows
 
 
@@ -33,6 +33,14 @@ class CalendarTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(completed_session(datetime.fromisoformat(text).replace(tzinfo=KST)), expected)
         self.assertFalse(is_session_date("20260101"))
+
+    def test_kis_collection_window_is_1600_or_later_on_delayed_close(self):
+        ordinary = kis_collection_ready_at(datetime(2026, 9, 8, 11, tzinfo=KST))
+        delayed = kis_collection_ready_at(datetime(2026, 11, 19, 11, tzinfo=KST))
+        holiday = kis_collection_ready_at(datetime(2026, 1, 1, 11, tzinfo=KST))
+        self.assertEqual(ordinary.strftime("%H:%M"), "16:00")
+        self.assertEqual(delayed.strftime("%H:%M"), "17:00")
+        self.assertIsNone(holiday)
 
     def test_scheduled_holiday_does_not_request_token(self):
         with patch.dict(os.environ, {}, clear=True):
@@ -165,13 +173,38 @@ class FreshnessTests(unittest.TestCase):
     def test_listing_failure_has_no_fake_success_fallback(self):
         with patch("scanner.get_stock_universe", side_effect=RuntimeError("offline")):
             with self.assertRaisesRegex(RuntimeError, "offline"):
-                scanner.get_stock_lists()
+                scanner.build_scan_cache(
+                    "key",
+                    "secret",
+                    "token",
+                    target_date=TARGET_DATE,
+                )
 
     def test_wrong_sized_listing_is_rejected(self):
-        from stock_universe import parse_listing
-        frame = pd.DataFrame({"Name": ["A"], "Code": ["000001"], "Marcap": [10], "MarketId": ["STK"]})
-        with self.assertRaisesRegex(ValueError, "불완전"):
-            parse_listing(frame.to_csv(index=False))
+        from stock_universe import get_stock_universe
+
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.headers = {}
+        response.json.return_value = {
+            "rt_cd": "0",
+            "output": [
+                {
+                    "mksc_shrn_iscd": "000001",
+                    "data_rank": "1",
+                    "hts_kor_isnm": "A",
+                    "stck_avls": "10",
+                }
+            ],
+        }
+        with self.assertRaisesRegex(RuntimeError, "불완전"):
+            get_stock_universe(
+                "token",
+                "key",
+                "secret",
+                TARGET_DATE,
+                request_get=Mock(return_value=response),
+            )
 
     def test_partial_retries_then_publishes_degraded_without_issuing(self):
         payload = scan_cache()

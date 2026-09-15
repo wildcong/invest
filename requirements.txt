@@ -4,5 +4,4 @@ numpy
 requests
 cryptography>=42
 plotly
-finance-datareader
 exchange-calendars>=4.13.1,<5

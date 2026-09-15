@@ -1,11 +1,15 @@
 import streamlit as st
 
+from dashboard_theme import render_theme_picker
+
 
 st.set_page_config(
     page_title="투자 시장 대시보드",
     page_icon="📊",
     layout="wide",
 )
+
+render_theme_picker()
 
 navigation = st.navigation(
     [

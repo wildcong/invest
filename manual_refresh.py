@@ -14,6 +14,7 @@ from typing import Callable, Iterator
 from market_data import KST
 from prefetch_scan_cache import run_scanner_phase
 from scanner import cache_has_target_date, get_target_date, load_scan_cache
+from trading_calendar import kis_collection_ready_at
 
 
 STATE_FILE = Path(__file__).parent / "data" / "manual_refresh_state.json"
@@ -155,6 +156,12 @@ def run_direct_scan_refresh(
     target_date = get_target_date(now_kst)
     if cache_has_target_date(cache_loader(), target_date):
         return ManualRefreshResult(target_date, "already_current", "이미 최신 데이터입니다.")
+
+    ready_at = kis_collection_ready_at(now_kst)
+    if ready_at is not None and now_kst < ready_at:
+        raise ManualRefreshError(
+            f"당일 한국투자증권 데이터는 {ready_at:%H:%M KST} 이후 갱신할 수 있습니다."
+        )
 
     if not _PROCESS_LOCK.acquire(blocking=False):
         raise ManualRefreshBusy("다른 수동 갱신이 실행 중입니다.")

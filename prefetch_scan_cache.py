@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import tempfile
 import time
@@ -32,6 +33,7 @@ from scanner import (
     save_scan_cache,
     scan_coverage,
 )
+from trading_calendar import kis_collection_ready_at
 
 PREFETCH_MAX_ATTEMPTS = max(1, int(os.environ.get("PREFETCH_MAX_ATTEMPTS", "3")))
 PREFETCH_RETRY_DELAY_SECONDS = max(
@@ -349,6 +351,25 @@ def _validate_run_time(now_kst: datetime) -> bool:
     return True
 
 
+def wait_until_kis_collection_window(
+    now: datetime | None = None,
+    *,
+    sleep: Callable[[float], None] = time.sleep,
+) -> int:
+    """Keep an early scheduled runner idle until KIS closing data is ready."""
+    now_kst = _as_kst(now)
+    ready_at = kis_collection_ready_at(now_kst)
+    if ready_at is None or now_kst >= ready_at:
+        return 0
+    wait_seconds = math.ceil((ready_at - now_kst).total_seconds())
+    print(
+        f"waiting {wait_seconds} seconds without a KIS request until "
+        f"{ready_at:%Y-%m-%d %H:%M KST}"
+    )
+    sleep(wait_seconds)
+    return wait_seconds
+
+
 def _credentials() -> tuple[str, str]:
     app_key = os.environ.get("KIS_APP_KEY", "").strip()
     app_secret = os.environ.get("KIS_APP_SECRET", "").strip()
@@ -586,14 +607,7 @@ def run_scanner_phase(now: datetime | None = None) -> None:
             return result
 
         def collection_finished(payload):
-            if cache_has_target_date(payload, target_date):
-                return True
-            # A stale universe is refreshed next scheduled run. Repeating all
-            # 350 already-current charts cannot make the listing date advance.
-            return cache_has_target_date(payload, target_date, allow_partial=True) and all(
-                scan_coverage(payload["markets"][key], target_date, size)["current"] == size
-                for key, size in (("kospi200", 200), ("kosdaq150", 150))
-            )
+            return cache_has_target_date(payload, target_date)
 
         try:
             completed_scan, attempts = run_with_retries(
@@ -683,10 +697,17 @@ def main(argv: list[str] | None = None) -> None:
         "--mark-workflow-failure",
         choices=("priority", "scanner"),
     )
+    parser.add_argument(
+        "--wait-until-ready",
+        action="store_true",
+        help="Wait without requesting KIS until the same-day collection window.",
+    )
     arguments = parser.parse_args(argv)
     if arguments.mark_workflow_failure:
         mark_workflow_failure(arguments.mark_workflow_failure)
         return
+    if arguments.wait_until_ready:
+        wait_until_kis_collection_window()
 
     if arguments.phase == "priority":
         run_priority_phase()

@@ -23,7 +23,8 @@ from scanner import (
     scan_coverage,
     valid_chart_rows,
 )
-from trading_calendar import REVIEWED_THROUGH_YEAR
+from stock_universe import STOCK_UNIVERSE_SOURCE
+from trading_calendar import REVIEWED_THROUGH_YEAR, kis_collection_ready_at
 
 
 KST = timezone(timedelta(hours=9))
@@ -124,6 +125,9 @@ def render_manual_refresh(scan_cache: dict) -> None:
     availability = manual_refresh_availability(target_date)
     app_key, app_secret = get_kis_credentials()
     credentials_ready = bool(app_key and app_secret)
+    now_kst = datetime.now(KST)
+    ready_at = kis_collection_ready_at(now_kst)
+    waiting_for_kis = ready_at is not None and now_kst < ready_at
 
     status_column, button_column = st.columns([4, 1])
     with status_column:
@@ -140,6 +144,10 @@ def render_manual_refresh(scan_cache: dict) -> None:
                 )
             elif not credentials_ready:
                 st.warning("수동 직접조회를 사용하려면 Streamlit에 KIS API 키 설정이 필요합니다.")
+            elif waiting_for_kis:
+                st.caption(
+                    f"당일 KIS 데이터 준비 대기 중 · {ready_at:%H:%M KST}부터 갱신할 수 있습니다."
+                )
             else:
                 st.caption(
                     f"갱신 대상 {format_target_date(target_date)} · 버튼을 누르면 KIS에서 직접 조회합니다."
@@ -151,7 +159,7 @@ def render_manual_refresh(scan_cache: dict) -> None:
             key="manual_market_refresh",
             width="stretch",
             type="primary",
-            disabled=completed or not availability.can_run,
+            disabled=completed or not availability.can_run or waiting_for_kis,
             help="KIS 수급 데이터를 직접 조회해 이 페이지의 캐시를 갱신합니다.",
         ):
             if not credentials_ready:
@@ -167,6 +175,7 @@ def render_manual_refresh(scan_cache: dict) -> None:
                 return
 
             get_scan_cache.clear()
+            get_all_symbols.clear()
             st.session_state["manual_refresh_notice"] = {
                 "status": result.status,
                 "message": result.message,
@@ -275,9 +284,20 @@ def render_status(scan_cache: dict, market: dict) -> None:
     coverage = scan_coverage(market, expected_date, size)
     universe = scan_cache.get("universe", {})
     if universe.get("as_of"):
-        st.caption(f"종목 선정 목록 기준일: {format_target_date(universe['as_of'])} · FinanceData 제공")
+        source_label = (
+            "한국투자증권 Open API 제공"
+            if universe.get("source") == STOCK_UNIVERSE_SOURCE
+            else "이전 방식의 캐시 · KIS 재수집 대기"
+        )
+        st.caption(
+            f"종목 선정 목록 기준일: {format_target_date(universe['as_of'])} "
+            f"· {source_label}"
+        )
         if universe["as_of"] != expected_date:
-            st.warning("당일 종목 목록이 아직 게시되지 않아 최근 검증된 목록을 사용합니다. 수급 관측일과 목록 기준일은 다르며 다음 배치에서 최신 목록을 다시 확인합니다.")
+            st.warning(
+                "현재 캐시는 이전 기준일의 종목 목록입니다. 다음 KIS 갱신에서 "
+                "당일 시가총액 목록을 다시 조회합니다."
+            )
     if cached_date == expected_date and coverage["current"] == size:
         st.success(message)
     else:

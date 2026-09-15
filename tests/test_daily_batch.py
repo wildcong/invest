@@ -12,6 +12,7 @@ import pandas as pd
 import prefetch_scan_cache
 from kis_token_store import decrypt_access_token, encrypt_access_token
 from market_data import KST
+from stock_universe import STOCK_UNIVERSE_SOURCE
 
 NOW = datetime(2026, 8, 28, 16, 0, tzinfo=KST)
 TARGET_DATE = "20260828"
@@ -46,6 +47,11 @@ def scan_cache(target_date: str = TARGET_DATE) -> dict:
         }
     return {
         "target_date": target_date,
+        "universe": {
+            "as_of": target_date,
+            "target_date": target_date,
+            "source": STOCK_UNIVERSE_SOURCE,
+        },
         "markets": {"kospi200": market(200), "kosdaq150": market(150)},
     }
 
@@ -77,12 +83,15 @@ class IncrementalScannerTests(unittest.TestCase):
             prefetch_scan_cache.run_scanner_phase(NOW)
         return build, save
 
-    def test_complete_flows_with_old_listing_stop_after_one_collection(self):
+    def test_complete_flows_with_kis_universe_stop_after_one_collection(self):
         current = scan_cache()
-        current["universe"] = {"as_of": "20260827"}
+        current["universe"] = {
+            "as_of": TARGET_DATE,
+            "source": STOCK_UNIVERSE_SOURCE,
+        }
         build, save = self.run_phase({}, [current])
         self.assertEqual(build.call_count, 1)
-        self.assertEqual(save.call_args.args[0]["quality"], "degraded")
+        self.assertEqual(save.call_args.args[0]["quality"], "complete")
 
     def test_retry_reuses_previous_collection_after_loading_existing(self):
         existing = scan_cache("20260827")
@@ -294,6 +303,36 @@ class RunWindowTests(unittest.TestCase):
             self.assertFalse(prefetch_scan_cache._validate_run_time(before_close))
         with patch.dict(os.environ, {"ALLOW_OFF_HOURS": "true"}, clear=True):
             self.assertTrue(prefetch_scan_cache._validate_run_time(before_close))
+
+    def test_early_runner_waits_without_a_kis_request_until_1600(self):
+        early = NOW.replace(hour=11, minute=3)
+        sleep = Mock()
+        waited = prefetch_scan_cache.wait_until_kis_collection_window(
+            early,
+            sleep=sleep,
+        )
+        self.assertEqual(waited, 17_820)
+        sleep.assert_called_once_with(17_820)
+
+    def test_runner_at_collection_window_does_not_wait(self):
+        sleep = Mock()
+        self.assertEqual(
+            prefetch_scan_cache.wait_until_kis_collection_window(NOW, sleep=sleep),
+            0,
+        )
+        sleep.assert_not_called()
+
+    def test_workflow_starts_early_and_waits_inside_the_runner(self):
+        workflow = (
+            Path(__file__).parents[1]
+            / ".github"
+            / "workflows"
+            / "prefetch-scan-cache.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn('cron: "3 2 * * 1-5"', workflow)
+        self.assertIn("--wait-until-ready", workflow)
+        self.assertIn("timeout-minutes: 360", workflow)
+        self.assertIn("timeout-minutes: 330", workflow)
 
 
 class PhaseIsolationTests(unittest.TestCase):

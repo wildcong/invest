@@ -2,12 +2,17 @@ name: Update Daily Market Cache
 
 on:
   schedule:
-    # The later retries cover a token that was issued after the prior day's
-    # primary slot. Encrypted token reuse and job concurrency make completed
-    # retries no-ops without issuing another token.
-    - cron: "47 6 * * 1-5" # 15:47 KST, Monday-Friday
-    - cron: "47 7 * * 1-5" # 16:47 KST backup, Monday-Friday
-    - cron: "47 8 * * 1-5" # 17:47 KST final backup, Monday-Friday
+    # GitHub has delayed these events by several hours in practice. The first
+    # runner that arrives early waits internally without a KIS request until
+    # 16:00 KST; later events are recovery triggers and become cache no-ops
+    # after a successful collection.
+    - cron: "3 2 * * 1-5"  # 11:03 KST early runner
+    - cron: "17 3 * * 1-5" # 12:17 KST recovery trigger
+    - cron: "17 4 * * 1-5" # 13:17 KST recovery trigger
+    - cron: "17 5 * * 1-5" # 14:17 KST recovery trigger
+    - cron: "17 6 * * 1-5" # 15:17 KST recovery trigger
+    - cron: "17 7 * * 1-5" # 16:17 KST recovery trigger
+    - cron: "17 8 * * 1-5" # 17:17 KST final recovery trigger
   workflow_dispatch:
 
 permissions:
@@ -19,7 +24,7 @@ jobs:
       group: daily-kis-market-cache
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 360
     environment: KIS_APP_KEY
     env:
       # A manual recovery run may safely collect the latest completed trading
@@ -44,11 +49,11 @@ jobs:
       - name: Update priority caches and persist encrypted token
         id: priority
         continue-on-error: true
-        timeout-minutes: 15
+        timeout-minutes: 330
         env:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
-        run: python prefetch_scan_cache.py --phase priority
+        run: python prefetch_scan_cache.py --phase priority --wait-until-ready
 
       - name: Record interrupted priority stage
         if: steps.priority.outcome == 'failure'

@@ -61,6 +61,20 @@ class ManualRefreshTests(unittest.TestCase):
             self.assertEqual(state["status"], "success")
             self.assertEqual(state["target_date"], TARGET_DATE)
 
+    def test_same_day_refresh_waits_until_kis_data_window(self):
+        before_ready = NOW.replace(hour=15, minute=50)
+        with self.assertRaisesRegex(
+            manual_refresh.ManualRefreshError,
+            "16:00 KST 이후",
+        ):
+            manual_refresh.run_direct_scan_refresh(
+                "key",
+                "secret",
+                now=before_ready,
+                scanner_runner=Mock(),
+                cache_loader=Mock(return_value={}),
+            )
+
     def test_failure_blocks_an_immediate_duplicate_retry(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

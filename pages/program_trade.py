@@ -8,6 +8,7 @@ from market_data import (
     cache_file_version,
     load_program_trade_cache,
 )
+from theme_palette import cumulative_line_color
 
 
 @st.cache_data(max_entries=2, show_spinner=False)
@@ -95,7 +96,13 @@ figure.add_trace(
         x=display.index,
         y=display["비차익 누적"],
         name="비차익 기간 누적",
-        line={"color": "#111827", "width": 2.5},
+        line={
+            "color": cumulative_line_color(
+                st.session_state.get("invest_theme_mode", "시스템"),
+                st.context.theme.type,
+            ),
+            "width": 4,
+        },
     ),
     secondary_y=True,
 )

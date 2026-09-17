@@ -329,10 +329,11 @@ class RunWindowTests(unittest.TestCase):
             / "workflows"
             / "prefetch-scan-cache.yml"
         ).read_text(encoding="utf-8")
+        self.assertIn('cron: "30 1 * * 1-5"', workflow)
         self.assertIn('cron: "3 2 * * 1-5"', workflow)
         self.assertIn("--wait-until-ready", workflow)
         self.assertIn("timeout-minutes: 360", workflow)
-        self.assertIn("timeout-minutes: 330", workflow)
+        self.assertIn("timeout-minutes: 345", workflow)
 
 
 class PhaseIsolationTests(unittest.TestCase):

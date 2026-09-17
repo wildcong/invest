@@ -15,10 +15,14 @@ class FlowNavigationTests(unittest.TestCase):
             status="success",
             message="수동 갱신이 완료됐습니다.",
         )
-        with patch(
-            "manual_refresh.run_direct_scan_refresh",
-            return_value=result,
-        ) as refresh:
+        with (
+            patch(
+                "manual_refresh.run_direct_scan_refresh",
+                return_value=result,
+            ) as refresh,
+            patch("scanner.cache_has_target_date", return_value=False),
+            patch("trading_calendar.kis_collection_ready_at", return_value=None),
+        ):
             app = AppTest.from_file(str(page), default_timeout=20)
             app.secrets["KIS_APP_KEY"] = "streamlit-key"
             app.secrets["KIS_APP_SECRET"] = "streamlit-secret"

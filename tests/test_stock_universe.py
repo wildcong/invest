@@ -33,7 +33,7 @@ def response(rows: object, continuation: str = "") -> Mock:
 
 def complete_responses() -> list[Mock]:
     return [
-        response(market_rows("Kospi", 1, 120, 0), "M"),
+        response(market_rows("Kospi", 1, 120, 0), "F"),
         response(market_rows("Kospi", 121, 80, 0)),
         response(market_rows("Kosdaq", 1, 100, 300_000), "M"),
         response(market_rows("Kosdaq", 101, 50, 300_000)),
@@ -74,9 +74,25 @@ class KisUniverseTests(unittest.TestCase):
             self.assertEqual(call.kwargs["headers"]["authorization"], "Bearer token")
         self.assertEqual(sleep.call_count, 2)
 
+    def test_normalizes_continuation_header_value(self):
+        responses = complete_responses()
+        responses[0].headers = {"tr_cont": " f "}
+        get = Mock(side_effect=responses)
+
+        universe = get_stock_universe(
+            "token",
+            "app-key",
+            "app-secret",
+            "20260908",
+            request_get=get,
+            sleep=Mock(),
+        )
+
+        self.assertEqual((len(universe.kospi), len(universe.kosdaq)), (200, 150))
+
     def test_incomplete_response_is_rejected_without_a_fallback_universe(self):
         get = Mock(return_value=response(market_rows("Kospi", 1, 30, 0)))
-        with self.assertRaisesRegex(RuntimeError, "불완전"):
+        with self.assertRaisesRegex(RuntimeError, r"불완전.*tr_cont=empty"):
             get_stock_universe(
                 "token", "key", "secret", "20260908", request_get=get
             )

@@ -121,10 +121,14 @@ def _request_market(
             response.headers.get("tr_cont")
             or response.headers.get("tr-cont")
             or ""
-        ).upper()
-        if response_continuation != "M":
+        ).strip().upper()
+        # KIS uses F (first page with more data) or M (middle page with
+        # more data) depending on the gateway/API version. Both continue
+        # with an N request, as in KIS's current official samples.
+        if response_continuation not in {"F", "M"}:
             raise RuntimeError(
-                f"KIS {market} 시가총액 목록이 불완전합니다: {len(rows)}/{limit}"
+                f"KIS {market} 시가총액 목록이 불완전합니다: {len(rows)}/{limit} "
+                f"(tr_cont={response_continuation or 'empty'})"
             )
         continuation = "N"
         sleep(CONTINUATION_DELAY_SECONDS)

@@ -1,25 +1,40 @@
-"""Validated KOSPI/KOSDAQ market-cap universes from KIS Open API."""
+"""Validated KOSPI/KOSDAQ market-cap universes from official KIS masters."""
 
 from dataclasses import dataclass
-import math
+from datetime import timedelta, timezone
+from email.utils import parsedate_to_datetime
+from io import BytesIO
 import re
-import time
 from typing import Callable
+from zipfile import BadZipFile, ZipFile
 
 import requests
 
 from trading_calendar import completed_session, is_session_date
 
 
-KIS_URL_BASE = "https://openapi.koreainvestment.com:9443"
-MARKET_CAP_PATH = "/uapi/domestic-stock/v1/ranking/market-cap"
-MARKET_CAP_TR_ID = "FHPST01740000"
-MAX_CONTINUATION_PAGES = 30
-CONTINUATION_DELAY_SECONDS = 0.1
-STOCK_UNIVERSE_SOURCE = "Korea Investment & Securities Open API"
+KST = timezone(timedelta(hours=9))
+KIS_MASTER_URL_BASE = "https://new.real.download.dws.co.kr/common/master"
+STOCK_UNIVERSE_SOURCE = "Korea Investment & Securities official master files"
+
+# Fixed-width layouts published in KIS's official open-trading-api repository.
+# Both layouts place the previous-session market cap in the fifth field from
+# the end. The line prefix is short code (9), standard code (12), then name.
+KOSPI_FIELD_WIDTHS = (
+    2, 1, 4, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 5, 5, 1, 1, 1, 2, 1, 1,
+    1, 2, 2, 2, 3, 1, 3, 12, 12, 8, 15, 21, 2, 7, 1, 1, 1, 1, 1,
+    9, 9, 9, 5, 9, 8, 9, 3, 1, 1, 1,
+)
+KOSDAQ_FIELD_WIDTHS = (
+    2, 1, 4, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 9, 5, 5, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 3,
+    1, 3, 12, 12, 8, 15, 21, 2, 7, 1, 1, 1, 1, 9, 9, 9, 5, 9, 8,
+    9, 3, 1, 1, 1,
+)
 MARKETS = (
-    ("kospi", "0001", 200),
-    ("kosdaq", "1001", 150),
+    ("kospi", 200, KOSPI_FIELD_WIDTHS),
+    ("kosdaq", 150, KOSDAQ_FIELD_WIDTHS),
 )
 
 
@@ -31,122 +46,91 @@ class StockUniverse:
     metadata: dict
 
 
-def _validated_page_rows(rows: object, market: str) -> list[tuple[int, int, str, str]]:
-    if not isinstance(rows, list) or not rows:
-        raise ValueError(f"KIS {market} 시가총액 응답이 비어 있습니다.")
+def _split_fixed_width(value: str, widths: tuple[int, ...]) -> list[str]:
+    fields = []
+    offset = 0
+    for width in widths:
+        fields.append(value[offset : offset + width])
+        offset += width
+    return fields
 
-    validated = []
-    for row in rows:
-        if not isinstance(row, dict):
-            raise ValueError(f"KIS {market} 시가총액 응답 형식이 잘못됐습니다.")
-        code = str(row.get("mksc_shrn_iscd", "")).strip()
-        name = str(row.get("hts_kor_isnm", "")).strip()
-        try:
-            rank = int(str(row.get("data_rank", "")).strip())
-            market_cap = int(str(row.get("stck_avls", "")).replace(",", "").strip())
-        except ValueError as exc:
-            raise ValueError(f"KIS {market} 순위 또는 시가총액이 잘못됐습니다.") from exc
+
+def _parse_master(
+    archive: bytes,
+    market: str,
+    limit: int,
+    widths: tuple[int, ...],
+) -> dict[str, str]:
+    expected_name = f"{market}_code.mst"
+    try:
+        with ZipFile(BytesIO(archive)) as zipped:
+            if expected_name not in zipped.namelist():
+                raise ValueError(f"KIS {market} 마스터 파일이 압축에 없습니다.")
+            raw = zipped.read(expected_name)
+    except BadZipFile as exc:
+        raise ValueError(f"KIS {market} 마스터 압축 형식이 잘못됐습니다.") from exc
+
+    try:
+        lines = raw.decode("cp949").splitlines()
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"KIS {market} 마스터 문자 인코딩이 잘못됐습니다.") from exc
+
+    tail_width = sum(widths)
+    ranked: list[tuple[int, str, str]] = []
+    seen_codes: set[str] = set()
+    for line in lines:
+        if len(line) <= tail_width + 21:
+            raise ValueError(f"KIS {market} 마스터 행 길이가 잘못됐습니다.")
+        prefix = line[:-tail_width]
+        values = _split_fixed_width(line[-tail_width:], widths)
+        code = prefix[:9].strip()
+        name = prefix[21:].strip()
+        security_group = values[0].strip()
+
+        # ST is KIS's stock group. This excludes funds, ETFs, ETNs, ELWs,
+        # beneficiary certificates, and other non-stock master rows.
+        if security_group != "ST":
+            continue
         if not re.fullmatch(r"[0-9A-Z]{6}", code):
             raise ValueError(f"KIS {market} 종목 코드 형식이 잘못됐습니다: {code}")
         if not name:
             raise ValueError(f"KIS {market} 종목명이 비어 있습니다.")
-        if rank <= 0 or market_cap <= 0 or not math.isfinite(float(market_cap)):
-            raise ValueError(f"KIS {market} 순위 또는 시가총액이 유효하지 않습니다.")
-        validated.append((rank, market_cap, name, code))
-    return validated
+        if code in seen_codes:
+            raise ValueError(f"KIS {market} 종목 코드가 중복됐습니다: {code}")
+        seen_codes.add(code)
+        try:
+            market_cap = int(values[-5].strip())
+        except ValueError as exc:
+            raise ValueError(f"KIS {market} 시가총액이 잘못됐습니다: {code}") from exc
+        if market_cap > 0:
+            ranked.append((market_cap, code, name))
 
-
-def _request_market(
-    market: str,
-    market_code: str,
-    limit: int,
-    access_token: str,
-    app_key: str,
-    app_secret: str,
-    request_get: Callable,
-    sleep: Callable[[float], None],
-) -> tuple[dict[str, str], int]:
-    rows: list[tuple[int, int, str, str]] = []
-    seen_codes: set[str] = set()
-    page_signatures: set[tuple[str, ...]] = set()
-    continuation = ""
-
-    for page_number in range(1, MAX_CONTINUATION_PAGES + 1):
-        headers = {
-            "content-type": "application/json; charset=utf-8",
-            "authorization": f"Bearer {access_token}",
-            "appkey": app_key,
-            "appsecret": app_secret,
-            "tr_id": MARKET_CAP_TR_ID,
-            "custtype": "P",
-            "tr_cont": continuation,
-        }
-        params = {
-            "fid_input_price_2": "",
-            "fid_cond_mrkt_div_code": "J",
-            "fid_cond_scr_div_code": "20174",
-            "fid_div_cls_code": "0",
-            "fid_input_iscd": market_code,
-            "fid_trgt_cls_code": "0",
-            "fid_trgt_exls_cls_code": "0",
-            "fid_input_price_1": "",
-            "fid_vol_cnt": "",
-        }
-        response = request_get(
-            f"{KIS_URL_BASE}{MARKET_CAP_PATH}",
-            headers=headers,
-            params=params,
-            timeout=20,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if not isinstance(payload, dict) or str(payload.get("rt_cd")) != "0":
-            message = payload.get("msg1") if isinstance(payload, dict) else None
-            raise RuntimeError(message or f"KIS {market} 시가총액 조회에 실패했습니다.")
-
-        page_rows = _validated_page_rows(payload.get("output"), market)
-        signature = tuple(value[3] for value in page_rows)
-        if signature in page_signatures:
-            raise RuntimeError(f"KIS {market} 연속조회가 같은 페이지를 반복했습니다.")
-        page_signatures.add(signature)
-        for row in page_rows:
-            if row[3] in seen_codes:
-                raise ValueError(f"KIS {market} 종목 코드가 중복됐습니다: {row[3]}")
-            rows.append(row)
-            seen_codes.add(row[3])
-
-        if len(rows) >= limit:
-            break
-        response_continuation = str(
-            response.headers.get("tr_cont")
-            or response.headers.get("tr-cont")
-            or ""
-        ).strip().upper()
-        # KIS uses F (first page with more data) or M (middle page with
-        # more data) depending on the gateway/API version. Both continue
-        # with an N request, as in KIS's current official samples.
-        if response_continuation not in {"F", "M"}:
-            raise RuntimeError(
-                f"KIS {market} 시가총액 목록이 불완전합니다: {len(rows)}/{limit} "
-                f"(tr_cont={response_continuation or 'empty'})"
-            )
-        continuation = "N"
-        sleep(CONTINUATION_DELAY_SECONDS)
-    else:
+    ranked.sort(key=lambda row: (-row[0], row[1]))
+    if len(ranked) < limit:
         raise RuntimeError(
-            f"KIS {market} 연속조회가 {MAX_CONTINUATION_PAGES}페이지를 초과했습니다."
+            f"KIS {market} 마스터의 유효 주식이 부족합니다: {len(ranked)}/{limit}"
         )
-
-    # KIS returns this endpoint in market-cap order. Preserve continuation page
-    # order so a final page that extends past the limit cannot reorder results.
-    ranked = rows[:limit]
-    market_caps = [value[1] for value in ranked]
-    if any(left < right for left, right in zip(market_caps, market_caps[1:])):
-        raise ValueError(f"KIS {market} 시가총액 순서가 올바르지 않습니다.")
-    symbols = {name: code for _, _, name, code in ranked}
+    selected = ranked[:limit]
+    symbols = {name: code for _, code, name in selected}
     if len(symbols) != limit or len(set(symbols.values())) != limit:
         raise ValueError(f"KIS {market} 선정 종목 수를 검증하지 못했습니다.")
-    return symbols, page_number
+    return symbols
+
+
+def _master_as_of(response: object, market: str, target_date: str) -> str:
+    last_modified = str(response.headers.get("Last-Modified") or "").strip()
+    try:
+        modified = parsedate_to_datetime(last_modified)
+        if modified.tzinfo is None:
+            modified = modified.replace(tzinfo=timezone.utc)
+        as_of = modified.astimezone(KST).strftime("%Y%m%d")
+    except (TypeError, ValueError) as exc:
+        raise RuntimeError(f"KIS {market} 마스터 갱신시각을 확인할 수 없습니다.") from exc
+    if as_of < target_date:
+        raise RuntimeError(
+            f"KIS {market} 마스터가 아직 목표일 자료가 아닙니다: {as_of}/{target_date}"
+        )
+    return as_of
 
 
 def get_stock_universe(
@@ -156,9 +140,10 @@ def get_stock_universe(
     target_date: str | None = None,
     *,
     request_get: Callable | None = None,
-    sleep: Callable[[float], None] = time.sleep,
+    sleep: Callable[[float], None] | None = None,
 ) -> StockUniverse:
-    """Return the top 200 KOSPI and top 150 KOSDAQ symbols from KIS."""
+    """Return the top 200 KOSPI and top 150 KOSDAQ stocks from KIS."""
+    del sleep
     if not access_token or not app_key or not app_secret:
         raise ValueError("KIS 시가총액 조회에 인증 정보가 필요합니다.")
     target = target_date or completed_session()
@@ -167,18 +152,13 @@ def get_stock_universe(
 
     get = request_get or requests.get
     selected: dict[str, dict[str, str]] = {}
-    page_counts: dict[str, int] = {}
-    for market, market_code, limit in MARKETS:
-        selected[market], page_counts[market] = _request_market(
-            market,
-            market_code,
-            limit,
-            access_token,
-            app_key,
-            app_secret,
-            get,
-            sleep,
-        )
+    master_dates: dict[str, str] = {}
+    for market, limit, widths in MARKETS:
+        url = f"{KIS_MASTER_URL_BASE}/{market}_code.mst.zip"
+        response = get(url, timeout=30)
+        response.raise_for_status()
+        master_dates[market] = _master_as_of(response, market, target)
+        selected[market] = _parse_master(response.content, market, limit, widths)
 
     all_symbols = {**selected["kospi"], **selected["kosdaq"]}
     all_codes = list(selected["kospi"].values()) + list(selected["kosdaq"].values())
@@ -193,8 +173,10 @@ def get_stock_universe(
             "target_date": target,
             "age_sessions": 0,
             "source": STOCK_UNIVERSE_SOURCE,
-            "endpoint": MARKET_CAP_PATH,
-            "tr_id": MARKET_CAP_TR_ID,
-            "pages": page_counts,
+            "endpoints": {
+                market: f"{KIS_MASTER_URL_BASE}/{market}_code.mst.zip"
+                for market, _, _ in MARKETS
+            },
+            "master_dates": master_dates,
         },
     )

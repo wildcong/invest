@@ -285,7 +285,7 @@ def render_status(scan_cache: dict, market: dict) -> None:
     universe = scan_cache.get("universe", {})
     if universe.get("as_of"):
         source_label = (
-            "한국투자증권 Open API 제공"
+            "한국투자증권 공식 종목 마스터 제공"
             if universe.get("source") == STOCK_UNIVERSE_SOURCE
             else "이전 방식의 캐시 · KIS 재수집 대기"
         )

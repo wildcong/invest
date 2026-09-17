@@ -181,23 +181,13 @@ class FreshnessTests(unittest.TestCase):
                 )
 
     def test_wrong_sized_listing_is_rejected(self):
-        from stock_universe import get_stock_universe
+        from stock_universe import KOSPI_FIELD_WIDTHS, get_stock_universe
+        from test_stock_universe import archive_response, market_rows
 
-        response = Mock()
-        response.raise_for_status.return_value = None
-        response.headers = {}
-        response.json.return_value = {
-            "rt_cd": "0",
-            "output": [
-                {
-                    "mksc_shrn_iscd": "000001",
-                    "data_rank": "1",
-                    "hts_kor_isnm": "A",
-                    "stck_avls": "10",
-                }
-            ],
-        }
-        with self.assertRaisesRegex(RuntimeError, "불완전"):
+        response = archive_response(
+            "kospi", market_rows("Kospi", 1, 0, KOSPI_FIELD_WIDTHS)
+        )
+        with self.assertRaisesRegex(RuntimeError, "유효 주식이 부족"):
             get_stock_universe(
                 "token",
                 "key",

@@ -1,10 +1,49 @@
-"""On-page controls for Streamlit's native app theme."""
+"""A quiet shared layout that follows Streamlit's native app theme."""
 
 import streamlit as st
 
 from theme_palette import THEME_OPTIONS
 
 _NATIVE_THEME_NAMES = {"시스템": "System", "라이트": "Light", "다크": "Dark"}
+
+# Keep native colors, controls, focus rings and warnings in both color modes.
+DASHBOARD_CSS = """
+<style>
+  [data-testid="stMainBlockContainer"] {
+    max-width: 1320px;
+    padding-top: 1.5rem;
+    padding-bottom: 2.5rem;
+  }
+  [data-testid="stVerticalBlock"] { gap: 0.85rem; }
+  h1 { font-size: 1.9rem !important; letter-spacing: -0.045em; }
+  h2 { font-size: 1.4rem !important; letter-spacing: -0.03em; }
+  h3 { font-size: 1.1rem !important; letter-spacing: -0.02em; }
+  [data-testid="stMetricValue"] { font-size: 1.55rem; }
+  [data-testid="stMetricLabel"] { font-size: 0.82rem; }
+  [data-testid="stCaptionContainer"] { line-height: 1.5; }
+  [data-testid="stExpander"] { border-radius: 0.75rem; }
+  [data-testid="stPlotlyChart"] { border-radius: 0.75rem; }
+  @media (max-width: 640px) {
+    [data-testid="stMainBlockContainer"] { padding: 1rem 1rem 2rem; }
+    h1 { font-size: 1.55rem !important; }
+    [data-testid="stMetricValue"] { font-size: 1.3rem; }
+  }
+</style>
+"""
+
+
+def style_chart(figure, *, height: int = 440):
+    """Unify chart spacing without changing traces, units or theme colors."""
+    figure.update_layout(
+        height=height,
+        margin={"l": 8, "r": 8, "t": 32, "b": 8},
+        font={"size": 12},
+        legend={"orientation": "h", "y": 1.02, "yanchor": "bottom", "x": 0},
+        hoverlabel={"font_size": 12},
+    )
+    figure.update_xaxes(showgrid=False, zeroline=False)
+    figure.update_yaxes(gridcolor="rgba(128, 128, 128, 0.12)", zeroline=False)
+    return figure
 
 # Streamlit has a native three-way theme switcher, but no public Python setter.
 # This trusted component activates that switcher so its theme applies to charts,
@@ -47,13 +86,16 @@ NATIVE_THEME_BRIDGE = st.components.v2.component(
 
 
 def render_theme_picker() -> None:
-    """Show the same theme control above every page."""
-    _, right = st.columns([5, 2], vertical_alignment="bottom")
-    with right:
-        choice = st.segmented_control(
-            "화면 모드",
-            THEME_OPTIONS,
-            default="시스템",
-            key="invest_theme_mode",
-        )
+    """Keep display preferences available in one small menu."""
+    st.markdown(DASHBOARD_CSS, unsafe_allow_html=True)
+    with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
+        st.caption("INVEST  /  시장 대시보드")
+        with st.popover("화면 설정"):
+            choice = st.segmented_control(
+                "화면 모드",
+                THEME_OPTIONS,
+                default="시스템",
+                key="invest_theme_mode",
+                wrap=True,
+            )
     NATIVE_THEME_BRIDGE(data={"theme": _NATIVE_THEME_NAMES[choice or "시스템"]})

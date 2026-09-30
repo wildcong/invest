@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from dashboard_theme import style_chart
 from market_data import (
     FRED_SERIES,
     US_LIQUIDITY_CACHE_FILE,
@@ -44,8 +45,6 @@ def render_series(key: str, series: dict, years: int | None) -> None:
     relation = metadata.get("liquidity_relation", "direct")
     is_inverse = relation == "inverse"
     relation_label = metadata.get("relation_label", "정방향")
-    badge_color = "#b45309" if is_inverse else "#047857"
-    badge_background = "#fef3c7" if is_inverse else "#d1fae5"
     line_color = "#f59e0b" if is_inverse else "#10b981"
     fill_color = (
         "rgba(245, 158, 11, 0.12)"
@@ -54,22 +53,16 @@ def render_series(key: str, series: dict, years: int | None) -> None:
     )
     precision = 3 if abs(latest["value"]) < 10 else 1
     effect = classify_liquidity_effect(delta, relation)
-    st.markdown(
-        f"#### {metadata.get('label', key)} "
-        f"<span style='font-size:0.72rem;color:{badge_color};"
-        f"background:{badge_background};padding:3px 8px;border-radius:999px;"
-        f"vertical-align:middle'>{relation_label}</span>",
-        unsafe_allow_html=True,
+    st.markdown(f"##### {metadata.get('label', key)}")
+    st.caption(
+        f"{relation_label} · "
+        + ("하락할수록 유동성 확대 방향" if is_inverse else "상승할수록 유동성 확대 방향")
     )
     st.metric(
-        "현재 수준",
+        "최근 발표값",
         "$" + f"{latest['value']:,.{precision}f}B",
         f"{delta:+,.{precision}f}B · {effect}",
         delta_color="inverse" if is_inverse else "normal",
-    )
-    st.caption(
-        f"**{metadata.get('relation_summary', '')}**  \n"
-        f"{metadata.get('interpretation', '')}"
     )
     figure = go.Figure(
         go.Scatter(
@@ -83,32 +76,27 @@ def render_series(key: str, series: dict, years: int | None) -> None:
         )
     )
     figure.update_layout(
-        height=300,
-        margin={"l": 5, "r": 5, "t": 5, "b": 5},
         yaxis_title="십억 달러",
         showlegend=False,
         hovermode="x",
     )
-    st.plotly_chart(figure, width="stretch", config={"displaylogo": False})
+    style_chart(figure, height=280)
+    st.plotly_chart(
+        figure,
+        key=f"us_liquidity_{key}",
+        width="stretch",
+        config={"displaylogo": False},
+    )
     st.caption(
-        f"최근 발표 {latest['date']:%Y-%m-%d} · "
+        f"최근 기준일 {latest['date']:%Y-%m-%d} · "
         f"{series['frequency']} · FRED {series['series_id']}"
     )
 
 
-st.title("🇺🇸 미국 유동성")
+st.title("미국 유동성")
 st.caption(
-    "TGA, M2, 연준 역레포, 지급준비금을 서로 다른 발표 주기 그대로 비교합니다. "
-    "수치는 모두 십억 달러($B)로 통일했습니다."
+    "네 가지 지표로 살펴보는 미국의 자금 흐름 · 단위: 십억 달러($B)"
 )
-st.info(
-    "읽는 법: **정방향**은 차트가 오르면 유동성 확대, "
-    "**역방향**은 차트가 내려가야 유동성 확대 방향입니다. "
-    "이는 유동성 해석이지 주가의 즉시 매수·매도 신호는 아닙니다."
-)
-direct_column, inverse_column = st.columns(2)
-direct_column.success("**정방향** · M2 · 지급준비금")
-inverse_column.warning("**역방향** · TGA · Overnight Reverse Repo")
 
 cache = get_liquidity_cache(cache_file_version(US_LIQUIDITY_CACHE_FILE))
 series_map = cache.get("series", {})
@@ -128,7 +116,20 @@ for row_keys in (("tga", "m2"), ("reverse_repo", "reserve_balances")):
     columns = st.columns(2)
     for column, key in zip(columns, row_keys):
         with column:
-            render_series(key, series_map.get(key, {}), years)
+            with st.container(border=True):
+                render_series(key, series_map.get(key, {}), years)
+
+with st.expander("지표 읽는 법", expanded=False):
+    st.write(
+        "정방향 지표는 상승할 때, 역방향 지표는 하락할 때 유동성 확대 방향으로 읽습니다. "
+        "각 지표의 발표 주기가 다르며, 증감은 직전 발표값과 비교합니다. "
+        "주가의 즉시 매수·매도 신호를 뜻하지는 않습니다."
+    )
+    for key in ("tga", "m2", "reverse_repo", "reserve_balances"):
+        metadata = {**FRED_SERIES[key], **series_map.get(key, {})}
+        st.markdown(f"**{metadata['label']} · {metadata['relation_label']}**")
+        st.write(metadata.get("relation_summary", ""))
+        st.caption(metadata.get("interpretation", ""))
 
 try:
     generated = datetime.fromisoformat(cache.get("generated_at_utc", ""))

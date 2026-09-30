@@ -1,3 +1,5 @@
+import copy
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -8,6 +10,31 @@ from manual_refresh import ManualRefreshResult
 
 
 class FlowNavigationTests(unittest.TestCase):
+    def test_search_uses_symbols_from_the_current_cache_version(self):
+        root = Path(__file__).resolve().parents[1]
+        cache = json.loads((root / "data" / "scan_cache.json").read_text())
+        updated = copy.deepcopy(cache)
+        symbols = updated["markets"]["kospi200"]["symbols"]
+        original_name = next(iter(symbols))
+        symbols["새로 반영된 분석 종목"] = symbols.pop(original_name)
+        with (
+            patch("scanner.load_scan_cache", return_value=cache) as load,
+            patch("market_data.cache_file_version", return_value=(123456789, 1)) as version,
+        ):
+            app = AppTest.from_file(str(root / "pages" / "flow_scanner.py"), default_timeout=20).run()
+            next(item for item in app.radio if item.label == "분석 시장").set_value("분석 대상 종목 검색").run()
+            self.assertFalse(app.exception)
+            selector = next(item for item in app.selectbox if item.label == "종목 선택")
+            self.assertIn(original_name, selector.options)
+
+            load.return_value = updated
+            version.return_value = (123456789, 2)
+            app.run()
+            self.assertFalse(app.exception)
+            selector = next(item for item in app.selectbox if item.label == "종목 선택")
+            self.assertIn("새로 반영된 분석 종목", selector.options)
+            self.assertNotIn(original_name, selector.options)
+
     def test_manual_button_runs_direct_kis_refresher(self):
         page = Path(__file__).resolve().parents[1] / "pages" / "flow_scanner.py"
         result = ManualRefreshResult(

@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
+from dashboard_theme import style_chart
 from market_data import cache_file_version
 from manual_refresh import (
     ManualRefreshError,
@@ -17,7 +18,6 @@ from scanner import (
     INVESTOR_CHART_MAX_ROWS,
     cache_has_target_date,
     classify_5day_direction,
-    get_stock_lists,
     get_target_date,
     load_scan_cache,
     scan_coverage,
@@ -82,12 +82,6 @@ DIRECTION_META = {
 def get_scan_cache(cache_version: tuple[int, int]) -> dict:
     del cache_version
     return load_scan_cache()
-
-
-@st.cache_data(ttl=86400, show_spinner=False)
-def get_all_symbols() -> dict[str, str]:
-    _, _, symbols = get_stock_lists()
-    return symbols
 
 
 def format_target_date(value: str | None) -> str:
@@ -175,7 +169,6 @@ def render_manual_refresh(scan_cache: dict) -> None:
                 return
 
             get_scan_cache.clear()
-            get_all_symbols.clear()
             st.session_state["manual_refresh_notice"] = {
                 "status": result.status,
                 "message": result.message,
@@ -249,7 +242,6 @@ def render_stock_navigation(options: list[str]) -> str:
         )
 
     STOCK_KEYBOARD_NAVIGATION(key="flow_stock_keyboard_navigation")
-    st.caption("키보드 ← / → 키로 이전·다음 종목을 연속해서 볼 수 있습니다.")
     return selected
 
 
@@ -276,41 +268,38 @@ def render_status(scan_cache: dict, market: dict) -> None:
     cached_date = market.get("target_date") or scan_cache.get("target_date")
     expected_date = get_target_date()
     generated_at = market.get("generated_at_kst") or scan_cache.get("generated_at_kst")
-    message = (
-        f"배치 갱신 {format_generated_at(generated_at)} · "
-        f"수집 목표일 {format_target_date(cached_date)}"
-    )
     size = 200 if market is scan_cache.get("markets", {}).get("kospi200") else 150
     coverage = scan_coverage(market, expected_date, size)
     universe = scan_cache.get("universe", {})
-    if universe.get("as_of"):
-        source_label = (
-            "한국투자증권 공식 종목 마스터 제공"
-            if universe.get("source") == STOCK_UNIVERSE_SOURCE
-            else "이전 방식의 캐시 · KIS 재수집 대기"
-        )
-        st.caption(
-            f"종목 선정 목록 기준일: {format_target_date(universe['as_of'])} "
-            f"· {source_label}"
-        )
-        if universe["as_of"] != expected_date:
-            st.warning(
-                "현재 캐시는 이전 기준일의 종목 목록입니다. 다음 KIS 갱신에서 "
-                "당일 시가총액 목록을 다시 조회합니다."
-            )
-    if cached_date == expected_date and coverage["current"] == size:
-        st.success(message)
-    else:
+    st.caption(
+        f"수급 기준일 {format_target_date(cached_date)} · "
+        f"당일 확인 {coverage['current']}/{size}종목"
+    )
+    if cached_date != expected_date or coverage["current"] != size:
         st.warning(
-            f"{message} · 현재 목표일 {format_target_date(expected_date)} 데이터 확인 "
-            f"{coverage['current']}/{size}종목. 일부 미갱신·누락은 다음 배치에서 재시도합니다. "
-            "미갱신 사유는 확인되지 않았으며, 거래정지를 의미하지 않습니다."
+            f"{format_target_date(expected_date)} 자료가 아직 완성되지 않았습니다. "
+            "미갱신 종목은 다음 배치에서 재확인합니다."
+        )
+    if universe.get("as_of") and universe["as_of"] != expected_date:
+        st.warning(
+            f"종목 선정 목록은 {format_target_date(universe['as_of'])} 기준입니다. "
+            "다음 수집에서 다시 확인합니다."
         )
     if coverage["stale"] or coverage["missing"] or coverage["invalid"]:
         with st.expander("미갱신·누락 종목"):
             st.write("이전 자료만 있음: " + (", ".join(coverage["stale"]) or "없음"))
             st.write("자료 부족·누락: " + (", ".join(coverage["missing"]) or "없음"))
             st.write("날짜·수치 검증 실패: " + (", ".join(coverage["invalid"]) or "없음"))
+    with st.expander("수집 정보", expanded=False):
+        st.caption(f"배치 갱신: {format_generated_at(generated_at)}")
+        if universe.get("as_of"):
+            source_label = (
+                "한국투자증권 공식 종목 마스터"
+                if universe.get("source") == STOCK_UNIVERSE_SOURCE
+                else "이전 방식의 캐시 · KIS 재수집 대기"
+            )
+            st.caption(f"종목 선정: {format_target_date(universe['as_of'])} · {source_label}")
+        st.caption("미갱신 사유는 확인되지 않았으며, 거래정지를 의미하지 않습니다.")
 
 
 def render_summary(summary: dict) -> None:
@@ -405,13 +394,8 @@ def render_stock_chart(name: str, ticker: str, frame: pd.DataFrame, period: int)
         secondary_y=True,
     )
     figure.add_hline(y=0, line_dash="dash", line_color="#94a3b8")
-    figure.update_layout(
-        height=460,
-        hovermode="x unified",
-        margin={"l": 10, "r": 10, "t": 25, "b": 10},
-        legend={"orientation": "h", "y": 1.08},
-        dragmode=False,
-    )
+    style_chart(figure, height=460)
+    figure.update_layout(hovermode="x unified", dragmode=False)
     st.plotly_chart(figure, width="stretch", config={"displaylogo": False, "scrollZoom": True})
 
     detail = display[
@@ -419,15 +403,14 @@ def render_stock_chart(name: str, ticker: str, frame: pd.DataFrame, period: int)
     ].iloc[::-1]
     detail.columns = ["주가", "외인 일일", "기관 일일", "개인 일일", "외인 누적", "기관 누적", "개인 누적"]
     detail.index = detail.index.strftime("%Y-%m-%d")
-    st.dataframe(detail.style.format("{:,.1f}"), width="stretch")
+    with st.expander("일별 상세 내역", expanded=False):
+        st.dataframe(detail.style.format("{:,.1f}"), width="stretch")
 
 
 st.title("📊 국내 수급 스캐너")
 if datetime.now(KST).year > REVIEWED_THROUGH_YEAR:
     st.caption("올해 거래일 달력 검토가 필요합니다. 검토 전까지 16:45 이후 보수적으로 수집하고 원자료 날짜를 확인합니다.")
-st.caption(
-    "평소에는 저장된 장 마감 캐시를 읽고, 수동 갱신 버튼을 누른 경우에만 KIS 수급 데이터를 직접 조회합니다."
-)
+st.caption("외국인·기관 수급을 종목별 차트로 확인합니다.")
 
 scan_cache = get_scan_cache(cache_file_version(CACHE_FILE))
 manual_notice = st.session_state.pop("manual_refresh_notice", None)
@@ -436,7 +419,17 @@ if manual_notice:
         st.success(manual_notice.get("message", "수동 갱신이 완료됐습니다."))
     else:
         st.warning(manual_notice.get("message", "일부 데이터만 갱신됐습니다."))
-render_manual_refresh(scan_cache)
+with st.expander("갱신·시스템 상태", expanded=False):
+    st.caption("평소에는 저장된 차트를 보여줍니다. 수동 갱신 시 KIS에서 직접 조회합니다.")
+    render_manual_refresh(scan_cache)
+    st.caption(f"전체 캐시 기준일: {format_target_date(scan_cache.get('target_date'))}")
+    st.caption(f"캐시 생성: {format_generated_at(scan_cache.get('generated_at_kst'))}")
+    manual_state = load_manual_refresh_state()
+    if manual_state.get("finished_at_kst"):
+        st.caption(
+            f"마지막 수동 갱신: {format_generated_at(manual_state.get('finished_at_kst'))} "
+            f"({manual_state.get('status', '-')})"
+        )
 markets = scan_cache.get("markets", {})
 if not markets:
     st.error("수급 캐시가 없습니다. GitHub의 일일 배치 실행 상태를 확인해 주세요.")
@@ -444,7 +437,7 @@ if not markets:
 
 mode = st.radio(
     "분석 시장",
-    ["KOSPI 시가총액 상위 200", "KOSDAQ 시가총액 상위 150", "전체 종목 검색"],
+    ["KOSPI 시가총액 상위 200", "KOSDAQ 시가총액 상위 150", "분석 대상 종목 검색"],
     horizontal=True,
     label_visibility="collapsed",
 )
@@ -487,13 +480,10 @@ if market_key:
         for label, item in entry_by_label.items()
     }
 else:
-    cached_symbols = {}
+    all_symbols = {}
     for cached_market in markets.values():
-        cached_symbols.update(cached_market.get("symbols", {}))
-    try:
-        all_symbols = get_all_symbols()
-    except Exception:
-        all_symbols = cached_symbols
+        all_symbols.update(cached_market.get("symbols", {}))
+    st.caption("현재 분석 대상인 KOSPI 200종목·KOSDAQ 150종목에서 검색합니다.")
     query = st.text_input("종목명 검색", placeholder="예: 삼성전자")
     candidates = {
         name: ticker
@@ -519,8 +509,8 @@ if not market_key:
         for ticker in cached_market.get("chart_data", {})
     }:
         st.info(
-            "이 종목은 일일 캐시 대상(KOSPI·KOSDAQ 시가총액 상위 200·150종목) 밖입니다. "
-            "KIS 토큰 단일 발급 원칙에 따라 웹에서 실시간 호출하지 않습니다."
+            "이 종목의 수급 자료가 아직 수집되지 않았습니다. "
+            "다음 갱신이 완료되면 차트를 확인할 수 있습니다."
         )
         st.stop()
 
@@ -529,20 +519,8 @@ period = st.select_slider(
     options=[5, 10, 15, 20, 25, INVESTOR_CHART_MAX_ROWS],
     value=INVESTOR_CHART_MAX_ROWS,
 )
-st.caption("KIS 단일 조회 캐시 기준 · 최근 최대 30거래일")
 chart_frame = find_chart_frame(scan_cache, selected_ticker)
 if chart_frame.empty:
     st.warning("선택 종목의 차트 캐시가 없습니다. 다음 장 마감 배치에서 다시 확인해 주세요.")
 else:
     render_stock_chart(selected_name, selected_ticker, chart_frame, period)
-
-with st.expander("시스템 상태"):
-    st.write(f"전체 캐시 기준일: **{format_target_date(scan_cache.get('target_date'))}**")
-    st.write(f"캐시 생성: **{format_generated_at(scan_cache.get('generated_at_kst'))}**")
-    manual_state = load_manual_refresh_state()
-    st.write("Streamlit KIS 조회: **수동 갱신 버튼에서만 활성화**")
-    if manual_state.get("finished_at_kst"):
-        st.write(
-            f"마지막 수동 갱신: **{format_generated_at(manual_state.get('finished_at_kst'))}** "
-            f"({manual_state.get('status', '-')})"
-        )

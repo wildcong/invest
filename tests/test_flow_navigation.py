@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import pandas as pd
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
@@ -18,20 +19,30 @@ class FlowNavigationTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         outside_name = "상위권 밖 테스트 종목"
         outside_ticker = "999999"
-        with patch(
-            "stock_universe.get_search_symbols",
-            return_value={outside_name: outside_ticker},
-        ) as search:
-            app = AppTest.from_file(str(root / "pages" / "flow_scanner.py"), default_timeout=20).run()
+        chart = pd.DataFrame(
+            {"Price": [100.0] * 5, "F_억": [1.0] * 5, "I_억": [2.0] * 5, "P_억": [-3.0] * 5},
+            index=pd.bdate_range(end="2026-09-30", periods=5),
+        )
+        with (
+            patch("stock_universe.get_search_symbols", return_value={outside_name: outside_ticker}) as search,
+            patch("stock_detail.load_stock_detail", return_value=chart) as detail,
+        ):
+            app = AppTest.from_file(str(root / "pages" / "flow_scanner.py"), default_timeout=20)
+            app.secrets["KIS_APP_KEY"] = "streamlit-key"
+            app.secrets["KIS_APP_SECRET"] = "streamlit-secret"
+            app.run()
             next(item for item in app.radio if item.label == "분석 시장").set_value("분석 대상 종목 검색").run()
             self.assertFalse(app.exception)
             next(item for item in app.text_input if item.label == "종목명 검색").set_value(outside_name).run()
+            app.run()
 
         self.assertFalse(app.exception)
         search.assert_called_once()
+        detail.assert_called_once()
+        self.assertEqual(detail.call_args.args[0], outside_ticker)
         selector = next(item for item in app.selectbox if item.label == "종목 선택")
         self.assertEqual(selector.options, [outside_name])
-        self.assertTrue(any("수급 차트는 제공되지 않습니다" in item.value for item in app.info))
+        self.assertTrue(any(outside_name in item.value for item in app.subheader))
 
     def test_search_fallback_uses_symbols_from_the_current_cache_version(self):
         root = Path(__file__).resolve().parents[1]
@@ -39,7 +50,8 @@ class FlowNavigationTests(unittest.TestCase):
         updated = copy.deepcopy(cache)
         symbols = updated["markets"]["kospi200"]["symbols"]
         original_name = next(iter(symbols))
-        symbols["새로 반영된 분석 종목"] = symbols.pop(original_name)
+        ticker = symbols.pop(original_name)
+        symbols["새로 반영된 분석 종목"] = ticker
         with (
             patch("scanner.load_scan_cache", return_value=cache) as load,
             patch("market_data.cache_file_version", return_value=(123456789, 1)) as version,
@@ -47,6 +59,7 @@ class FlowNavigationTests(unittest.TestCase):
         ):
             app = AppTest.from_file(str(root / "pages" / "flow_scanner.py"), default_timeout=20).run()
             next(item for item in app.radio if item.label == "분석 시장").set_value("분석 대상 종목 검색").run()
+            next(item for item in app.text_input if item.label == "종목명 검색").set_value(ticker).run()
             self.assertFalse(app.exception)
             selector = next(item for item in app.selectbox if item.label == "종목 선택")
             self.assertIn(original_name, selector.options)

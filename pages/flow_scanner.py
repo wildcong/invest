@@ -24,6 +24,8 @@ from scanner import (
     scan_coverage,
     valid_chart_rows,
 )
+from prefetch_scan_cache import BATCH_STATE_FILE
+from stock_detail import StockDetailUnavailable, load_stock_detail
 import stock_universe
 from stock_universe import STOCK_UNIVERSE_SOURCE
 from trading_calendar import REVIEWED_THROUGH_YEAR, kis_collection_ready_at
@@ -93,6 +95,19 @@ def get_all_search_symbols() -> dict[str, str]:
     if not hasattr(stock_universe, "get_search_symbols"):
         importlib.reload(stock_universe)
     return stock_universe.get_search_symbols()
+
+
+@st.cache_data(ttl=1800, max_entries=128, show_spinner=False)
+def get_searched_stock_chart(
+    ticker: str, target_date: str, batch_state_version: tuple[int, int]
+) -> pd.DataFrame:
+    del batch_state_version
+    try:
+        app_key = str(st.secrets.get("KIS_APP_KEY", "")).strip()
+        app_secret = str(st.secrets.get("KIS_APP_SECRET", "")).strip()
+    except Exception:
+        app_key = app_secret = ""
+    return load_stock_detail(ticker, target_date, app_key, app_secret)
 
 
 def format_target_date(value: str | None) -> str:
@@ -494,13 +509,16 @@ else:
     cached_symbols = {}
     for cached_market in markets.values():
         cached_symbols.update(cached_market.get("symbols", {}))
+    st.caption("KIS 공식 종목 마스터의 KOSPI·KOSDAQ 전체 주식에서 검색하고, 선택 종목의 수급 차트를 조회합니다.")
+    query = st.text_input("종목명 검색", placeholder="예: 동화약품 또는 000020")
+    if not query.strip():
+        st.info("종목명이나 종목코드를 입력해 주세요.")
+        st.stop()
     try:
         all_symbols = get_all_search_symbols()
-        st.caption("KIS 공식 종목 마스터의 KOSPI·KOSDAQ 전체 주식에서 검색합니다. 수급 차트는 정기 수집 대상 350종목만 제공합니다.")
     except Exception as exc:
         all_symbols = cached_symbols
         st.warning(f"KIS 전체 종목 목록을 불러오지 못했습니다. 현재는 저장된 350종목만 검색할 수 있습니다. ({type(exc).__name__})")
-    query = st.text_input("종목명 검색", placeholder="예: 삼성전자")
     candidates = {
         name: ticker
         for name, ticker in all_symbols.items()
@@ -518,24 +536,24 @@ else:
 selected_option = render_stock_navigation(selector_options)
 selected_name, selected_ticker = stock_by_option[selected_option]
 
-if not market_key:
-    if selected_ticker not in {
-        ticker
-        for cached_market in markets.values()
-        for ticker in cached_market.get("chart_data", {})
-    }:
-        st.info(
-            "이 종목은 정기 수급 수집 대상(KOSPI 상위 200·KOSDAQ 상위 150) 밖이므로 "
-            "검색은 가능하지만 수급 차트는 제공되지 않습니다."
-        )
-        st.stop()
-
 period = st.select_slider(
     "차트 기간",
     options=[5, 10, 15, 20, 25, INVESTOR_CHART_MAX_ROWS],
     value=INVESTOR_CHART_MAX_ROWS,
 )
 chart_frame = find_chart_frame(scan_cache, selected_ticker)
+if not market_key and chart_frame.empty:
+    try:
+        with st.spinner("KIS에서 선택 종목의 수급을 조회합니다..."):
+            chart_frame = get_searched_stock_chart(
+                selected_ticker,
+                get_target_date(),
+                cache_file_version(BATCH_STATE_FILE),
+            )
+        st.caption("KIS 종목별 투자자매매동향 직접 조회 · 저장된 배치 토큰 재사용")
+    except StockDetailUnavailable as exc:
+        st.warning(str(exc))
+        st.stop()
 if chart_frame.empty:
     st.warning("선택 종목의 차트 캐시가 없습니다. 다음 장 마감 배치에서 다시 확인해 주세요.")
 else:

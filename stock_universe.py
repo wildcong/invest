@@ -60,7 +60,7 @@ def _parse_master(
     market: str,
     limit: int,
     widths: tuple[int, ...],
-) -> dict[str, str]:
+) -> tuple[dict[str, str], dict[str, str]]:
     expected_name = f"{market}_code.mst"
     try:
         with ZipFile(BytesIO(archive)) as zipped:
@@ -77,6 +77,7 @@ def _parse_master(
 
     tail_width = sum(widths)
     ranked: list[tuple[int, str, str]] = []
+    listed: list[tuple[str, str]] = []
     seen_codes: set[str] = set()
     for line in lines:
         if len(line) <= tail_width + 21:
@@ -98,6 +99,7 @@ def _parse_master(
         if code in seen_codes:
             raise ValueError(f"KIS {market} 종목 코드가 중복됐습니다: {code}")
         seen_codes.add(code)
+        listed.append((code, name))
         try:
             market_cap = int(values[-5].strip())
         except ValueError as exc:
@@ -114,6 +116,23 @@ def _parse_master(
     symbols = {name: code for _, code, name in selected}
     if len(symbols) != limit or len(set(symbols.values())) != limit:
         raise ValueError(f"KIS {market} 선정 종목 수를 검증하지 못했습니다.")
+    all_symbols = {name: code for code, name in listed}
+    if len(all_symbols) != len(listed):
+        raise ValueError(f"KIS {market} 전체 종목명에 중복이 있습니다.")
+    return symbols, all_symbols
+
+
+def get_search_symbols(*, request_get: Callable | None = None) -> dict[str, str]:
+    """Fetch all listed stocks from public KIS masters, without issuing a token."""
+    get = request_get or requests.get
+    symbols: dict[str, str] = {}
+    for market, limit, widths in MARKETS:
+        response = get(f"{KIS_MASTER_URL_BASE}/{market}_code.mst.zip", timeout=30)
+        response.raise_for_status()
+        _, market_symbols = _parse_master(response.content, market, limit, widths)
+        if symbols.keys() & market_symbols.keys():
+            raise ValueError("KIS 전체 종목명에 시장 간 중복이 있습니다.")
+        symbols.update(market_symbols)
     return symbols
 
 
@@ -152,17 +171,20 @@ def get_stock_universe(
 
     get = request_get or requests.get
     selected: dict[str, dict[str, str]] = {}
+    all_by_market: dict[str, dict[str, str]] = {}
     master_dates: dict[str, str] = {}
     for market, limit, widths in MARKETS:
         url = f"{KIS_MASTER_URL_BASE}/{market}_code.mst.zip"
         response = get(url, timeout=30)
         response.raise_for_status()
         master_dates[market] = _master_as_of(response, market, target)
-        selected[market] = _parse_master(response.content, market, limit, widths)
+        selected[market], all_by_market[market] = _parse_master(response.content, market, limit, widths)
 
-    all_symbols = {**selected["kospi"], **selected["kosdaq"]}
+    if all_by_market["kospi"].keys() & all_by_market["kosdaq"].keys():
+        raise ValueError("KIS 전체 종목명에 시장 간 중복이 있습니다.")
+    all_symbols = {**all_by_market["kospi"], **all_by_market["kosdaq"]}
     all_codes = list(selected["kospi"].values()) + list(selected["kosdaq"].values())
-    if len(all_symbols) != 350 or len(set(all_codes)) != 350:
+    if len(all_symbols) < 350 or len(set(all_codes)) != 350:
         raise ValueError("KIS 전체 선정 목록에 중복 종목명 또는 코드가 있습니다.")
     return StockUniverse(
         selected["kospi"],

@@ -9,6 +9,7 @@ from stock_universe import (
     KOSDAQ_FIELD_WIDTHS,
     KOSPI_FIELD_WIDTHS,
     STOCK_UNIVERSE_SOURCE,
+    get_search_symbols,
     get_stock_universe,
 )
 from test_daily_batch import scan_cache
@@ -66,6 +67,7 @@ def market_rows(
 def complete_responses() -> list[Mock]:
     kospi = market_rows("Kospi", 220, 0, KOSPI_FIELD_WIDTHS)
     kospi.append(master_line("900001", "KospiFund", 9_999_999, KOSPI_FIELD_WIDTHS, "EF"))
+    kospi.append(master_line("900002", "KospiZero", 0, KOSPI_FIELD_WIDTHS))
     kosdaq = market_rows("Kosdaq", 170, 300_000, KOSDAQ_FIELD_WIDTHS)
     return [archive_response("kospi", kospi), archive_response("kosdaq", kosdaq)]
 
@@ -83,8 +85,12 @@ class KisUniverseTests(unittest.TestCase):
         )
 
         self.assertEqual((len(universe.kospi), len(universe.kosdaq)), (200, 150))
-        self.assertEqual(len(universe.all_symbols), 350)
+        self.assertEqual(len(universe.all_symbols), 391)
+        self.assertEqual(universe.all_symbols["Kospi220"], "000220")
+        self.assertEqual(universe.all_symbols["Kosdaq170"], "300170")
+        self.assertEqual(universe.all_symbols["KospiZero"], "900002")
         self.assertNotIn("KospiFund", universe.kospi)
+        self.assertNotIn("KospiFund", universe.all_symbols)
         self.assertEqual(universe.metadata["as_of"], "20260917")
         self.assertEqual(universe.metadata["source"], STOCK_UNIVERSE_SOURCE)
         self.assertEqual(
@@ -101,6 +107,16 @@ class KisUniverseTests(unittest.TestCase):
         )
         for call in get.call_args_list:
             self.assertEqual(call.kwargs, {"timeout": 30})
+
+    def test_search_fetches_all_stocks_from_public_kis_masters(self):
+        get = Mock(side_effect=complete_responses())
+        symbols = get_search_symbols(request_get=get)
+        self.assertEqual(len(symbols), 391)
+        self.assertEqual(symbols["Kospi220"], "000220")
+        self.assertEqual(symbols["Kosdaq170"], "300170")
+        self.assertEqual(symbols["KospiZero"], "900002")
+        self.assertNotIn("KospiFund", symbols)
+        self.assertEqual(get.call_count, 2)
 
     def test_market_cap_sort_is_independent_of_master_row_order(self):
         kospi = market_rows("Kospi", 200, 0, KOSPI_FIELD_WIDTHS)

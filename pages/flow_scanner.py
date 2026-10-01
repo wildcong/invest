@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import importlib
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -23,6 +24,7 @@ from scanner import (
     scan_coverage,
     valid_chart_rows,
 )
+import stock_universe
 from stock_universe import STOCK_UNIVERSE_SOURCE
 from trading_calendar import REVIEWED_THROUGH_YEAR, kis_collection_ready_at
 
@@ -82,6 +84,15 @@ DIRECTION_META = {
 def get_scan_cache(cache_version: tuple[int, int]) -> dict:
     del cache_version
     return load_scan_cache()
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_all_search_symbols() -> dict[str, str]:
+    # A long-lived Cloud process may still hold the pre-search module after a
+    # deployment. Reload only when that older module lacks the new function.
+    if not hasattr(stock_universe, "get_search_symbols"):
+        importlib.reload(stock_universe)
+    return stock_universe.get_search_symbols()
 
 
 def format_target_date(value: str | None) -> str:
@@ -480,10 +491,15 @@ if market_key:
         for label, item in entry_by_label.items()
     }
 else:
-    all_symbols = {}
+    cached_symbols = {}
     for cached_market in markets.values():
-        all_symbols.update(cached_market.get("symbols", {}))
-    st.caption("현재 분석 대상인 KOSPI 200종목·KOSDAQ 150종목에서 검색합니다.")
+        cached_symbols.update(cached_market.get("symbols", {}))
+    try:
+        all_symbols = get_all_search_symbols()
+        st.caption("KIS 공식 종목 마스터의 KOSPI·KOSDAQ 전체 주식에서 검색합니다. 수급 차트는 정기 수집 대상 350종목만 제공합니다.")
+    except Exception as exc:
+        all_symbols = cached_symbols
+        st.warning(f"KIS 전체 종목 목록을 불러오지 못했습니다. 현재는 저장된 350종목만 검색할 수 있습니다. ({type(exc).__name__})")
     query = st.text_input("종목명 검색", placeholder="예: 삼성전자")
     candidates = {
         name: ticker
@@ -509,8 +525,8 @@ if not market_key:
         for ticker in cached_market.get("chart_data", {})
     }:
         st.info(
-            "이 종목의 수급 자료가 아직 수집되지 않았습니다. "
-            "다음 갱신이 완료되면 차트를 확인할 수 있습니다."
+            "이 종목은 정기 수급 수집 대상(KOSPI 상위 200·KOSDAQ 상위 150) 밖이므로 "
+            "검색은 가능하지만 수급 차트는 제공되지 않습니다."
         )
         st.stop()
 

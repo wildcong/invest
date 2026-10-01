@@ -4,13 +4,36 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from manual_refresh import ManualRefreshResult
 
 
 class FlowNavigationTests(unittest.TestCase):
-    def test_search_uses_symbols_from_the_current_cache_version(self):
+    def setUp(self):
+        st.cache_data.clear()
+
+    def test_search_includes_kis_stocks_outside_the_daily_350(self):
+        root = Path(__file__).resolve().parents[1]
+        outside_name = "상위권 밖 테스트 종목"
+        outside_ticker = "999999"
+        with patch(
+            "stock_universe.get_search_symbols",
+            return_value={outside_name: outside_ticker},
+        ) as search:
+            app = AppTest.from_file(str(root / "pages" / "flow_scanner.py"), default_timeout=20).run()
+            next(item for item in app.radio if item.label == "분석 시장").set_value("분석 대상 종목 검색").run()
+            self.assertFalse(app.exception)
+            next(item for item in app.text_input if item.label == "종목명 검색").set_value(outside_name).run()
+
+        self.assertFalse(app.exception)
+        search.assert_called_once()
+        selector = next(item for item in app.selectbox if item.label == "종목 선택")
+        self.assertEqual(selector.options, [outside_name])
+        self.assertTrue(any("수급 차트는 제공되지 않습니다" in item.value for item in app.info))
+
+    def test_search_fallback_uses_symbols_from_the_current_cache_version(self):
         root = Path(__file__).resolve().parents[1]
         cache = json.loads((root / "data" / "scan_cache.json").read_text())
         updated = copy.deepcopy(cache)
@@ -20,6 +43,7 @@ class FlowNavigationTests(unittest.TestCase):
         with (
             patch("scanner.load_scan_cache", return_value=cache) as load,
             patch("market_data.cache_file_version", return_value=(123456789, 1)) as version,
+            patch("stock_universe.get_search_symbols", side_effect=RuntimeError("KIS unavailable")),
         ):
             app = AppTest.from_file(str(root / "pages" / "flow_scanner.py"), default_timeout=20).run()
             next(item for item in app.radio if item.label == "분석 시장").set_value("분석 대상 종목 검색").run()

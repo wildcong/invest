@@ -48,10 +48,13 @@ def style_chart(figure, *, height: int = 440):
 # Streamlit has a native three-way theme switcher, but no public Python setter.
 # This trusted component activates that switcher so its theme applies to charts,
 # widgets, tables, navigation, and every page rather than just recoloring content.
-NATIVE_THEME_BRIDGE = st.components.v2.component(
-    "invest_native_theme_bridge",
-    css=":host { display: none; }",
-    js="""
+def _native_theme_bridge():
+    # Register against the active Streamlit runtime. A Cloud code reload or
+    # AppTest can create a new runtime while the Python module stays imported.
+    return st.components.v2.component(
+        "invest_native_theme_bridge",
+        css=":host { display: none; }",
+        js="""
     export default function({ data }) {
       const wanted = data.theme;
       if (window.__investAppliedTheme === wanted) return;
@@ -81,8 +84,8 @@ NATIVE_THEME_BRIDGE = st.components.v2.component(
       const timeout = setTimeout(() => observer.disconnect(), 1500);
       return () => { observer.disconnect(); clearTimeout(timeout); };
     }
-    """,
-)
+        """,
+    )
 
 
 def render_theme_picker() -> None:
@@ -98,4 +101,4 @@ def render_theme_picker() -> None:
                 key="invest_theme_mode",
                 wrap=True,
             )
-    NATIVE_THEME_BRIDGE(data={"theme": _NATIVE_THEME_NAMES[choice or "시스템"]})
+    _native_theme_bridge()(data={"theme": _NATIVE_THEME_NAMES[choice or "시스템"]})

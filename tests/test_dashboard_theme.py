@@ -1,8 +1,10 @@
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from streamlit.testing.v1 import AppTest
 
+import dashboard_theme
 from theme_palette import THEME_OPTIONS, cumulative_line_color
 
 
@@ -18,6 +20,13 @@ def contrast_ratio(first: str, second: str) -> float:
 
 
 class DashboardThemeTests(unittest.TestCase):
+    def test_app_recovers_when_cloud_keeps_the_old_theme_module(self):
+        app_path = Path(__file__).resolve().parents[1] / "app.py"
+        with patch.object(dashboard_theme, "style_chart", None):
+            app = AppTest.from_file(str(app_path), default_timeout=20).run()
+            self.assertFalse(app.exception)
+            self.assertTrue(callable(dashboard_theme.style_chart))
+
     def test_page_has_three_way_theme_picker(self):
         app_path = Path(__file__).resolve().parents[1] / "app.py"
         app = AppTest.from_file(str(app_path), default_timeout=20).run()

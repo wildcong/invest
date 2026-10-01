@@ -1,6 +1,14 @@
 import streamlit as st
+import importlib
 
-from dashboard_theme import render_theme_picker
+import dashboard_theme
+
+
+# Community Cloud can update page files without restarting the Python process.
+# If an older dashboard_theme is still in sys.modules, reload it before a page
+# imports symbols that were introduced in the new deployment.
+if not callable(getattr(dashboard_theme, "style_chart", None)):
+    dashboard_theme = importlib.reload(dashboard_theme)
 
 
 st.set_page_config(
@@ -9,7 +17,7 @@ st.set_page_config(
     layout="wide",
 )
 
-render_theme_picker()
+dashboard_theme.render_theme_picker()
 
 navigation = st.navigation(
     [
